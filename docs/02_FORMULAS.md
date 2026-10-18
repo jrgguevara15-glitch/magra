@@ -24,7 +24,13 @@ el reportado como referencia.
 - Cintura/estatura: < 0,5 riesgo bajo; 0,5–0,6 elevado; ≥ 0,6 alto.
 
 Tablas de referencia (OMS por edad; IMCM de Eston, Hawes, Martin y Reilly)
-en el código de evaluación.
+en `lib/core/formulas/body_composition.dart`.
+
+Clasificación del % grasa: bajo < mínimo OMS; saludable hasta el tope OMS;
+alto hasta tope + 7; muy alto sobre eso. El margen de 7 se calibró con los
+encabezados de los planes del nutricionista (hombre 35 años, tope 19 %):
+26,40 → Muy alto; 25,78 → Alto; feb-2022 → Alto (coherente con 23,88 % de
+la fórmula, no con el 18,74 % informado).
 
 ## Energía
 

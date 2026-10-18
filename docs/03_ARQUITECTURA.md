@@ -1,7 +1,7 @@
 # 03 — Arquitectura
 
-Estado: **PROPUESTA — pendiente de aprobación del usuario.** Cualquier
-cambio a estas decisiones requiere autorización (ver AGENTS.md).
+Estado: **APROBADA por el usuario.** Cualquier cambio a estas decisiones
+requiere autorización (ver AGENTS.md).
 
 ## Vista general
 
