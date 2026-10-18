@@ -40,7 +40,7 @@ abstract final class MagraTheme {
       colorScheme: scheme,
       useMaterial3: true,
       visualDensity: VisualDensity.adaptivePlatformDensity,
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(

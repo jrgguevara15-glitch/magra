@@ -46,6 +46,10 @@ flutter analyze
 El bloque no puede considerarse terminado mientras flutter analyze
 presente issues.
 
+Versión de referencia: Flutter estable actual (3.47.x a oct-2026). El
+agente valida con la misma versión que usa el usuario; un analyze limpio
+en otra versión no cuenta (pasó en M0: `CardTheme` → `CardThemeData`).
+
 ## Git
 
 - Antes de cambios relevantes: revisar git status y mantener identificados
