@@ -9,7 +9,8 @@
 - M0 — Scaffolding Flutter: TERMINADO. Validación funcional del usuario
   APROBADA en Chrome (Windows) con Flutter 3.47: wordmark MAGRA, 6 pestañas
   y navegación lateral en escritorio. analyze sin issues, 3/3 pruebas.
-- M1 — Fórmulas puras: IMPLEMENTADO, validación del usuario PENDIENTE.
+- M1 — Fórmulas puras: TERMINADO. Validación del usuario APROBADA
+  (flutter test en Windows, Flutter 3.47: 32/32).
   `lib/core/formulas/` (composición corporal, energía, intercambios,
   ejercicio MET, meta física, tendencia). 29 pruebas contra los valores de
   los informes del nutricionista. analyze sin issues; suite 32/32.
