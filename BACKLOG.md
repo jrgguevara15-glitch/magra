@@ -15,3 +15,7 @@ activo.
   calibrado en M1 (tope + 7; el prototipo usa tope + 6).
 - El catálogo de alimentos del prototipo (valores por 100 g y marcas) pasa
   a la app en M3.
+- Antes de publicar: reactivar "Confirm email" en Supabase y configurar la
+  URL de redirección y los correos en español.
+- Inicio de sesión con Google y Apple; recuperar contraseña.
+- Migraciones con Supabase CLI en vez de pegarlas en el SQL Editor.

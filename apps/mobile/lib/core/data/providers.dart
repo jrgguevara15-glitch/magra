@@ -1,0 +1,28 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../features/profile/user_profile.dart';
+import '../../features/progress/measurement.dart';
+import 'repositories.dart';
+
+/// Se reemplazan en `main` con las implementaciones de Supabase y en las
+/// pruebas con implementaciones en memoria.
+final authRepositoryProvider =
+    Provider<AuthRepository>((ref) => throw UnimplementedError());
+final profileRepositoryProvider =
+    Provider<ProfileRepository>((ref) => throw UnimplementedError());
+final measurementRepositoryProvider =
+    Provider<MeasurementRepository>((ref) => throw UnimplementedError());
+
+final signedInProvider = StreamProvider<bool>(
+  (ref) => ref.watch(authRepositoryProvider).signedInChanges(),
+);
+
+final profileProvider = FutureProvider<UserProfile?>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return null;
+  return ref.watch(profileRepositoryProvider).fetch();
+});
+
+final measurementsProvider = FutureProvider<List<Measurement>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const [];
+  return ref.watch(measurementRepositoryProvider).list();
+});

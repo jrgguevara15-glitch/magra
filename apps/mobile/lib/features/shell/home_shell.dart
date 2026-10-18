@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/data/providers.dart';
+import '../progress/progress_page.dart';
 
 /// Una pestaña principal de MAGRA.
 class MagraDestination {
@@ -57,22 +61,52 @@ const magraDestinations = <MagraDestination>[
 /// Ancho desde el que se usa navegación lateral (tablet y escritorio).
 const double kWideLayoutBreakpoint = 720;
 
-class HomeShell extends StatefulWidget {
+/// Índice de la pestaña Progreso.
+const int kProgressTab = 3;
+
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 0;
 
   void _select(int index) => setState(() => _index = index);
 
+  Future<void> _signOut() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: Text(
+            'Saldrás de ${ref.read(authRepositoryProvider).email ?? 'tu cuenta'}.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(d, false),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(d, true),
+              child: const Text('Cerrar sesión')),
+        ],
+      ),
+    );
+    if (ok == true) await ref.read(authRepositoryProvider).signOut();
+  }
+
   @override
   Widget build(BuildContext context) {
     final destination = magraDestinations[_index];
-    final body = _PlaceholderPage(destination: destination);
+    final body = _index == kProgressTab
+        ? const ProgressPage()
+        : _PlaceholderPage(destination: destination);
+    final signOutButton = IconButton(
+      tooltip: 'Cerrar sesión',
+      icon: const Icon(Icons.logout),
+      onPressed: _signOut,
+    );
     final wide = MediaQuery.sizeOf(context).width >= kWideLayoutBreakpoint;
 
     if (wide) {
@@ -86,6 +120,15 @@ class _HomeShellState extends State<HomeShell> {
               leading: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
                 child: _Wordmark(),
+              ),
+              trailing: Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: signOutButton,
+                  ),
+                ),
               ),
               destinations: [
                 for (final d in magraDestinations)
@@ -104,7 +147,7 @@ class _HomeShellState extends State<HomeShell> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const _Wordmark()),
+      appBar: AppBar(title: const _Wordmark(), actions: [signOutButton]),
       body: body,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,

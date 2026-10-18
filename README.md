@@ -24,6 +24,7 @@ BACKLOG.md        Ideas registradas para bloques futuros
 - [docs/02_FORMULAS.md](docs/02_FORMULAS.md) — cálculos (verificados)
 - [docs/03_ARQUITECTURA.md](docs/03_ARQUITECTURA.md) — tecnología y datos
 - [docs/04_FASES.md](docs/04_FASES.md) — plan por bloques
+- [docs/05_SUPABASE.md](docs/05_SUPABASE.md) — configurar la base de datos
 
 ## Prototipo
 

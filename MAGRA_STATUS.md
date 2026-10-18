@@ -14,7 +14,11 @@
   `lib/core/formulas/` (composición corporal, energía, intercambios,
   ejercicio MET, meta física, tendencia). 29 pruebas contra los valores de
   los informes del nutricionista. analyze sin issues; suite 32/32.
-- M2 a M7 — NO ABIERTOS.
+- M2 — Supabase (cuentas, perfil, mediciones): IMPLEMENTADO, validación del
+  usuario PENDIENTE. Migración + RLS validadas en Postgres local; inicio de
+  sesión con correo, perfil, mediciones y evaluación en Progreso.
+  analyze sin issues; suite 44/44; build web OK.
+- M3 a M7 — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 
@@ -27,5 +31,6 @@
 
 ## Decisiones pendientes
 
-- Crear cuenta de Supabase y de la API de Claude.
+- Proyecto Supabase creado (twtkxvbnkxuggsnkihlb, São Paulo).
+- Pendiente: cuenta de la API de Claude (para M4).
 - Precio y límites del plan gratis vs premium.
