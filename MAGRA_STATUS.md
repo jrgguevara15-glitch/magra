@@ -6,7 +6,9 @@
 
 ## Fase 2 — Núcleo nativo
 
-- M0 — Scaffolding Flutter: EN IMPLEMENTACIÓN.
+- M0 — Scaffolding Flutter: TERMINADO. Validación funcional del usuario
+  APROBADA en Chrome (Windows) con Flutter 3.47: wordmark MAGRA, 6 pestañas
+  y navegación lateral en escritorio. analyze sin issues, 3/3 pruebas.
 - M1 a M7 — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
