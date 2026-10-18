@@ -16,29 +16,34 @@ compras, evaluación, evolución, entrenamiento y coach IA.
 | M0 | Scaffolding Flutter + tema MAGRA + navegación por pestañas |
 | M1 | Fórmulas puras en `core/` con pruebas contra valores del nutri |
 | M2 | Supabase: proyecto, auth, tablas + RLS, perfil y mediciones |
-| M3 | Registro del día con catálogo de intercambios y porciones |
-| M4 | Foto → calorías (Edge Function `ai-photo` + revisión editable) |
-| M5 | Ejercicio MET + días sin carbohidratos + ayuno con avisos |
-| M6 | Peso de tendencia + gasto adaptativo semanal |
-| M7 | Código de barras (Open Food Facts) y registro por voz |
+| M3 | Cuestionario completo: horarios, entrenamiento, experiencia, lesiones, equipo, gustos, alergias, salud, ayuno, presupuesto |
+| M4 | Motor de recomendación: plan nutricional (n.º de comidas 2–6, horarios, qué comer, porciones) y plan de entrenamiento, con explicación |
+| M5 | Registro del día con catálogo de intercambios y porciones |
+| M6 | Foto → calorías (Edge Function `ai-photo` + revisión editable) |
+| M7 | Ejercicio MET + ayuno con avisos |
+| M8 | Peso de tendencia + gasto adaptativo semanal |
+| M9 | Código de barras (Open Food Facts) y registro por voz |
+
+Orden aprobado por el usuario: primero que MAGRA evalúe y recomiende
+(M3–M4), después el registro diario.
 
 ## Fase 3 — Conectado
 
 | Bloque | Contenido |
 |---|---|
-| M8 | Apple Health / Health Connect (pasos, entrenos, sueño, FC) |
-| M9 | Menús semanales con IA + lista de compras |
-| M10 | Rutinas adaptativas de fuerza |
-| M11 | Fotos de progreso y comparador |
-| M12 | Notificaciones inteligentes |
+| M10 | Apple Health / Health Connect (pasos, entrenos, sueño, FC) |
+| M11 | Menús semanales con IA + lista de compras |
+| M12 | Rutinas adaptativas de fuerza |
+| M13 | Fotos de progreso y comparador |
+| M14 | Notificaciones inteligentes |
 
 ## Fase 4 — Producto vendible
 
 | Bloque | Contenido |
 |---|---|
-| M13 | Coach IA: chat y revisión semanal |
-| M14 | Rachas, logros, semáforo de alimentos, banco de calorías |
-| M15 | Suscripciones (RevenueCat), plan gratis vs premium |
-| M16 | Legal: consentimiento, exportar/borrar cuenta, textos |
-| M17 | Publicación en App Store, Google Play, Windows y macOS |
-| M18 | PDF para el nutricionista |
+| M15 | Coach IA: chat y revisión semanal |
+| M16 | Rachas, logros, semáforo de alimentos, banco de calorías |
+| M17 | Suscripciones (RevenueCat), plan gratis vs premium |
+| M18 | Legal: consentimiento, exportar/borrar cuenta, textos |
+| M19 | Publicación en App Store, Google Play, Windows y macOS |
+| M20 | PDF para compartir con un profesional |

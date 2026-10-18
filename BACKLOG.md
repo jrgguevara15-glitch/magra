@@ -3,8 +3,9 @@
 Ideas registradas para bloques futuros. No se implementan en el bloque
 activo.
 
-- Validar con el usuario si los días sin carbohidratos deben mantener las
-  calorías (redistribuir) o bajar a ~1.500 kcal como hoy en el prototipo.
+- M4: generalizar `portionScale` (M1 supone 4 comidas) a 2–6 comidas y
+  decidir por reglas si un usuario lleva días bajos en carbohidratos y cómo
+  se reparten sus calorías.
 - Catálogo de alimentos: completar valores por 100 g con tabla chilena
   (INTA) en vez de valores genéricos.
 - Soporte de mujeres en el plan base de intercambios (hoy escalado desde un

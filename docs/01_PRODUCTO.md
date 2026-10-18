@@ -27,11 +27,26 @@ fórmulas. No son datos de la app ni se cargan en ninguna cuenta.
 - Texto libre estimado por IA.
 - Lista de intercambios del plan con porción sugerida del día.
 
-### 2. Plan nutricional (método de intercambios)
-- 4 comidas/día: 1 carbohidrato + 1 proteína + 1 lípido + 2–3 vegetales.
-- Porciones escaladas desde el plan base del nutricionista hacia la meta
-  calórica actual (ver 02_FORMULAS).
-- **Días sin carbohidratos** configurables (por defecto martes y jueves).
+### 2. Plan nutricional (MAGRA como nutricionista deportivo)
+MAGRA decide el plan de cada usuario; nada es fijo. Las 4 comidas y los
+martes/jueves sin carbohidratos de los informes de referencia eran la
+indicación para UNA persona, no una regla.
+
+- **Número de comidas (2–6)** según calorías totales, proteína a repartir
+  (tomas de 25–40 g; más grandes desde ~50 años), horario de sueño y
+  trabajo, hora de entrenamiento (pre y post), preferencia de ayuno y
+  condiciones de salud (diabetes, hipoglicemia, adulto mayor: comidas
+  regulares y sin ayuno).
+- **Qué comer en cada comida** con el método de intercambios
+  (carbohidrato, proteína, lípido, vegetales): carbohidratos cerca del
+  entrenamiento, proteína repartida, porciones para su meta.
+- **Días bajos en carbohidratos** solo si le convienen a ese usuario.
+- **Alimentos** según gustos, alergias, presupuesto, si cocina y país.
+- Base científica: con calorías iguales, la frecuencia de comidas no cambia
+  la pérdida de grasa (ISSN); importa el déficit, la proteína repartida y
+  que el plan sea sostenible.
+- Arquitectura: **reglas** calculan números y límites de seguridad; la
+  **IA** arma el plan concreto dentro de esos números y lo explica.
 - **Ayuno intermitente** 12:12 / 14:10 / 16:8 con temporizador y avisos.
   Nunca se proponen ayunos > 24 h.
 
@@ -44,8 +59,8 @@ fórmulas. No son datos de la app ni se cargan en ninguna cuenta.
 
 ### 4. Ejercicio
 - Calorías por actividad con MET y peso actual; se recupera solo 50 %.
-- Plan de fuerza + cardio (45 + 45 min, mínimo 3 días) generado según días,
-  nivel y equipo.
+- MAGRA como entrenador personal: plan de fuerza + cardio según días y
+  tiempo disponibles, experiencia, lesiones, equipo, edad y peso.
 - **Rutinas adaptativas**: progresión de carga por sesión y por grupo
   muscular descansado.
 - Integración con Apple Health (HealthKit) y Health Connect (Android):

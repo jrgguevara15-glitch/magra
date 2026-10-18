@@ -18,7 +18,9 @@
   usuario PENDIENTE. Migración + RLS validadas en Postgres local; inicio de
   sesión con correo, perfil, mediciones y evaluación en Progreso.
   analyze sin issues; suite 44/44; build web OK.
-- M3 a M7 — NO ABIERTOS.
+- M3 (cuestionario completo) y M4 (motor de recomendación) — NO ABIERTOS;
+  orden aprobado. Se abren al cerrar M2.
+- M5 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 
