@@ -12,7 +12,8 @@ activo.
 - Modo nutricionista: el profesional ve el progreso de sus pacientes
   (posible canal de venta B2B).
 - Prototipo web (Fase 1): alinear la clasificación de % grasa con el margen
-  calibrado en M1 (tope + 7; el prototipo usa tope + 6).
+  calibrado en M1 (tope + 7; el prototipo usa tope + 6) y quitarle los
+  datos precargados del fundador (debe partir vacío como la app).
 - El catálogo de alimentos del prototipo (valores por 100 g y marcas) pasa
   a la app en M3.
 - Antes de publicar: reactivar "Confirm email" en Supabase y configurar la

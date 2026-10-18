@@ -43,17 +43,17 @@ void main() {
     expect(find.text('Nueva medición'), findsOneWidget);
   });
 
-  testWidgets('evaluación con las mediciones de Magic Formula', (tester) async {
+  testWidgets('evaluación con mediciones de referencia', (tester) async {
     setSize(tester, const Size(900, 2400));
     await tester.pumpWidget(testApp(
       auth: FakeAuth(signedIn: true),
-      profiles: FakeProfiles(juniorProfile),
-      measurements: FakeMeasurements(magicFormulaMeasurements),
+      profiles: FakeProfiles(sampleProfile),
+      measurements: FakeMeasurements(referenceMeasurements),
     ));
     await tester.pumpAndSettle();
     await openProgress(tester);
 
-    expect(find.text('Hola, Junior'), findsOneWidget);
+    expect(find.text('Hola, Alex'), findsOneWidget);
     // Feb-2022: 110,9 kg, cuello 44, cintura 102 → 23,9 % (no 18,74).
     expect(find.text('110,9 kg'), findsOneWidget);
     expect(find.text('23,9 %'), findsOneWidget);
@@ -69,7 +69,7 @@ void main() {
     final store = FakeMeasurements();
     await tester.pumpWidget(testApp(
       auth: FakeAuth(signedIn: true),
-      profiles: FakeProfiles(juniorProfile),
+      profiles: FakeProfiles(sampleProfile),
       measurements: store,
     ));
     await tester.pumpAndSettle();
@@ -94,7 +94,7 @@ void main() {
     final store = FakeMeasurements();
     await tester.pumpWidget(testApp(
       auth: FakeAuth(signedIn: true),
-      profiles: FakeProfiles(juniorProfile),
+      profiles: FakeProfiles(sampleProfile),
       measurements: store,
     ));
     await tester.pumpAndSettle();
@@ -122,8 +122,8 @@ void main() {
 
     await tester.pumpWidget(testApp(
       auth: FakeAuth(signedIn: true),
-      profiles: FakeProfiles(juniorProfile),
-      measurements: FakeMeasurements(magicFormulaMeasurements),
+      profiles: FakeProfiles(sampleProfile),
+      measurements: FakeMeasurements(referenceMeasurements),
     ));
     await tester.pumpAndSettle();
     await openProgress(tester);
@@ -133,10 +133,10 @@ void main() {
     expect(find.text('Guardar perfil'), findsOneWidget);
   });
 
-  test('perfil de Junior: edad y meta', () {
-    expect(juniorProfile.ageOn(DateTime(2026, 10, 18)), 40);
-    expect(juniorProfile.ageOn(DateTime(2027, 2, 28)), 40);
-    expect(juniorProfile.ageOn(DateTime(2027, 3, 1)), 41);
-    expect(juniorProfile.sex, Sex.male);
+  test('perfil de ejemplo: edad', () {
+    expect(sampleProfile.ageOn(DateTime(2026, 10, 18)), 40);
+    expect(sampleProfile.ageOn(DateTime(2027, 2, 28)), 40);
+    expect(sampleProfile.ageOn(DateTime(2027, 3, 1)), 41);
+    expect(sampleProfile.sex, Sex.male);
   });
 }

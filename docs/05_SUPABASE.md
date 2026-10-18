@@ -26,18 +26,9 @@ Authentication → **Sign In / Providers** → **Email** → desactivar
 Antes de publicar la app hay que volver a activarlo (registrado en
 BACKLOG.md).
 
-## 3. Importar las mediciones de Magic Formula
-
-Después de crear la cuenta en la app con `jrgguevara15@gmail.com`:
-
-1. SQL Editor → New query.
-2. Pegar `backend/supabase/seed/importar_magic_formula.sql` → **Run**.
-
-No duplica si se ejecuta dos veces.
-
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migración idempotente; import idempotente (5 filas).
+- Migración idempotente.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.

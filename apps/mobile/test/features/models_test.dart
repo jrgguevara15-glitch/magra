@@ -7,7 +7,7 @@ import 'package:magra/features/progress/measurement.dart';
 void main() {
   test('perfil: ida y vuelta con la fila de Supabase', () {
     final row = {
-      'name': 'Junior',
+      'name': 'Alex',
       'sex': 'male',
       'birth_date': '1986-03-01',
       'height_cm': 180,

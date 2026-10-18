@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magra/core/formulas/formulas.dart';
 
-/// Mediciones reales de los informes del nutricionista (Magic Formula),
+/// Mediciones reales de informes de un nutricionista deportivo (referencia),
 /// estatura 180 cm, hombre: (peso, cuello, cintura, % grasa informado).
 const nutritionistReports = <(double, double, double, double)>[
   (116.4, 46, 112, 28.79), // 2-ago-2021

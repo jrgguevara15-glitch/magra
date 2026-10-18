@@ -7,9 +7,13 @@ nutricionista deportivo (sistema de intercambios, déficit calórico,
 fuerza + cardio) con IA que reduce la fricción de registrar y ajusta el
 plan con datos reales.
 
-Usuario inicial: el fundador (hombre, 180 cm, ~110 kg, historial con
-nutricionista deportiva 2021–2022). Objetivo comercial: venderla como
-suscripción.
+Usuario: cualquier persona que quiere bajar grasa. Ingresa sus datos
+(perfil y medidas) y MAGRA hace la evaluación y le recomienda plan
+nutricional y entrenamiento. Objetivo comercial: venderla como suscripción.
+
+Los informes de un nutricionista deportivo (2021–2022) entregados por el
+fundador son material de referencia del método y de verificación de las
+fórmulas. No son datos de la app ni se cargan en ninguna cuenta.
 
 ## Módulos
 

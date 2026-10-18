@@ -38,7 +38,8 @@ class _Onboarding extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 4),
       const Text('Con estos datos MAGRA calcula tu composición corporal, '
-          'tus calorías y tus porciones, igual que tu nutricionista.'),
+          'tus calorías y tus porciones con el método de un nutricionista '
+          'deportivo.'),
       const SizedBox(height: 16),
       const ProfileForm(),
     ]);

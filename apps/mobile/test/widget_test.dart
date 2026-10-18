@@ -40,7 +40,7 @@ void main() {
     await tester.pumpWidget(testApp(auth: auth));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'junior@example.com');
+    await tester.enterText(find.byType(TextFormField).at(0), 'usuario@example.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'clave-segura');
     await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();

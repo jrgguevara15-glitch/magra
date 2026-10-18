@@ -23,7 +23,7 @@ class FakeAuth implements AuthRepository {
   }
 
   @override
-  String? get email => _signedIn ? 'junior@example.com' : null;
+  String? get email => _signedIn ? 'usuario@example.com' : null;
 
   @override
   Future<void> signIn(String email, String password) async {
@@ -82,16 +82,17 @@ class FakeMeasurements implements MeasurementRepository {
   Future<void> delete(String id) async => items.removeWhere((x) => x.id == id);
 }
 
-/// Perfil de Junior: hombre, 180 cm, nacido en 1986.
-final juniorProfile = UserProfile(
-  name: 'Junior',
+/// Perfil de ejemplo: hombre, 180 cm, nacido en 1986.
+final sampleProfile = UserProfile(
+  name: 'Alex',
   sex: Sex.male,
   birthDate: DateTime(1986, 3, 1),
   heightCm: 180,
 );
 
-/// Las 5 mediciones de los informes de Magic Formula.
-final magicFormulaMeasurements = [
+/// Mediciones de referencia (informes reales de un nutricionista, usados
+/// para verificar que la app calcula igual).
+final referenceMeasurements = [
   Measurement(id: 'a', date: DateTime(2021, 8, 2), weightKg: 116.4, neckCm: 46, waistCm: 112, reportedFatPct: 28.79, source: 'Nutri · Dieta 01'),
   Measurement(id: 'b', date: DateTime(2021, 9, 8), weightKg: 114.8, neckCm: 45, waistCm: 109, reportedFatPct: 27.61, source: 'Nutri · Dieta 02'),
   Measurement(id: 'c', date: DateTime(2021, 10, 6), weightKg: 114.6, neckCm: 45, waistCm: 107, reportedFatPct: 26.40, source: 'Nutri · Dieta 02'),

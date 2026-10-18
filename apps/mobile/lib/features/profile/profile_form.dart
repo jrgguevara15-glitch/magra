@@ -157,11 +157,13 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
             items: const [
               DropdownMenuItem(
                   value: ActivityFactor.sedentary,
-                  child: Text('Sedentario ×1,2 (el de tu nutri)')),
+                  child: Text('Sedentario (oficina) ×1,2')),
               DropdownMenuItem(
-                  value: ActivityFactor.light, child: Text('Ligero ×1,375')),
+                  value: ActivityFactor.light,
+                  child: Text('Ligero (de pie a ratos) ×1,375')),
               DropdownMenuItem(
-                  value: ActivityFactor.active, child: Text('Activo ×1,55')),
+                  value: ActivityFactor.active,
+                  child: Text('Activo (trabajo físico) ×1,55')),
             ],
             onChanged: (v) => setState(() => _activity = v!),
           ),
