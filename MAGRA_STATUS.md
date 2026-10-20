@@ -19,12 +19,12 @@
   perímetros, evaluación completa, cerrar sesión y volver a entrar). Migración + RLS validadas en Postgres local; inicio de
   sesión con correo, perfil, mediciones y evaluación en Progreso.
   analyze sin issues; suite 44/44; build web OK.
-- M3 — Cuestionario completo: IMPLEMENTADO, validación del usuario
-  PENDIENTE. Migración 0002 (questionnaires + RLS) validada en Postgres
+- M3 — Cuestionario completo: TERMINADO. Validación del usuario APROBADA
+  (responder, editar, aviso de salud, persistencia tras cerrar sesión). Migración 0002 (questionnaires + RLS) validada en Postgres
   local. 4 pasos (rutina, entrenamiento, salud, alimentación) desde
   Progreso; aviso cuando una condición requiere un profesional.
   analyze sin issues; suite 52/52; build web OK.
-- M4 — Motor de recomendación: NO ABIERTO.
+- M4 — Motor de recomendación: EN IMPLEMENTACIÓN.
 - M5 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
