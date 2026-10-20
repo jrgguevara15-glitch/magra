@@ -32,6 +32,8 @@ final photoAnalyzerProvider =
     Provider<PhotoAnalyzer>((ref) => throw UnimplementedError());
 final productLookupProvider =
     Provider<ProductLookup>((ref) => OpenFoodFactsLookup());
+final customProductRepositoryProvider =
+    Provider<CustomProductRepository>((ref) => throw UnimplementedError());
 final barcodeScanProvider = Provider<BarcodeScanFn>((ref) => scanWithCamera);
 final imagePickProvider =
     Provider<ImagePickFn>((ref) => pickWithImagePicker);

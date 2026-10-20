@@ -4,6 +4,7 @@ import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
 import '../../features/today/activity_log.dart';
+import '../../features/today/barcode.dart';
 import '../../features/today/food_catalog.dart';
 import '../format.dart';
 import '../recommendation/weekly_adjustment.dart';
@@ -47,6 +48,14 @@ abstract interface class FoodLogRepository {
 
   /// Calorías registradas por día entre [from] y [to] (ambos incluidos).
   Future<Map<DateTime, double>> dailyKcal(DateTime from, DateTime to);
+}
+
+/// Productos que el usuario creó porque no estaban en Open Food Facts.
+abstract interface class CustomProductRepository {
+  Future<Product?> find(String code);
+
+  /// Crea o reemplaza el producto de ese código.
+  Future<void> save(Product product);
 }
 
 abstract interface class KcalAdjustmentRepository {
@@ -283,4 +292,25 @@ class SupabaseFastRepository implements FastRepository {
 
   @override
   Future<void> delete(String id) => _client.from('fasts').delete().eq('id', id);
+}
+
+class SupabaseCustomProductRepository implements CustomProductRepository {
+  SupabaseCustomProductRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<Product?> find(String code) async {
+    final row = await _client
+        .from('custom_products')
+        .select()
+        .eq('code', code)
+        .maybeSingle();
+    return row == null ? null : Product.fromRow(row);
+  }
+
+  @override
+  Future<void> save(Product p) => _client.from('custom_products').upsert(
+      {...p.toRow(), 'updated_at': DateTime.now().toUtc().toIso8601String()},
+      onConflict: 'user_id,code');
 }

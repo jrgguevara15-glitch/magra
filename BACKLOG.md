@@ -60,9 +60,9 @@ activo.
 - Escáner en vivo en iPhone/Safari requiere https (o la app nativa); hoy
   se escriben los números.
 - Texto "Agregar 1 alimentos": usar singular cuando es 1.
-- Código no encontrado (aprobado por el usuario): botón directo
-  "Fotografiar la etiqueta" y guardar ese código con sus nutrientes para
-  encontrarlo al instante la próxima vez (base propia de MAGRA).
+- Productos creados por usuarios: hoy cada uno ve solo los suyos (M9b).
+  Evaluar una base compartida y moderada de MAGRA, o enviarlos a Open
+  Food Facts.
 - Orden sugerido: M10 (salud) y M14 (notificaciones) solo funcionan en la
   app nativa; antes hace falta compilar para iPhone (Mac o Codemagic +
   Apple Developer) o Android.

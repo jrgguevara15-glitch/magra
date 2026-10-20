@@ -31,6 +31,7 @@ Widget app({
   required FakeFoodLog log,
   FakePhotoAnalyzer? ai,
   FakeProductLookup? products,
+  FakeCustomProducts? customProducts,
   BarcodeScanFn? scan,
 }) =>
     testApp(
@@ -43,6 +44,7 @@ Widget app({
       foodLog: log,
       photoAnalyzer: ai,
       products: products,
+      customProducts: customProducts,
       scan: scan,
     );
 
@@ -204,12 +206,13 @@ void main() {
       await tester.enterText(field, '22222222');
       await tester.tap(find.byTooltip('Buscar'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('No encontré el código 22222222'), findsOneWidget);
+      expect(find.text('El código 22222222 no está en Open Food Facts.'), findsOneWidget);
+      expect(find.text('Crear producto'), findsOneWidget);
 
       await tester.enterText(field, '11111111');
       await tester.tap(find.byTooltip('Buscar'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Misterio no trae información'), findsOneWidget);
+      expect(find.text('Misterio no trae información nutricional.'), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Agregar'), findsNothing);
 
       products.error = const ProductLookupException('Sin internet.');
@@ -276,6 +279,142 @@ void main() {
     });
   });
 
+  group('Producto propio', () {
+    testWidgets('crear el que falta, agregarlo y encontrarlo después',
+        (tester) async {
+      setSize(tester, const Size(700, 3000));
+      final log = FakeFoodLog();
+      final custom = FakeCustomProducts();
+      final off = FakeProductLookup();
+      await tester.pumpWidget(app(log: log, products: off, customProducts: custom));
+      await tester.pumpAndSettle();
+      await openMode(tester, 'Código');
+      await search(tester, '7802000017629');
+      await tester.tap(find.text('Crear producto'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Código 7802000017629'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Agregar'), findsNothing);
+
+      // Sin nombre no guarda.
+      await tester.tap(find.text('Guardar producto'));
+      await tester.pumpAndSettle();
+      expect(find.text('Escribe el nombre del producto.'), findsOneWidget);
+
+      await fill(tester, 'Nombre', 'Papas fritas corte americano');
+      await fill(tester, 'Marca (opcional)', 'Lays');
+      await fill(tester, 'Calorías', '540');
+      await fill(tester, 'Proteína', '6,5');
+      await fill(tester, 'Carbos', '52');
+      await fill(tester, 'Grasas', '60'); // 6,5 + 52 + 60 > 100
+      await tester.tap(find.text('Guardar producto'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('hasta 100 g'), findsOneWidget);
+      await fill(tester, 'Grasas', '34');
+      await fill(tester, 'Porción del envase (opcional)', '30');
+      await tester.tap(find.text('Guardar producto'));
+      await tester.pumpAndSettle();
+
+      final saved = custom.items['7802000017629']!;
+      expect(saved.custom, isTrue);
+      expect(saved.protein100, 6.5);
+      expect(saved.toRow()['brand'], 'Lays');
+      expect(find.text('Papas fritas corte americano (Lays)'), findsOneWidget);
+      expect(find.text('Producto creado por ti'), findsOneWidget);
+      expect(find.textContaining('162 kcal'), findsOneWidget); // 30 g
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Agregar'));
+      await tester.pumpAndSettle();
+      expect(log.items.single.kcal, closeTo(162, 1e-9));
+      expect(log.items.single.source, 'barcode');
+
+      // La próxima vez lo encuentra sin preguntar a Open Food Facts.
+      await openMode(tester, 'Código');
+      await search(tester, '7802000017629');
+      expect(off.asked, ['7802000017629']);
+      // En la hoja y en la comida donde ya se agregó.
+      expect(find.text('Papas fritas corte americano (Lays)'), findsNWidgets(2));
+      expect(find.text('Producto creado por ti'), findsOneWidget);
+    });
+
+    testWidgets('leer la etiqueta con foto llena los valores por 100 g',
+        (tester) async {
+      setSize(tester, const Size(700, 3000));
+      final ai = FakePhotoAnalyzer(result: PhotoAnalysis(items: [
+        PhotoItem(name: 'Papas fritas', quantity: 30, unit: 'g', kcal: 162, protein: 2, carbs: 15.6, fat: 10.2),
+      ], confidence: 'alta', notes: ''));
+      final custom = FakeCustomProducts();
+      await tester.pumpWidget(app(log: FakeFoodLog(), ai: ai, customProducts: custom));
+      await tester.pumpAndSettle();
+      await openMode(tester, 'Código');
+      await search(tester, '12345678');
+      await tester.tap(find.text('Crear producto'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Leer la etiqueta con una foto'));
+      await tester.pumpAndSettle();
+      expect(ai.lastMode, PhotoMode.label);
+      expect(find.textContaining('Leí la porción de 30 g'), findsOneWidget);
+      await tester.tap(find.text('Guardar producto'));
+      await tester.pumpAndSettle();
+      final p = custom.items['12345678']!;
+      expect(p.name, 'Papas fritas');
+      expect(p.kcal100, 540);
+      expect(p.carbs100, 52);
+      expect(p.fat100, 34);
+      expect(p.servingQuantity, 30);
+    });
+
+    testWidgets('corregir un producto propio y partir del nombre de OFF',
+        (tester) async {
+      setSize(tester, const Size(700, 3000));
+      final custom = FakeCustomProducts()
+        ..items['11112222'] = const Product(
+            code: '11112222', name: 'Barra', unit: 'g', kcal100: 400,
+            protein100: 20, carbs100: 40, fat100: 15, custom: true);
+      final off = FakeProductLookup({
+        '33334444': const Product(code: '33334444', name: 'Jugo', brand: 'Marca', unit: 'ml'),
+      });
+      await tester.pumpWidget(app(log: FakeFoodLog(), products: off, customProducts: custom));
+      await tester.pumpAndSettle();
+      await openMode(tester, 'Código');
+
+      await search(tester, '11112222');
+      await tester.tap(find.text('Corregir'));
+      await tester.pumpAndSettle();
+      expect(find.text('Corregir producto'), findsOneWidget);
+      await fill(tester, 'Calorías', '380');
+      await tester.tap(find.text('Guardar producto'));
+      await tester.pumpAndSettle();
+      expect(custom.items['11112222']!.kcal100, 380);
+      expect(custom.items['11112222']!.protein100, 20);
+
+      await search(tester, '33334444');
+      expect(find.text('Jugo (Marca) no trae información nutricional.'), findsOneWidget);
+      await tester.tap(find.text('Crear producto'));
+      await tester.pumpAndSettle();
+      await fill(tester, 'Calorías', '45');
+      await tester.tap(find.text('Guardar producto'));
+      await tester.pumpAndSettle();
+      final p = custom.items['33334444']!;
+      expect(p.name, 'Jugo');
+      expect(p.brand, 'Marca');
+      expect(p.unit, 'ml');
+      expect(p.carbs100, 0);
+    });
+  });
+
+  testWidgets('teléfono de 360 px: crear producto sin desbordes', (tester) async {
+    setSize(tester, const Size(360, 3000));
+    await tester.pumpWidget(app(log: FakeFoodLog()));
+    await tester.pumpAndSettle();
+    await openMode(tester, 'Código');
+    await search(tester, '7802000017629');
+    await tester.tap(find.text('Crear producto'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ml'));
+    await tester.pumpAndSettle();
+    expect(find.text('Guardar producto'), findsOneWidget);
+  });
+
   testWidgets('teléfono de 360 px: modos, código y descripción sin desbordes',
       (tester) async {
     setSize(tester, const Size(360, 3000));
@@ -300,3 +439,15 @@ void main() {
     expect(find.text('Agregar 1 alimentos'), findsOneWidget);
   });
 }
+
+Future<void> search(WidgetTester tester, String code) async {
+  await tester.enterText(find.widgetWithText(TextField, 'Código de barras'), code);
+  await tester.tap(find.byTooltip('Buscar'));
+  await tester.pumpAndSettle();
+}
+
+Future<void> fill(WidgetTester tester, String label, String value) async {
+  await tester.enterText(find.widgetWithText(TextField, label), value);
+  await tester.pumpAndSettle();
+}
+

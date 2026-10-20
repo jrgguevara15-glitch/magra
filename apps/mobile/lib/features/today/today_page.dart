@@ -11,6 +11,7 @@ import '../questionnaire/questionnaire.dart';
 import 'activity_cards.dart';
 import 'activity_log.dart';
 import 'barcode.dart';
+import 'custom_product_form.dart';
 import 'food_catalog.dart';
 import 'photo_analysis.dart';
 
@@ -414,6 +415,11 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
   final _codeQty = TextEditingController();
   Product? _product;
   bool _searching = false;
+
+  /// Código buscado que no está (o viene sin nutrientes): se puede crear.
+  String? _missingCode;
+  Product? _partial;
+  bool _creating = false;
   Uint8List? _photo;
   PhotoAnalysis? _analysis;
   bool _analyzing = false;
@@ -538,22 +544,28 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     FocusScope.of(context).unfocus();
     setState(() {
       _product = null;
+      _missingCode = null;
+      _partial = null;
+      _creating = false;
       _searching = true;
       _error = null;
     });
     try {
-      final product = await ref.read(productLookupProvider).find(code);
+      // Primero los productos que creó el usuario.
+      Product? product;
+      try {
+        product = await ref.read(customProductRepositoryProvider).find(code);
+      } catch (_) {
+        product = null;
+      }
+      product ??= await ref.read(productLookupProvider).find(code);
       if (!mounted) return;
       setState(() {
-        if (product == null) {
-          _error = 'No encontré el código $code en Open Food Facts. Agrégalo '
-              'con una foto de la etiqueta o a mano.';
-        } else if (product.kcal100 == null) {
-          _error = '${product.fullName} no trae información nutricional. '
-              'Usa una foto de la etiqueta.';
+        if (product == null || product.kcal100 == null) {
+          _missingCode = code;
+          _partial = product;
         } else {
-          _product = product;
-          _codeQty.text = (product.servingQuantity ?? 100).round().toString();
+          _selectProduct(product);
         }
       });
     } on ProductLookupException catch (e) {
@@ -561,6 +573,13 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     } finally {
       if (mounted) setState(() => _searching = false);
     }
+  }
+
+  void _selectProduct(Product p) {
+    _product = p;
+    _creating = false;
+    _missingCode = null;
+    _codeQty.text = (p.servingQuantity ?? 100).round().toString();
   }
 
   Future<void> _savePhotoItems() async {
@@ -736,9 +755,50 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
         const SizedBox(height: 12),
         const LinearProgressIndicator(),
       ],
-      if (product != null) ...[
+      if (_creating) ...[
+        const SizedBox(height: 12),
+        CustomProductForm(
+          code: _missingCode ?? product!.code,
+          initial: _missingCode != null ? _partial : product,
+          onSaved: (p) => setState(() => _selectProduct(p)),
+          onCancel: () => setState(() => _creating = false),
+        ),
+      ] else if (_missingCode != null) ...[
+        const SizedBox(height: 12),
+        Text(
+          _partial == null
+              ? 'El código $_missingCode no está en Open Food Facts.'
+              : '${_partial!.fullName} no trae información nutricional.',
+          style: theme.textTheme.titleSmall,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Créalo con los datos de la etiqueta (o léela con una foto) y '
+          'MAGRA lo recordará la próxima vez que lo escanees.',
+          style: theme.textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        FilledButton.tonalIcon(
+          onPressed: () => setState(() => _creating = true),
+          icon: const Icon(Icons.add_box_outlined),
+          label: const Text('Crear producto'),
+        ),
+      ] else if (product != null) ...[
         const SizedBox(height: 12),
         Text(product.fullName, style: theme.textTheme.titleMedium),
+        if (product.custom)
+          Row(
+            children: [
+              Expanded(
+                child: Text('Producto creado por ti',
+                    style: theme.textTheme.bodySmall),
+              ),
+              TextButton(
+                onPressed: () => setState(() => _creating = true),
+                child: const Text('Corregir'),
+              ),
+            ],
+          ),
         Text(
           'Por 100 ${product.unit}: ${fmt(product.kcal100)} kcal · '
           'P ${fmt(product.protein100, 1)} · C ${fmt(product.carbs100, 1)} · '
@@ -997,7 +1057,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
             const SizedBox(height: 16),
             if (_manual ||
                 (_mode == _AddMode.catalog && _food != null) ||
-                (_mode == _AddMode.barcode && _product != null))
+                (_mode == _AddMode.barcode && _product != null && !_creating))
               FilledButton(
                 onPressed: _busy ? null : _save,
                 child: const Padding(

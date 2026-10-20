@@ -247,6 +247,16 @@ class FakePhotoAnalyzer implements PhotoAnalyzer {
   }
 }
 
+class FakeCustomProducts implements CustomProductRepository {
+  final Map<String, Product> items = {};
+
+  @override
+  Future<Product?> find(String code) async => items[code];
+
+  @override
+  Future<void> save(Product p) async => items[p.code] = p;
+}
+
 class FakeProductLookup implements ProductLookup {
   FakeProductLookup([this.products = const {}]);
 
@@ -305,6 +315,7 @@ Widget testApp({
   FastRepository? fasts,
   KcalAdjustmentRepository? adjustments,
   ProductLookup? products,
+  CustomProductRepository? customProducts,
   BarcodeScanFn? scan,
   DateTime Function()? clock,
 }) {
@@ -320,6 +331,8 @@ Widget testApp({
       photoAnalyzerProvider.overrideWithValue(photoAnalyzer ?? FakePhotoAnalyzer()),
       imagePickProvider.overrideWithValue(pick ?? fakePick),
       productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),
+      customProductRepositoryProvider
+          .overrideWithValue(customProducts ?? FakeCustomProducts()),
       barcodeScanProvider.overrideWithValue(scan ?? (context) async => null),
       exerciseLogRepositoryProvider
           .overrideWithValue(exerciseLog ?? FakeExerciseLog()),

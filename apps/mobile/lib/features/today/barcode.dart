@@ -16,6 +16,7 @@ class Product {
     this.carbs100 = 0,
     this.fat100 = 0,
     this.servingQuantity,
+    this.custom = false,
   });
 
   /// Lee la respuesta de Open Food Facts (`product`).
@@ -65,6 +66,40 @@ class Product {
 
   /// Porción declarada en el envase, en [unit].
   final double? servingQuantity;
+
+  /// Creado por el usuario (no viene de Open Food Facts).
+  final bool custom;
+
+  factory Product.fromRow(Map<String, dynamic> row) {
+    double d(String k) => (row[k] as num? ?? 0).toDouble();
+    return Product(
+      code: row['code'] as String,
+      name: row['name'] as String,
+      brand: row['brand'] as String?,
+      unit: row['unit'] as String? ?? 'g',
+      kcal100: d('kcal_100'),
+      protein100: d('protein_100'),
+      carbs100: d('carbs_100'),
+      fat100: d('fat_100'),
+      servingQuantity: (row['serving_quantity'] as num?)?.toDouble(),
+      custom: true,
+    );
+  }
+
+  Map<String, dynamic> toRow() {
+    double r1(double v) => (v * 10).round() / 10;
+    return {
+      'code': code,
+      'name': name,
+      'brand': brand,
+      'unit': unit,
+      'kcal_100': r1(kcal100 ?? 0),
+      'protein_100': r1(protein100),
+      'carbs_100': r1(carbs100),
+      'fat_100': r1(fat100),
+      'serving_quantity': servingQuantity == null ? null : r1(servingQuantity!),
+    };
+  }
 
   String get fullName => brand == null ? name : '$name ($brand)';
 

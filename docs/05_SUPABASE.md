@@ -14,7 +14,7 @@ la base de datos nunca van en el repositorio ni en la app.
    en orden: `0001_profiles_measurements.sql` (M2),
    `0002_questionnaires.sql` (M3), `0003_food_entries.sql` (M5),
    `0004_ai_usage.sql` (M6), `0005_exercise_fasting.sql` (M7),
-   `0006_kcal_adjustments.sql` (M8).
+   `0006_kcal_adjustments.sql` (M8), `0007_custom_products.sql` (M9b).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
 Cada migración se puede volver a ejecutar sin romper nada.
@@ -53,7 +53,7 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migraciones 0001 a 0006 idempotentes.
+- Migraciones 0001 a 0007 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
@@ -68,6 +68,10 @@ BACKLOG.md).
 - Ajustes semanales (M8): una decisión por semana (upsert), la semana debe
   empezar en lunes, máximo ±150 por semana; B no ve, edita, borra ni
   inserta en la cuenta de A.
+- Productos propios (M9b): uno por código y usuario (upsert); código de 8
+  a 14 dígitos, kcal 0–900 y macros 0–100 por 100 g/ml, unidad g o ml; B
+  no ve ni modifica los de A y puede tener su propio producto con el mismo
+  código.
 - Límite de IA: 25 por día y por usuario; la 26.ª falla y no cuenta; cada
   usuario su propio conteo; sin sesión o anónimo no se puede usar; nadie
   puede reiniciar su contador.
