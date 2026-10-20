@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Supabase y la IA necesitan internet también en la versión instalada. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="MAGRA"
         android:name="${applicationName}"
