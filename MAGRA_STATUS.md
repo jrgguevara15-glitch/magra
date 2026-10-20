@@ -61,8 +61,10 @@
   ahora no); el Plan y Hoy usan la meta ajustada. Reglas en
   docs/02_FORMULAS.md. Migración 0006 + RLS validadas en Postgres local.
   analyze sin issues; suite 133/133; build web OK.
-- M9 — Código de barras y registro por voz: IMPLEMENTADO, validación del
-  usuario PENDIENTE (requiere volver a desplegar ai-photo). En Hoy →
+- M9 — Código de barras y registro por voz: TERMINADO. Validación del
+  usuario APROBADA (ai-photo redesplegada; Describir → completo + Pepsi
+  Zero; escaneo con cámara del PC y consulta a Open Food Facts; el
+  producto chileno probado no estaba en la base). En Hoy →
   Agregar: "Código" (escribir o escanear con mobile_scanner; datos de Open
   Food Facts por 100 g/ml, porción del envase, cantidad editable) y
   "Describir" (texto o dictado con el micrófono del teclado → IA → revisar
