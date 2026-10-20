@@ -6,6 +6,7 @@ import 'app.dart';
 import 'core/config.dart';
 import 'core/data/providers.dart';
 import 'core/data/repositories.dart';
+import 'features/menus/weekly_menu.dart';
 import 'features/today/photo_analysis.dart';
 
 Future<void> main() async {
@@ -34,6 +35,8 @@ Future<void> main() async {
             .overrideWithValue(SupabaseKcalAdjustmentRepository(client)),
         customProductRepositoryProvider
             .overrideWithValue(SupabaseCustomProductRepository(client)),
+        menuRepositoryProvider.overrideWithValue(SupabaseMenuRepository(client)),
+        menuGeneratorProvider.overrideWithValue(SupabaseMenuGenerator(client)),
         photoAnalyzerProvider.overrideWithValue(SupabasePhotoAnalyzer(client)),
       ],
       child: const MagraApp(),

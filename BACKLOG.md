@@ -66,3 +66,7 @@ activo.
 - Orden sugerido: M10 (salud) y M14 (notificaciones) solo funcionan en la
   app nativa; antes hace falta compilar para iPhone (Mac o Codemagic +
   Apple Developer) o Android.
+- Menús: ajustar en la app las cantidades de cada plato para que calce
+  exacto con la meta (hoy se acepta ±10 % de la IA y se muestra la
+  diferencia); recetas paso a paso; exportar/compartir la lista de
+  compras (WhatsApp); precios estimados por supermercado.

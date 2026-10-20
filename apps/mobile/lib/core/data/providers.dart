@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/menus/weekly_menu.dart';
 import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
@@ -28,6 +29,10 @@ final fastRepositoryProvider =
     Provider<FastRepository>((ref) => throw UnimplementedError());
 final kcalAdjustmentRepositoryProvider =
     Provider<KcalAdjustmentRepository>((ref) => throw UnimplementedError());
+final menuRepositoryProvider =
+    Provider<MenuRepository>((ref) => throw UnimplementedError());
+final menuGeneratorProvider =
+    Provider<MenuGenerator>((ref) => throw UnimplementedError());
 final photoAnalyzerProvider =
     Provider<PhotoAnalyzer>((ref) => throw UnimplementedError());
 final productLookupProvider =
@@ -95,4 +100,11 @@ final recentIntakeProvider = FutureProvider<Map<DateTime, double>>((ref) async {
   return ref
       .watch(foodLogRepositoryProvider)
       .dailyKcal(today.subtract(const Duration(days: 21)), today);
+});
+
+/// Menú de una semana (la clave es el lunes).
+final menuProvider =
+    FutureProvider.family<WeeklyMenu?, DateTime>((ref, weekStart) async {
+  if (ref.watch(signedInProvider).value != true) return null;
+  return ref.watch(menuRepositoryProvider).forWeek(weekStart);
 });

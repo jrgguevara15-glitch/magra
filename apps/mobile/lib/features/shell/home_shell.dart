@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/providers.dart';
+import '../menus/menus_page.dart';
 import '../plan/plan_inputs.dart';
 import '../plan/plan_page.dart';
 import '../progress/progress_page.dart';
@@ -103,6 +104,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final body = switch (_index) {
       0 => const TodayPage(),
       1 => const PlanPage(),
+      2 => const MenusPage(),
       kProgressTab => const ProgressPage(),
       4 => const TrainingPage(),
       _ => _PlaceholderPage(destination: destination),

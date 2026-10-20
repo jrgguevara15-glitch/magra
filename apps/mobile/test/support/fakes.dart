@@ -9,6 +9,7 @@ import 'package:magra/core/data/providers.dart';
 import 'package:magra/core/data/repositories.dart';
 import 'package:magra/core/formulas/formulas.dart';
 import 'package:magra/core/recommendation/weekly_adjustment.dart';
+import 'package:magra/features/menus/weekly_menu.dart';
 import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
@@ -257,6 +258,72 @@ class FakeCustomProducts implements CustomProductRepository {
   Future<void> save(Product p) async => items[p.code] = p;
 }
 
+class FakeMenus implements MenuRepository {
+  final Map<DateTime, WeeklyMenu> items = {};
+  int saves = 0;
+
+  @override
+  Future<WeeklyMenu?> forWeek(DateTime weekStart) async => items[weekStart];
+
+  @override
+  Future<void> save(WeeklyMenu menu) async {
+    saves++;
+    items[menu.weekStart] = menu;
+  }
+}
+
+/// Arma platos simples que suman lo que pide cada slot.
+class FakeMenuGenerator implements MenuGenerator {
+  MenuException? error;
+  List<MenuSlot>? lastSlots;
+  Map<String, dynamic>? lastPrefs;
+  List<String>? lastAvoid;
+  int weeks = 0;
+  int swaps = 0;
+
+  static MenuMeal mealFor(MenuSlot s, String name) => MenuMeal(
+        name: name,
+        prep: 'Preparación simple.',
+        items: [
+          MenuItem(food: 'Pechuga de pollo', quantity: 120, unit: 'g', kcal: s.kcal * 0.5,
+              protein: s.protein, category: 'Carnes, pollo y pescados'),
+          MenuItem(food: 'Arroz', quantity: 60, unit: 'g', kcal: s.kcal * 0.4,
+              carbs: s.carbs, category: 'Abarrotes', brand: 'Tucapel'),
+          MenuItem(food: 'Palta', quantity: 0.5, unit: 'unidad', kcal: s.kcal * 0.1,
+              fat: s.fat, category: 'Verduras y frutas'),
+        ],
+      );
+
+  @override
+  Future<List<List<MenuMeal>>> week({
+    required List<MenuSlot> slots,
+    required Map<String, dynamic> prefs,
+  }) async {
+    weeks++;
+    lastSlots = slots;
+    lastPrefs = prefs;
+    if (error != null) throw error!;
+    return [
+      for (var d = 0; d < 7; d++)
+        [for (var i = 0; i < slots.length; i++) mealFor(slots[i], 'Plato $d-$i')],
+    ];
+  }
+
+  @override
+  Future<MenuMeal> meal({
+    required List<MenuSlot> slots,
+    required Map<String, dynamic> prefs,
+    required int day,
+    required int meal,
+    required List<String> avoid,
+  }) async {
+    swaps++;
+    lastAvoid = avoid;
+    if (error != null) throw error!;
+    return mealFor(slots[meal], 'Nuevo plato $day-$meal');
+  }
+}
+
 class FakeProductLookup implements ProductLookup {
   FakeProductLookup([this.products = const {}]);
 
@@ -317,6 +384,8 @@ Widget testApp({
   ProductLookup? products,
   CustomProductRepository? customProducts,
   BarcodeScanFn? scan,
+  MenuRepository? menus,
+  MenuGenerator? menuGenerator,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -330,6 +399,8 @@ Widget testApp({
       foodLogRepositoryProvider.overrideWithValue(foodLog ?? FakeFoodLog()),
       photoAnalyzerProvider.overrideWithValue(photoAnalyzer ?? FakePhotoAnalyzer()),
       imagePickProvider.overrideWithValue(pick ?? fakePick),
+      menuRepositoryProvider.overrideWithValue(menus ?? FakeMenus()),
+      menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),
       productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),
       customProductRepositoryProvider
           .overrideWithValue(customProducts ?? FakeCustomProducts()),

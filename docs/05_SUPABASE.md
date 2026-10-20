@@ -14,7 +14,8 @@ la base de datos nunca van en el repositorio ni en la app.
    en orden: `0001_profiles_measurements.sql` (M2),
    `0002_questionnaires.sql` (M3), `0003_food_entries.sql` (M5),
    `0004_ai_usage.sql` (M6), `0005_exercise_fasting.sql` (M7),
-   `0006_kcal_adjustments.sql` (M8), `0007_custom_products.sql` (M9b).
+   `0006_kcal_adjustments.sql` (M8), `0007_custom_products.sql` (M9b),
+   `0008_menus.sql` (M11).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
 Cada migración se puede volver a ejecutar sin romper nada.
@@ -37,7 +38,15 @@ comió escrito o dictado), con su propio límite de 50 por día
 (`ai_consume('text', 50)`); no requiere migración nueva. Al actualizar el
 archivo hay que volver a desplegarla (Code → pegar → Deploy).
 
-La función exige sesión: valida al usuario con `ai_consume()` (límite de 25
+## 2b. Función de menús "ai-menu" (M11)
+
+Edge Functions → **Deploy a new function** → **Via Editor** → nombre
+`ai-menu` → reemplazar el ejemplo por `backend/supabase/functions/ai-menu/index.ts`
+(copiar con `Get-Content … -Raw -Encoding UTF8 | Set-Clipboard`) → Deploy.
+Usa el mismo secreto `ANTHROPIC_API_KEY`. Límites: 3 menús semanales y 20
+cambios de comida por día (`ai_consume`). Arma los 7 días en paralelo.
+
+La función ai-photo exige sesión: valida al usuario con `ai_consume()` (límite de 25
 fotos por día) antes de llamar a Claude, aunque "Verify JWT" esté apagado.
 
 ## 3. Confirmación de correo (desarrollo)
@@ -53,7 +62,7 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migraciones 0001 a 0007 idempotentes.
+- Migraciones 0001 a 0008 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
@@ -72,6 +81,12 @@ BACKLOG.md).
   a 14 dígitos, kcal 0–900 y macros 0–100 por 100 g/ml, unidad g o ml; B
   no ve ni modifica los de A y puede tener su propio producto con el mismo
   código.
+- Menús (M11): uno por semana (lunes) y usuario, 7 días obligatorios; B no
+  ve ni modifica el de A; food_entries acepta origen 'menu' y rechaza
+  otros desconocidos.
+- Función ai-menu: compila contra los tipos del SDK; 6 pruebas (petición,
+  prompt con metas/alergias/gustos/variedad, 7 llamadas en paralelo,
+  respuestas incompletas o rechazadas, saneo, sesión).
 - Límite de IA: 25 por día y por usuario; la 26.ª falla y no cuenta; cada
   usuario su propio conteo; sin sesión o anónimo no se puede usar; nadie
   puede reiniciar su contador.

@@ -110,6 +110,22 @@ Código: `lib/core/formulas/trend.dart` y
 - La meta del Plan y de Hoy = fórmula + ajustes aplicados (macros
   escalados, sin bajar del mínimo seguro).
 
+## Menú semanal (M11)
+
+- El motor fija las comidas (hora, papel respecto del entreno, kcal y
+  macros de cada una). La IA solo elige platos e ingredientes que sumen
+  esa meta (±10 %) sin alergias ni alimentos que no le gustan, con su
+  presupuesto y cuánto cocina.
+- Variedad: proteína principal del almuerzo rota por día según la dieta
+  (omnívoro: pollo, vacuno magro, pescado, legumbres, cerdo magro, pavo,
+  huevo/vacuno). "Cambiar" pide otra comida evitando los platos de la
+  semana.
+- Lista de compras = suma de ingredientes de los 7 días (mismo nombre sin
+  tildes y unidad), por sección del supermercado; g → kg y ml → L sobre
+  1.000; unidades hacia arriba.
+- Si el plan cambia (otro n.º de comidas o ±5 % de kcal) se avisa que el
+  menú quedó desactualizado.
+
 ## Motor de recomendación (M4)
 
 Código: `lib/core/recommendation/`. Reglas puras con pruebas.

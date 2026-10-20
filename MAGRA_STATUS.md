@@ -77,7 +77,13 @@
   queda guardado en la cuenta y se busca primero la próxima vez; los
   propios se pueden corregir. analyze sin issues; suite 147/147; build web
   OK.
-- M10 en adelante — NO ABIERTOS.
+- M11 — Menús semanales con IA + lista de compras: IMPLEMENTADO,
+  validación del usuario PENDIENTE (requiere migración 0008 y desplegar
+  ai-menu). Pestaña Menús: generar la semana con las metas del plan, ver
+  por día, "Lo comí" (registra en Hoy), "Cambiar" una comida, nuevo menú
+  y lista de compras por sección con marcas sugeridas y checks guardados.
+  analyze sin issues; suite 156/156; build web OK.
+- M10 y M12 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 

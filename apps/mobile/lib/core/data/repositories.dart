@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/profile/user_profile.dart';
+import '../../features/menus/weekly_menu.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
 import '../../features/today/activity_log.dart';
@@ -56,6 +57,14 @@ abstract interface class CustomProductRepository {
 
   /// Crea o reemplaza el producto de ese código.
   Future<void> save(Product product);
+}
+
+abstract interface class MenuRepository {
+  /// El menú de esa semana (lunes), o `null`.
+  Future<WeeklyMenu?> forWeek(DateTime weekStart);
+
+  /// Crea o reemplaza el menú de esa semana.
+  Future<void> save(WeeklyMenu menu);
 }
 
 abstract interface class KcalAdjustmentRepository {
@@ -313,4 +322,25 @@ class SupabaseCustomProductRepository implements CustomProductRepository {
   Future<void> save(Product p) => _client.from('custom_products').upsert(
       {...p.toRow(), 'updated_at': DateTime.now().toUtc().toIso8601String()},
       onConflict: 'user_id,code');
+}
+
+class SupabaseMenuRepository implements MenuRepository {
+  SupabaseMenuRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<WeeklyMenu?> forWeek(DateTime weekStart) async {
+    final row = await _client
+        .from('menus')
+        .select()
+        .eq('week_start', isoDate(weekStart))
+        .maybeSingle();
+    return row == null ? null : WeeklyMenu.fromRow(row);
+  }
+
+  @override
+  Future<void> save(WeeklyMenu menu) => _client.from('menus').upsert(
+      {...menu.toRow(), 'updated_at': DateTime.now().toUtc().toIso8601String()},
+      onConflict: 'user_id,week_start');
 }

@@ -70,9 +70,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.shopping_basket_outlined));
     await tester.pumpAndSettle();
+    expect(find.text('Para armar tu menú semanal me falta:'), findsOneWidget);
 
-    expect(find.text('Menú semanal con marcas y lista de compras.'),
-        findsOneWidget);
+    await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Asesor IA con tus datos.'), findsOneWidget);
   });
 
   testWidgets('escritorio: navegación lateral', (tester) async {
