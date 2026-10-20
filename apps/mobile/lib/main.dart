@@ -24,6 +24,8 @@ Future<void> main() async {
             .overrideWithValue(SupabaseMeasurementRepository(client)),
         questionnaireRepositoryProvider
             .overrideWithValue(SupabaseQuestionnaireRepository(client)),
+        foodLogRepositoryProvider
+            .overrideWithValue(SupabaseFoodLogRepository(client)),
       ],
       child: const MagraApp(),
     ),

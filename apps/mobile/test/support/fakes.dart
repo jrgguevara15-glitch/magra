@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart' show DateUtils;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:magra/app.dart';
@@ -9,6 +10,7 @@ import 'package:magra/core/formulas/formulas.dart';
 import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
+import 'package:magra/features/today/food_catalog.dart';
 
 class FakeAuth implements AuthRepository {
   FakeAuth({bool signedIn = false}) : _signedIn = signedIn;
@@ -95,6 +97,33 @@ class FakeQuestionnaires implements QuestionnaireRepository {
   Future<void> save(Questionnaire q) async => saved = q;
 }
 
+class FakeFoodLog implements FoodLogRepository {
+  final List<FoodEntry> items = [];
+  var _next = 0;
+
+  @override
+  Future<List<FoodEntry>> forDay(DateTime day) async =>
+      [for (final e in items) if (DateUtils.isSameDay(e.date, day)) e];
+
+  @override
+  Future<void> add(FoodEntry e) async => items.add(FoodEntry(
+        id: 'f${_next++}',
+        date: e.date,
+        mealIndex: e.mealIndex,
+        name: e.name,
+        quantity: e.quantity,
+        unit: e.unit,
+        kcal: e.kcal,
+        protein: e.protein,
+        carbs: e.carbs,
+        fat: e.fat,
+        source: e.source,
+      ));
+
+  @override
+  Future<void> delete(String id) async => items.removeWhere((e) => e.id == id);
+}
+
 /// Perfil de ejemplo: hombre, 180 cm, nacido en 1986.
 final sampleProfile = UserProfile(
   name: 'Alex',
@@ -118,6 +147,7 @@ Widget testApp({
   ProfileRepository? profiles,
   MeasurementRepository? measurements,
   QuestionnaireRepository? questionnaires,
+  FoodLogRepository? foodLog,
 }) {
   return ProviderScope(
     overrides: [
@@ -127,6 +157,7 @@ Widget testApp({
           .overrideWithValue(measurements ?? FakeMeasurements()),
       questionnaireRepositoryProvider
           .overrideWithValue(questionnaires ?? FakeQuestionnaires()),
+      foodLogRepositoryProvider.overrideWithValue(foodLog ?? FakeFoodLog()),
     ],
     child: const MagraApp(),
   );

@@ -5,6 +5,7 @@ import '../../core/data/providers.dart';
 import '../plan/plan_inputs.dart';
 import '../plan/plan_page.dart';
 import '../progress/progress_page.dart';
+import '../today/today_page.dart';
 import '../training/training_page.dart';
 
 /// Una pestaña principal de MAGRA.
@@ -100,6 +101,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     final destination = magraDestinations[_index];
     final body = switch (_index) {
+      0 => const TodayPage(),
       1 => const PlanPage(),
       kProgressTab => const ProgressPage(),
       4 => const TrainingPage(),

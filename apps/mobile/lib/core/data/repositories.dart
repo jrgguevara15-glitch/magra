@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
+import '../../features/today/food_catalog.dart';
+import '../format.dart';
 
 /// Sesión del usuario.
 abstract interface class AuthRepository {
@@ -33,6 +35,13 @@ abstract interface class MeasurementRepository {
 abstract interface class QuestionnaireRepository {
   Future<Questionnaire?> fetch();
   Future<void> save(Questionnaire questionnaire);
+}
+
+abstract interface class FoodLogRepository {
+  /// Lo registrado en un día, en el orden en que se anotó.
+  Future<List<FoodEntry>> forDay(DateTime day);
+  Future<void> add(FoodEntry entry);
+  Future<void> delete(String id);
 }
 
 class SupabaseAuthRepository implements AuthRepository {
@@ -130,4 +139,28 @@ class SupabaseQuestionnaireRepository implements QuestionnaireRepository {
   Future<void> save(Questionnaire q) => _client
       .from('questionnaires')
       .upsert({'user_id': _uid, ...q.toRow()});
+}
+
+class SupabaseFoodLogRepository implements FoodLogRepository {
+  SupabaseFoodLogRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<List<FoodEntry>> forDay(DateTime day) async {
+    final rows = await _client
+        .from('food_entries')
+        .select()
+        .eq('eaten_on', isoDate(day))
+        .order('created_at', ascending: true);
+    return [for (final r in rows) FoodEntry.fromRow(r)];
+  }
+
+  @override
+  Future<void> add(FoodEntry entry) =>
+      _client.from('food_entries').insert(entry.toRow());
+
+  @override
+  Future<void> delete(String id) =>
+      _client.from('food_entries').delete().eq('id', id);
 }

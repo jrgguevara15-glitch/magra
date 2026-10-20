@@ -12,7 +12,7 @@ la base de datos nunca van en el repositorio ni en la app.
 1. Supabase → **SQL Editor** → **New query**.
 2. Pegar el contenido de cada archivo de `backend/supabase/migrations/`,
    en orden: `0001_profiles_measurements.sql` (M2),
-   `0002_questionnaires.sql` (M3).
+   `0002_questionnaires.sql` (M3), `0003_food_entries.sql` (M5).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
 Cada migración se puede volver a ejecutar sin romper nada.
@@ -30,9 +30,11 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migraciones 0001 y 0002 idempotentes.
+- Migraciones 0001, 0002 y 0003 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
 - Upsert por día (`user_id, measured_on`) como lo usa la app.
 - Cuestionario: una fila por usuario; B no ve ni puede escribir la de A.
+- Registro de comidas: B no ve, modifica, borra ni inserta en la cuenta de
+  A; se rechazan calorías fuera de rango.

@@ -12,8 +12,13 @@ activo.
 - Días bajos en carbohidratos: el motor M4 no los usa. Decidir por reglas a
   quién le convienen (p. ej. glucosa alterada) y quitar el valor por
   defecto martes/jueves del perfil, que venía del plan de referencia.
-- `portionScale` del M1 supone 4 comidas; el M4 calcula porciones directo
-  por gramos de macronutriente. Revisar si se elimina al hacer el M5.
+- `portionScale` del M1 supone 4 comidas; el M4/M5 calculan porciones
+  directo por gramos de macronutriente. Evaluar eliminarlo.
+- Unificar `referenceFoods` (M4) con `foodCatalog` (M5): hoy son dos listas
+  con los mismos alimentos.
+- Registro: editar un alimento ya anotado, alimentos recientes y favoritos,
+  "repetir comida de ayer" y marcar una comida del plan como "comí lo
+  sugerido".
 - Proteína: hoy es el % del perfil (30 %). Evaluar fijarla por g/kg de masa
   magra (≈ 2 g/kg en déficit) como haría un nutricionista deportivo.
 - Explicaciones del plan redactadas por IA (Coach, M15) sobre los números

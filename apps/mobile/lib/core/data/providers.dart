@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
+import '../../features/today/food_catalog.dart';
 import 'repositories.dart';
 
 /// Se reemplazan en `main` con las implementaciones de Supabase y en las
@@ -15,6 +16,8 @@ final measurementRepositoryProvider =
     Provider<MeasurementRepository>((ref) => throw UnimplementedError());
 final questionnaireRepositoryProvider =
     Provider<QuestionnaireRepository>((ref) => throw UnimplementedError());
+final foodLogRepositoryProvider =
+    Provider<FoodLogRepository>((ref) => throw UnimplementedError());
 
 final signedInProvider = StreamProvider<bool>(
   (ref) => ref.watch(authRepositoryProvider).signedInChanges(),
@@ -33,4 +36,11 @@ final measurementsProvider = FutureProvider<List<Measurement>>((ref) async {
 final questionnaireProvider = FutureProvider<Questionnaire?>((ref) async {
   if (ref.watch(signedInProvider).value != true) return null;
   return ref.watch(questionnaireRepositoryProvider).fetch();
+});
+
+/// Lo registrado en un día (la clave es la fecha sin hora).
+final foodLogProvider =
+    FutureProvider.family<List<FoodEntry>, DateTime>((ref, day) async {
+  if (ref.watch(signedInProvider).value != true) return const [];
+  return ref.watch(foodLogRepositoryProvider).forDay(day);
 });

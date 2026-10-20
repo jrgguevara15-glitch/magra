@@ -90,7 +90,8 @@ const referenceFoods = <ReferenceFood>[
       tags: {FoodTag.dairy}),
 ];
 
-Set<FoodTag> _excludedTags(Questionnaire q) {
+/// Lo que la dieta y las alergias del usuario excluyen.
+Set<FoodTag> excludedFoodTags(Questionnaire q) {
   final out = <FoodTag>{};
   switch (q.dietPattern) {
     case DietPattern.omnivore:
@@ -123,7 +124,8 @@ Set<FoodTag> _excludedTags(Questionnaire q) {
   return out;
 }
 
-String _plain(String s) => s
+/// Texto en minúsculas y sin tildes, para comparar búsquedas.
+String plainText(String s) => s
     .toLowerCase()
     .replaceAll('á', 'a')
     .replaceAll('é', 'e')
@@ -134,8 +136,8 @@ String _plain(String s) => s
 /// Alimentos permitidos para el usuario en un grupo: sin lo que su dieta o
 /// alergias excluyen, ni lo que dijo que no le gusta.
 List<ReferenceFood> allowedFoods(Questionnaire q, MacroGroup group) {
-  final excluded = _excludedTags(q);
-  final dislikes = _plain(q.dislikedFoods)
+  final excluded = excludedFoodTags(q);
+  final dislikes = plainText(q.dislikedFoods)
       .split(RegExp(r'[,;\n]| y '))
       .map((w) => w.trim())
       .where((w) => w.length >= 3)
@@ -144,7 +146,7 @@ List<ReferenceFood> allowedFoods(Questionnaire q, MacroGroup group) {
     for (final f in referenceFoods)
       if (f.group == group &&
           f.tags.intersection(excluded).isEmpty &&
-          !dislikes.any((d) => _plain(f.name).contains(d)))
+          !dislikes.any((d) => plainText(f.name).contains(d)))
         f,
   ];
 }
