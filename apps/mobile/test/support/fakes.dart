@@ -13,6 +13,7 @@ import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/activity_log.dart';
+import 'package:magra/features/today/barcode.dart';
 import 'package:magra/features/today/food_catalog.dart';
 import 'package:magra/features/today/photo_analysis.dart';
 
@@ -233,6 +234,32 @@ class FakePhotoAnalyzer implements PhotoAnalyzer {
     if (error != null) throw error!;
     return result!;
   }
+
+  String? lastText;
+
+  @override
+  Future<PhotoAnalysis> describe({required String text, double? remainingKcal}) async {
+    calls++;
+    lastText = text;
+    lastRemaining = remainingKcal;
+    if (error != null) throw error!;
+    return result!;
+  }
+}
+
+class FakeProductLookup implements ProductLookup {
+  FakeProductLookup([this.products = const {}]);
+
+  final Map<String, Product> products;
+  ProductLookupException? error;
+  final List<String> asked = [];
+
+  @override
+  Future<Product?> find(String code) async {
+    asked.add(code);
+    if (error != null) throw error!;
+    return products[code];
+  }
 }
 
 /// PNG de 1×1 px para simular una foto.
@@ -277,6 +304,8 @@ Widget testApp({
   ExerciseLogRepository? exerciseLog,
   FastRepository? fasts,
   KcalAdjustmentRepository? adjustments,
+  ProductLookup? products,
+  BarcodeScanFn? scan,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -290,6 +319,8 @@ Widget testApp({
       foodLogRepositoryProvider.overrideWithValue(foodLog ?? FakeFoodLog()),
       photoAnalyzerProvider.overrideWithValue(photoAnalyzer ?? FakePhotoAnalyzer()),
       imagePickProvider.overrideWithValue(pick ?? fakePick),
+      productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),
+      barcodeScanProvider.overrideWithValue(scan ?? (context) async => null),
       exerciseLogRepositoryProvider
           .overrideWithValue(exerciseLog ?? FakeExerciseLog()),
       fastRepositoryProvider.overrideWithValue(fasts ?? FakeFasts()),

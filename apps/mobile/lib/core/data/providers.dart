@@ -4,6 +4,7 @@ import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
 import '../../features/today/activity_log.dart';
+import '../../features/today/barcode.dart';
 import '../../features/today/food_catalog.dart';
 import '../../features/today/photo_analysis.dart';
 import '../recommendation/weekly_adjustment.dart';
@@ -29,6 +30,9 @@ final kcalAdjustmentRepositoryProvider =
     Provider<KcalAdjustmentRepository>((ref) => throw UnimplementedError());
 final photoAnalyzerProvider =
     Provider<PhotoAnalyzer>((ref) => throw UnimplementedError());
+final productLookupProvider =
+    Provider<ProductLookup>((ref) => OpenFoodFactsLookup());
+final barcodeScanProvider = Provider<BarcodeScanFn>((ref) => scanWithCamera);
 final imagePickProvider =
     Provider<ImagePickFn>((ref) => pickWithImagePicker);
 

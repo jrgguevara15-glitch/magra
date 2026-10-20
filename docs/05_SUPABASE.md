@@ -32,6 +32,11 @@ Cada migración se puede volver a ejecutar sin romper nada.
    Editor** → nombre `ai-photo` → reemplazar el código de ejemplo por
    `backend/supabase/functions/ai-photo/index.ts` → **Deploy function**.
 
+Desde M9 la misma función también recibe texto (`mode: "text"`, lo que
+comió escrito o dictado), con su propio límite de 50 por día
+(`ai_consume('text', 50)`); no requiere migración nueva. Al actualizar el
+archivo hay que volver a desplegarla (Code → pegar → Deploy).
+
 La función exige sesión: valida al usuario con `ai_consume()` (límite de 25
 fotos por día) antes de llamar a Claude, aunque "Verify JWT" esté apagado.
 
@@ -66,6 +71,8 @@ BACKLOG.md).
 - Límite de IA: 25 por día y por usuario; la 26.ª falla y no cuenta; cada
   usuario su propio conteo; sin sesión o anónimo no se puede usar; nadie
   puede reiniciar su contador.
+- Función ai-photo (M9): modo texto validado (largo 3–500, sin imagen,
+  prompt con la descripción); 8 pruebas.
 - Función ai-photo: compila contra los tipos de @anthropic-ai/sdk 0.132.1 y
   @supabase/supabase-js 2.117.3; 6 pruebas con un Claude simulado (entrada,
   petición, recorte de valores absurdos, rechazo, respuesta ilegible,

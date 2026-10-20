@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>MAGRA usa la cámara para fotografiar tu comida y estimar sus calorías.</string>
+	<string>MAGRA usa la cámara para fotografiar tu comida y escanear el código de barras de los productos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>MAGRA usa tus fotos para estimar las calorías de tu comida.</string>
 	<key>CFBundleDevelopmentRegion</key>

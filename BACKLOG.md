@@ -55,3 +55,8 @@ activo.
 - Ajuste semanal: cambiar la decisión de la semana, restablecer el
   acumulado y recordatorio de pesaje (lunes).
 - Gráfico de cintura junto al de peso y rango de fechas elegible.
+- Código de barras: guardar los productos escaneados como recientes, y
+  aportar a Open Food Facts los productos que no estén.
+- Escáner en vivo en iPhone/Safari requiere https (o la app nativa); hoy
+  se escriben los números.
+- Texto "Agregar 1 alimentos": usar singular cuando es 1.

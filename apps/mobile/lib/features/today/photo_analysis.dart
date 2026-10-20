@@ -94,6 +94,9 @@ abstract interface class PhotoAnalyzer {
     String? note,
     double? remainingKcal,
   });
+
+  /// Lo que comió, escrito o dictado por voz.
+  Future<PhotoAnalysis> describe({required String text, double? remainingKcal});
 }
 
 /// Tipo de imagen según el nombre del archivo.
@@ -117,10 +120,10 @@ String photoErrorMessage(int status, Object? details) {
     401 || 403 =>
       'El servidor rechazó tu sesión (error $status). Cierra sesión y vuelve '
           'a entrar; si sigue, hay que revisar la verificación JWT de ai-photo.',
-    404 => 'La función de fotos aún no está instalada en el servidor.',
+    404 => 'La función de IA aún no está instalada en el servidor.',
     413 => 'La imagen es demasiado grande.',
-    429 => 'Llegaste al límite de fotos por hoy.',
-    _ => 'No se pudo analizar la foto (error $status). Intenta de nuevo.',
+    429 => 'Llegaste al límite de análisis por hoy.',
+    _ => 'No se pudo analizar (error $status). Intenta de nuevo.',
   };
 }
 
@@ -144,6 +147,26 @@ class SupabasePhotoAnalyzer implements PhotoAnalyzer {
         'media_type': mediaType,
         'mode': mode == PhotoMode.label ? 'label' : 'plate',
         if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+        if (remainingKcal != null) 'remaining_kcal': remainingKcal,
+      });
+      return PhotoAnalysis.fromJson(res.data as Map<String, dynamic>);
+    } on FunctionException catch (e) {
+      throw PhotoException(photoErrorMessage(e.status, e.details));
+    } catch (_) {
+      throw const PhotoException(
+          'No hay conexión con el servidor. Revisa tu internet.');
+    }
+  }
+
+  @override
+  Future<PhotoAnalysis> describe({
+    required String text,
+    double? remainingKcal,
+  }) async {
+    try {
+      final res = await _client.functions.invoke('ai-photo', body: {
+        'mode': 'text',
+        'text': text.trim(),
         if (remainingKcal != null) 'remaining_kcal': remainingKcal,
       });
       return PhotoAnalysis.fromJson(res.data as Map<String, dynamic>);

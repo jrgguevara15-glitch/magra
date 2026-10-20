@@ -61,7 +61,13 @@
   ahora no); el Plan y Hoy usan la meta ajustada. Reglas en
   docs/02_FORMULAS.md. Migración 0006 + RLS validadas en Postgres local.
   analyze sin issues; suite 133/133; build web OK.
-- M9 en adelante — NO ABIERTOS.
+- M9 — Código de barras y registro por voz: IMPLEMENTADO, validación del
+  usuario PENDIENTE (requiere volver a desplegar ai-photo). En Hoy →
+  Agregar: "Código" (escribir o escanear con mobile_scanner; datos de Open
+  Food Facts por 100 g/ml, porción del envase, cantidad editable) y
+  "Describir" (texto o dictado con el micrófono del teclado → IA → revisar
+  y agregar, 50 por día). analyze sin issues; suite 143/143; build web OK.
+- M10 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 

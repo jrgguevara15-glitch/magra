@@ -10,6 +10,7 @@ import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
 import 'activity_cards.dart';
 import 'activity_log.dart';
+import 'barcode.dart';
 import 'food_catalog.dart';
 import 'photo_analysis.dart';
 
@@ -362,9 +363,19 @@ class _MealLog extends StatelessWidget {
   }
 }
 
-enum _AddMode { catalog, photo, manual }
+enum _AddMode {
+  catalog('Catálogo'),
+  photo('Foto'),
+  text('Describir'),
+  barcode('Código'),
+  manual('A mano');
 
-/// Hoja para agregar un alimento: del catálogo, por foto o a mano.
+  const _AddMode(this.label);
+  final String label;
+}
+
+/// Hoja para agregar un alimento: del catálogo, por foto, describiéndolo
+/// (texto o voz), con el código de barras o a mano.
 class AddFoodSheet extends ConsumerStatefulWidget {
   const AddFoodSheet({
     super.key,
@@ -398,6 +409,11 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
   bool get _manual => _mode == _AddMode.manual;
   PhotoMode _photoMode = PhotoMode.plate;
   final _photoNote = TextEditingController();
+  final _describe = TextEditingController();
+  final _code = TextEditingController();
+  final _codeQty = TextEditingController();
+  Product? _product;
+  bool _searching = false;
   Uint8List? _photo;
   PhotoAnalysis? _analysis;
   bool _analyzing = false;
@@ -414,7 +430,10 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
 
   @override
   void dispose() {
-    for (final c in [_query, _qty, _name, _kcal, _p, _c, _f, _photoNote]) {
+    for (final c in [
+      _query, _qty, _name, _kcal, _p, _c, _f, _photoNote, _describe, _code,
+      _codeQty,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -471,6 +490,79 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     }
   }
 
+  Future<void> _describeMeal() async {
+    final text = _describe.text.trim();
+    if (text.length < 3) {
+      setState(() => _error = 'Cuéntame qué comiste.');
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _analysis = null;
+      _analyzing = true;
+      _error = null;
+    });
+    try {
+      final result = await ref
+          .read(photoAnalyzerProvider)
+          .describe(text: text, remainingKcal: widget.remainingKcal);
+      if (!mounted) return;
+      setState(() {
+        _analysis = result;
+        if (result.items.isEmpty) {
+          _error = result.notes.isNotEmpty
+              ? result.notes
+              : 'No reconocí alimentos. Prueba a escribirlo de otra forma.';
+        }
+      });
+    } on PhotoException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _analyzing = false);
+    }
+  }
+
+  Future<void> _scan() async {
+    final code = await ref.read(barcodeScanProvider)(context);
+    if (code == null || !mounted) return;
+    _code.text = code;
+    await _lookup();
+  }
+
+  Future<void> _lookup() async {
+    final code = normalizeBarcode(_code.text);
+    if (code == null) {
+      setState(() => _error = 'El código tiene entre 8 y 14 números.');
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _product = null;
+      _searching = true;
+      _error = null;
+    });
+    try {
+      final product = await ref.read(productLookupProvider).find(code);
+      if (!mounted) return;
+      setState(() {
+        if (product == null) {
+          _error = 'No encontré el código $code en Open Food Facts. Agrégalo '
+              'con una foto de la etiqueta o a mano.';
+        } else if (product.kcal100 == null) {
+          _error = '${product.fullName} no trae información nutricional. '
+              'Usa una foto de la etiqueta.';
+        } else {
+          _product = product;
+          _codeQty.text = (product.servingQuantity ?? 100).round().toString();
+        }
+      });
+    } on ProductLookupException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
   Future<void> _savePhotoItems() async {
     final items = _analysis?.items.where((i) => i.include).toList() ?? const [];
     if (items.isEmpty) {
@@ -494,7 +586,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
           protein: i.protein,
           carbs: i.carbs,
           fat: i.fat,
-          source: 'photo',
+          source: _mode == _AddMode.text ? 'voice' : 'photo',
         ));
       }
       ref.invalidate(foodLogProvider(widget.day));
@@ -507,9 +599,33 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
   }
 
   Future<void> _save() async {
-    if (_mode == _AddMode.photo) return _savePhotoItems();
+    if (_mode == _AddMode.photo || _mode == _AddMode.text) {
+      return _savePhotoItems();
+    }
     FoodEntry entry;
-    if (_manual) {
+    if (_mode == _AddMode.barcode) {
+      final product = _product;
+      final qty = parseNum(_codeQty.text);
+      if (product == null || qty == null || qty <= 0 || qty > 3000) {
+        setState(() => _error = 'Busca el producto y escribe una cantidad válida.');
+        return;
+      }
+      final n = product.nutrientsFor(qty);
+      entry = FoodEntry(
+        date: widget.day,
+        mealIndex: widget.mealIndex,
+        name: product.fullName.length > 120
+            ? product.fullName.substring(0, 120)
+            : product.fullName,
+        quantity: qty,
+        unit: product.unit,
+        kcal: n.kcal,
+        protein: n.protein,
+        carbs: n.carbs,
+        fat: n.fat,
+        source: 'barcode',
+      );
+    } else if (_manual) {
       final kcal = parseNum(_kcal.text);
       if (_name.text.trim().isEmpty || kcal == null || kcal < 0 || kcal > 5000) {
         setState(() => _error = 'Escribe un nombre y las calorías (0–5.000).');
@@ -549,8 +665,112 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     }
   }
 
+  List<Widget> _describeSection(ThemeData theme) => [
+        TextField(
+          controller: _describe,
+          minLines: 2,
+          maxLines: 5,
+          maxLength: 500,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            labelText: '¿Qué comiste?',
+            hintText: 'Ej: almorcé porotos con riendas y media marraqueta',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        Text(
+          'Escríbelo o díctalo con el micrófono del teclado del celular. La '
+          'IA de Claude (Anthropic) lo convierte en alimentos y cantidades; '
+          'revísalos antes de agregar.',
+          style: theme.textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        FilledButton.tonalIcon(
+          onPressed: _analyzing ? null : _describeMeal,
+          icon: const Icon(Icons.auto_awesome_outlined),
+          label: const Text('Analizar'),
+        ),
+        ..._analysisResults(theme, 'Analizando lo que comiste…'),
+      ];
+
+  List<Widget> _barcodeSection(ThemeData theme) {
+    final product = _product;
+    final qty = parseNum(_codeQty.text);
+    final preview =
+        product != null && qty != null && qty > 0 ? product.nutrientsFor(qty) : null;
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _code,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Código de barras',
+                hintText: '7801234567890',
+              ),
+              onSubmitted: (_) => _lookup(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            tooltip: 'Buscar',
+            onPressed: _searching ? null : _lookup,
+            icon: const Icon(Icons.search),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      OutlinedButton.icon(
+        onPressed: _searching ? null : _scan,
+        icon: const Icon(Icons.qr_code_scanner),
+        label: const Text('Escanear con la cámara'),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        'Datos de Open Food Facts, base abierta de productos. Si la cámara no '
+        'abre (por ejemplo en Safari sin https), escribe los números.',
+        style: theme.textTheme.bodySmall,
+      ),
+      if (_searching) ...[
+        const SizedBox(height: 12),
+        const LinearProgressIndicator(),
+      ],
+      if (product != null) ...[
+        const SizedBox(height: 12),
+        Text(product.fullName, style: theme.textTheme.titleMedium),
+        Text(
+          'Por 100 ${product.unit}: ${fmt(product.kcal100)} kcal · '
+          'P ${fmt(product.protein100, 1)} · C ${fmt(product.carbs100, 1)} · '
+          'G ${fmt(product.fat100, 1)}',
+          style: theme.textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _codeQty,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(
+            labelText: 'Cantidad',
+            suffixText: product.unit,
+            helperText: product.servingQuantity == null
+                ? null
+                : 'Porción del envase: ${fmt(product.servingQuantity)} ${product.unit}',
+          ),
+          onChanged: (_) => setState(() {}),
+        ),
+        if (preview != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            '${fmt(preview.kcal)} kcal · P ${fmt(preview.protein)} g · '
+            'C ${fmt(preview.carbs)} g · G ${fmt(preview.fat)} g',
+            style: theme.textTheme.titleSmall,
+          ),
+        ],
+      ],
+    ];
+  }
+
   List<Widget> _photoSection(ThemeData theme) {
-    final analysis = _analysis;
     return [
       SegmentedButton<PhotoMode>(
         showSelectedIcon: false,
@@ -601,11 +821,19 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
           child: Image.memory(_photo!, height: 160, fit: BoxFit.cover),
         ),
       ],
+      ..._analysisResults(theme, 'Analizando tu foto…'),
+    ];
+  }
+
+  /// Progreso y alimentos reconocidos por la IA (foto o descripción).
+  List<Widget> _analysisResults(ThemeData theme, String progress) {
+    final analysis = _analysis;
+    return [
       if (_analyzing) ...[
         const SizedBox(height: 12),
         const LinearProgressIndicator(),
         const SizedBox(height: 4),
-        const Text('Analizando tu foto…'),
+        Text(progress),
       ],
       if (analysis != null && analysis.items.isNotEmpty) ...[
         const SizedBox(height: 12),
@@ -647,21 +875,29 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
           children: [
             Text('Agregar a ${widget.title}', style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
-            SegmentedButton<_AddMode>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(value: _AddMode.catalog, label: Text('Catálogo')),
-                ButtonSegment(value: _AddMode.photo, label: Text('Foto')),
-                ButtonSegment(value: _AddMode.manual, label: Text('A mano')),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                for (final m in _AddMode.values)
+                  ChoiceChip(
+                    label: Text(m.label),
+                    selected: _mode == m,
+                    showCheckmark: false,
+                    onSelected: (_) => setState(() {
+                      if ((_mode == _AddMode.photo) != (m == _AddMode.photo)) {
+                        _analysis = null;
+                      }
+                      _mode = m;
+                      _error = null;
+                    }),
+                  ),
               ],
-              selected: {_mode},
-              onSelectionChanged: (s) => setState(() {
-                _mode = s.first;
-                _error = null;
-              }),
             ),
             const SizedBox(height: 12),
             if (_mode == _AddMode.photo) ..._photoSection(theme),
+            if (_mode == _AddMode.text) ..._describeSection(theme),
+            if (_mode == _AddMode.barcode) ..._barcodeSection(theme),
             if (_mode == _AddMode.catalog && _food == null) ...[
               TextField(
                 controller: _query,
@@ -759,7 +995,9 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
               Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
             ],
             const SizedBox(height: 16),
-            if (_manual || (_mode == _AddMode.catalog && _food != null))
+            if (_manual ||
+                (_mode == _AddMode.catalog && _food != null) ||
+                (_mode == _AddMode.barcode && _product != null))
               FilledButton(
                 onPressed: _busy ? null : _save,
                 child: const Padding(
@@ -767,7 +1005,8 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                   child: Text('Agregar'),
                 ),
               ),
-            if (_mode == _AddMode.photo && (_analysis?.items.isNotEmpty ?? false))
+            if ((_mode == _AddMode.photo || _mode == _AddMode.text) &&
+                (_analysis?.items.isNotEmpty ?? false))
               FilledButton(
                 onPressed: _busy ? null : _save,
                 child: Padding(

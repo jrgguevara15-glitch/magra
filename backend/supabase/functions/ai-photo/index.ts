@@ -1,7 +1,8 @@
-// MAGRA · M6 — Edge Function "ai-photo".
+// MAGRA · M6/M9 — Edge Function "ai-photo".
 //
-// Recibe la foto de un plato o de una etiqueta nutricional y devuelve los
-// alimentos con gramos y nutrientes estimados por Claude. La clave de la API
+// Recibe la foto de un plato o de una etiqueta nutricional, o la
+// descripción de lo que comió (escrita o dictada por voz, M9), y devuelve
+// los alimentos con gramos y nutrientes estimados por Claude. La clave de la API
 // vive solo aquí, como secreto ANTHROPIC_API_KEY (nunca en la app). La foto
 // no se guarda.
 //
@@ -14,6 +15,12 @@ import { createClient } from "npm:@supabase/supabase-js@2.117.3";
 
 /** Fotos por usuario al día. */
 export const DAILY_LIMIT = 25;
+
+/** Descripciones por texto o voz por usuario al día (más baratas). */
+export const TEXT_DAILY_LIMIT = 50;
+
+/** Largo máximo de una descripción. */
+export const MAX_TEXT_LENGTH = 500;
 
 /** Tamaño máximo de la imagen en base64 (~5 MB de imagen). */
 export const MAX_BASE64_LENGTH = 7_000_000;
@@ -31,9 +38,12 @@ const MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as co
 type MediaType = (typeof MEDIA_TYPES)[number];
 
 export interface PhotoRequest {
+  /** Vacíos en el modo "text". */
   image: string;
   media_type: MediaType;
-  mode: "plate" | "label";
+  mode: "plate" | "label" | "text";
+  /** Lo que comió, en el modo "text". */
+  text?: string;
   note?: string;
   remaining_kcal?: number;
 }
@@ -91,6 +101,18 @@ export class HttpError extends Error {
 /** Valida el cuerpo que manda la app. */
 export function parseRequest(body: unknown): PhotoRequest {
   const b = body as Partial<PhotoRequest> | null;
+  const remaining =
+    typeof b?.remaining_kcal === "number" && Number.isFinite(b.remaining_kcal)
+      ? Math.round(b.remaining_kcal)
+      : undefined;
+  if (b?.mode === "text") {
+    const text = typeof b.text === "string" ? b.text.trim() : "";
+    if (text.length < 3) throw new HttpError(400, "Cuéntame qué comiste.");
+    if (text.length > MAX_TEXT_LENGTH) {
+      throw new HttpError(413, `Máximo ${MAX_TEXT_LENGTH} caracteres.`);
+    }
+    return { image: "", media_type: "image/jpeg", mode: "text", text, remaining_kcal: remaining };
+  }
   if (!b || typeof b.image !== "string" || b.image.length < 100) {
     throw new HttpError(400, "Falta la imagen.");
   }
@@ -104,17 +126,18 @@ export function parseRequest(body: unknown): PhotoRequest {
     throw new HttpError(400, "Modo inválido.");
   }
   const note = typeof b.note === "string" ? b.note.slice(0, 300) : undefined;
-  const remaining =
-    typeof b.remaining_kcal === "number" && Number.isFinite(b.remaining_kcal)
-      ? Math.round(b.remaining_kcal)
-      : undefined;
   return { image: b.image, media_type: b.media_type as MediaType, mode: b.mode, note, remaining_kcal: remaining };
 }
 
 /** Instrucciones para Claude según el modo. */
 export function buildPrompt(req: PhotoRequest): string {
   const what =
-    req.mode === "label"
+    req.mode === "text"
+      ? "La persona describe lo que comió; puede venir dictado por voz con " +
+        "errores de transcripción. Separa cada alimento y usa las cantidades " +
+        "que diga; si no las dice, estima una porción típica en Chile. " +
+        `Descripción: """${req.text}"""`
+      : req.mode === "label"
       ? "La imagen es la etiqueta nutricional de un producto. Lee los valores " +
         "de UNA porción declarada y devuelve un solo item con esa porción."
       : "La imagen es un plato de comida. Identifica cada alimento visible y " +
@@ -124,7 +147,9 @@ export function buildPrompt(req: PhotoRequest): string {
     "Eres el nutricionista de MAGRA, una app para bajar grasa en Chile y Latinoamérica.",
     what,
     "Usa nombres cortos en español de Chile. Cantidades en g, ml o unidad.",
-    "Si la imagen no muestra comida, devuelve items vacío y explícalo en notes.",
+    req.mode === "text"
+      ? "Si el texto no describe comida, devuelve items vacío y explícalo en notes."
+      : "Si la imagen no muestra comida, devuelve items vacío y explícalo en notes.",
     "En notes escribe una frase útil para la persona (máximo 160 caracteres).",
     req.remaining_kcal !== undefined
       ? `A la persona le quedan ${req.remaining_kcal} kcal hoy.`
@@ -170,10 +195,12 @@ export async function analyzePhoto(client: Anthropic, req: PhotoRequest): Promis
     messages: [
       {
         role: "user",
-        content: [
-          { type: "image", source: { type: "base64", media_type: req.media_type, data: req.image } },
-          { type: "text", text: buildPrompt(req) },
-        ],
+        content: req.mode === "text"
+          ? [{ type: "text", text: buildPrompt(req) }]
+          : [
+            { type: "image", source: { type: "base64", media_type: req.media_type, data: req.image } },
+            { type: "text", text: buildPrompt(req) },
+          ],
       },
     ],
   });
@@ -232,13 +259,18 @@ export async function handle(req: Request): Promise<Response> {
     // Antes de descontar una foto del límite diario.
     const apiKey = anthropicKey(Deno.env.get("ANTHROPIC_API_KEY"));
 
+    const isText = photo.mode === "text";
+    const limit = isText ? TEXT_DAILY_LIMIT : DAILY_LIMIT;
     const { error: limitError } = await supabase.rpc("ai_consume", {
-      p_feature: "photo",
-      p_limit: DAILY_LIMIT,
+      p_feature: isText ? "text" : "photo",
+      p_limit: limit,
     });
     if (limitError) {
       if (limitError.message.includes("limit_reached")) {
-        throw new HttpError(429, `Llegaste al límite de ${DAILY_LIMIT} fotos por hoy.`);
+        throw new HttpError(
+          429,
+          `Llegaste al límite de ${limit} ${isText ? "descripciones" : "fotos"} por hoy.`,
+        );
       }
       throw new HttpError(401, "Tu sesión no es válida. Vuelve a entrar.");
     }
@@ -248,7 +280,7 @@ export async function handle(req: Request): Promise<Response> {
   } catch (e) {
     if (e instanceof HttpError) return json(e.status, { error: e.message });
     console.error("ai-photo", redact(e instanceof Error ? e.message : "error"));
-    return json(500, { error: "No se pudo analizar la foto. Intenta de nuevo." });
+    return json(500, { error: "No se pudo analizar. Intenta de nuevo." });
   }
 }
 
