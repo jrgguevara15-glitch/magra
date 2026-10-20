@@ -7,13 +7,15 @@ La app usa la **publishable key** (pública por diseño, en
 `apps/mobile/lib/core/config.dart`). La **secret key** y la contraseña de
 la base de datos nunca van en el repositorio ni en la app.
 
-## 1. Crear las tablas (una vez por migración)
+## 1. Crear las tablas (una vez por migración, en orden)
 
 1. Supabase → **SQL Editor** → **New query**.
-2. Pegar el contenido de `backend/supabase/migrations/0001_profiles_measurements.sql`.
+2. Pegar el contenido de cada archivo de `backend/supabase/migrations/`,
+   en orden: `0001_profiles_measurements.sql` (M2),
+   `0002_questionnaires.sql` (M3).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
-Se puede volver a ejecutar sin romper nada.
+Cada migración se puede volver a ejecutar sin romper nada.
 
 ## 2. Confirmación de correo (desarrollo)
 
@@ -28,8 +30,9 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migración idempotente.
+- Migraciones 0001 y 0002 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
 - Upsert por día (`user_id, measured_on`) como lo usa la app.
+- Cuestionario: una fila por usuario; B no ve ni puede escribir la de A.

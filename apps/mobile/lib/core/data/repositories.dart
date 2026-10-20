@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
+import '../../features/questionnaire/questionnaire.dart';
 
 /// Sesión del usuario.
 abstract interface class AuthRepository {
@@ -27,6 +28,11 @@ abstract interface class MeasurementRepository {
   /// Crea o reemplaza la medición de ese día.
   Future<void> save(Measurement measurement);
   Future<void> delete(String id);
+}
+
+abstract interface class QuestionnaireRepository {
+  Future<Questionnaire?> fetch();
+  Future<void> save(Questionnaire questionnaire);
 }
 
 class SupabaseAuthRepository implements AuthRepository {
@@ -101,4 +107,27 @@ class SupabaseMeasurementRepository implements MeasurementRepository {
   @override
   Future<void> delete(String id) =>
       _client.from('measurements').delete().eq('id', id);
+}
+
+class SupabaseQuestionnaireRepository implements QuestionnaireRepository {
+  SupabaseQuestionnaireRepository(this._client);
+
+  final SupabaseClient _client;
+
+  String get _uid => _client.auth.currentUser!.id;
+
+  @override
+  Future<Questionnaire?> fetch() async {
+    final row = await _client
+        .from('questionnaires')
+        .select()
+        .eq('user_id', _uid)
+        .maybeSingle();
+    return row == null ? null : Questionnaire.fromRow(row);
+  }
+
+  @override
+  Future<void> save(Questionnaire q) => _client
+      .from('questionnaires')
+      .upsert({'user_id': _uid, ...q.toRow()});
 }

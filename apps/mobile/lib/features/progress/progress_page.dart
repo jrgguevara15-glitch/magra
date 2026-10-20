@@ -7,6 +7,7 @@ import '../../core/formulas/formulas.dart';
 import '../../core/theme.dart';
 import '../profile/profile_form.dart';
 import '../profile/user_profile.dart';
+import '../questionnaire/questionnaire_page.dart';
 import 'measurement.dart';
 import 'measurement_form.dart';
 
@@ -76,6 +77,8 @@ class _Progress extends ConsumerWidget {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        const QuestionnaireCard(),
         const SizedBox(height: 12),
         FilledButton.icon(
           onPressed: () => showMeasurementForm(context, sex: profile.sex),
@@ -407,6 +410,62 @@ class _Retry extends StatelessWidget {
           OutlinedButton(onPressed: onRetry, child: const Text('Reintentar')),
         ],
       ),
+    );
+  }
+}
+
+/// Invita a responder el cuestionario o muestra que está completo.
+class QuestionnaireCard extends ConsumerWidget {
+  const QuestionnaireCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final q = ref.watch(questionnaireProvider);
+    final theme = Theme.of(context);
+    void open() => Navigator.of(context).push(MaterialPageRoute<bool>(
+          builder: (_) => QuestionnairePage(initial: q.value),
+        ));
+    return q.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (e, st) => _Retry(
+        message: 'No se pudo cargar tu cuestionario.',
+        onRetry: () => ref.invalidate(questionnaireProvider),
+      ),
+      data: (answers) => answers == null
+          ? Card(
+              color: theme.colorScheme.primaryContainer,
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(16),
+                leading: Icon(Icons.assignment_outlined,
+                    color: theme.colorScheme.onPrimaryContainer),
+                title: const Text('Cuéntame de ti para armar tu plan'),
+                subtitle: const Text(
+                    'Rutina, entrenamiento, salud y alimentación: 4 pasos, '
+                    'unos 3 minutos.'),
+                trailing: FilledButton(
+                    onPressed: open, child: const Text('Responder')),
+              ),
+            )
+          : Card(
+              child: ListTile(
+                leading: Icon(
+                  answers.needsProfessionalSupervision
+                      ? Icons.health_and_safety_outlined
+                      : Icons.assignment_turned_in_outlined,
+                  color: answers.needsProfessionalSupervision
+                      ? theme.colorScheme.error
+                      : theme.colorScheme.primary,
+                ),
+                title: const Text('Cuestionario completo'),
+                subtitle: Text(
+                  answers.needsProfessionalSupervision
+                      ? 'Tu plan debe guiarlo un profesional de salud.'
+                      : '${answers.trainingDays} días de entrenamiento · '
+                          '${answers.preferredMeals == null ? 'comidas: MAGRA decide' : '${answers.preferredMeals} comidas al día'}',
+                ),
+                trailing: TextButton(onPressed: open, child: const Text('Editar')),
+              ),
+            ),
     );
   }
 }

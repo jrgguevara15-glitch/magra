@@ -8,6 +8,7 @@ import 'package:magra/core/data/repositories.dart';
 import 'package:magra/core/formulas/formulas.dart';
 import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
+import 'package:magra/features/questionnaire/questionnaire.dart';
 
 class FakeAuth implements AuthRepository {
   FakeAuth({bool signedIn = false}) : _signedIn = signedIn;
@@ -82,6 +83,18 @@ class FakeMeasurements implements MeasurementRepository {
   Future<void> delete(String id) async => items.removeWhere((x) => x.id == id);
 }
 
+class FakeQuestionnaires implements QuestionnaireRepository {
+  FakeQuestionnaires([this.saved]);
+
+  Questionnaire? saved;
+
+  @override
+  Future<Questionnaire?> fetch() async => saved;
+
+  @override
+  Future<void> save(Questionnaire q) async => saved = q;
+}
+
 /// Perfil de ejemplo: hombre, 180 cm, nacido en 1986.
 final sampleProfile = UserProfile(
   name: 'Alex',
@@ -104,6 +117,7 @@ Widget testApp({
   required AuthRepository auth,
   ProfileRepository? profiles,
   MeasurementRepository? measurements,
+  QuestionnaireRepository? questionnaires,
 }) {
   return ProviderScope(
     overrides: [
@@ -111,6 +125,8 @@ Widget testApp({
       profileRepositoryProvider.overrideWithValue(profiles ?? FakeProfiles()),
       measurementRepositoryProvider
           .overrideWithValue(measurements ?? FakeMeasurements()),
+      questionnaireRepositoryProvider
+          .overrideWithValue(questionnaires ?? FakeQuestionnaires()),
     ],
     child: const MagraApp(),
   );
