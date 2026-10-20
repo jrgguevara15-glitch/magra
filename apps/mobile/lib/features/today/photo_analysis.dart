@@ -106,6 +106,24 @@ String mediaTypeFor(String fileName, String? reported) {
   return 'image/jpeg';
 }
 
+/// Mensaje para el usuario según la respuesta de la función. Incluye el
+/// código de estado cuando el error es inesperado, para poder diagnosticar.
+String photoErrorMessage(int status, Object? details) {
+  if (details is Map && details['error'] is String) {
+    final text = details['error'] as String;
+    return status >= 500 ? '$text (error $status)' : text;
+  }
+  return switch (status) {
+    401 || 403 =>
+      'El servidor rechazó tu sesión (error $status). Cierra sesión y vuelve '
+          'a entrar; si sigue, hay que revisar la verificación JWT de ai-photo.',
+    404 => 'La función de fotos aún no está instalada en el servidor.',
+    413 => 'La imagen es demasiado grande.',
+    429 => 'Llegaste al límite de fotos por hoy.',
+    _ => 'No se pudo analizar la foto (error $status). Intenta de nuevo.',
+  };
+}
+
 /// Llama a la función `ai-photo` del servidor.
 class SupabasePhotoAnalyzer implements PhotoAnalyzer {
   SupabasePhotoAnalyzer(this._client);
@@ -130,16 +148,7 @@ class SupabasePhotoAnalyzer implements PhotoAnalyzer {
       });
       return PhotoAnalysis.fromJson(res.data as Map<String, dynamic>);
     } on FunctionException catch (e) {
-      final details = e.details;
-      final message = details is Map && details['error'] is String
-          ? details['error'] as String
-          : switch (e.status) {
-              404 => 'La función de fotos aún no está instalada en el servidor.',
-              413 => 'La imagen es demasiado grande.',
-              429 => 'Llegaste al límite de fotos por hoy.',
-              _ => 'No se pudo analizar la foto. Intenta de nuevo.',
-            };
-      throw PhotoException(message);
+      throw PhotoException(photoErrorMessage(e.status, e.details));
     } catch (_) {
       throw const PhotoException(
           'No hay conexión con el servidor. Revisa tu internet.');

@@ -63,6 +63,16 @@ void main() {
       expect(PhotoAnalysis.fromJson(const {}).items, isEmpty);
     });
 
+    test('mensajes de error con su código', () {
+      expect(photoErrorMessage(429, {'error': 'Llegaste al límite de 25 fotos por hoy.'}),
+          'Llegaste al límite de 25 fotos por hoy.');
+      expect(photoErrorMessage(500, {'error': 'No se pudo analizar la foto. Intenta de nuevo.'}),
+          'No se pudo analizar la foto. Intenta de nuevo. (error 500)');
+      expect(photoErrorMessage(401, {'msg': 'Invalid JWT'}), contains('error 401'));
+      expect(photoErrorMessage(404, null), contains('no está instalada'));
+      expect(photoErrorMessage(502, 'Bad gateway'), contains('error 502'));
+    });
+
     test('tipo de imagen', () {
       expect(mediaTypeFor('a.PNG', null), 'image/png');
       expect(mediaTypeFor('a.webp', null), 'image/webp');
