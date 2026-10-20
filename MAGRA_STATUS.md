@@ -30,13 +30,15 @@
   (rutina por días/experiencia/equipo/lesiones, cardio, zona 2, pasos),
   avisos de salud y meta por etapas en Progreso. Reglas en
   docs/02_FORMULAS.md. analyze sin issues; suite 81/81; build web OK.
-- M5 — Registro del día: IMPLEMENTADO, validación del usuario PENDIENTE.
+- M5 — Registro del día: TERMINADO. Validación del usuario APROBADA
+  (catálogo, cantidad sugerida, a mano, quitar, días, persistencia).
   Migración 0003 (food_entries + RLS) validada en Postgres local. Pestaña
   Hoy: resumen de calorías y macros contra el plan, comidas del plan con lo
   registrado, "Fuera del plan", catálogo de 41 alimentos filtrado por dieta
   y alergias con cantidad sugerida, ingreso a mano, quitar y navegar días.
   analyze sin issues; suite 92/92; build web OK.
-- M6 en adelante — NO ABIERTOS.
+- M6 — Foto → calorías con IA: EN IMPLEMENTACIÓN.
+- M7 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 
