@@ -229,6 +229,8 @@ export async function handle(req: Request): Promise<Response> {
       { global: { headers: { Authorization: authorization } } },
     );
     const photo = parseRequest(await req.json());
+    // Antes de descontar una foto del límite diario.
+    const apiKey = anthropicKey(Deno.env.get("ANTHROPIC_API_KEY"));
 
     const { error: limitError } = await supabase.rpc("ai_consume", {
       p_feature: "photo",
@@ -241,15 +243,30 @@ export async function handle(req: Request): Promise<Response> {
       throw new HttpError(401, "Tu sesión no es válida. Vuelve a entrar.");
     }
 
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) throw new HttpError(500, "Falta configurar la IA en el servidor.");
     const result = await analyzePhoto(new Anthropic({ apiKey }), photo);
     return json(200, result);
   } catch (e) {
     if (e instanceof HttpError) return json(e.status, { error: e.message });
-    console.error("ai-photo", e instanceof Error ? e.message : "error");
+    console.error("ai-photo", redact(e instanceof Error ? e.message : "error"));
     return json(500, { error: "No se pudo analizar la foto. Intenta de nuevo." });
   }
+}
+
+/// El secreto debe ser solo la clave (sk-ant-…), sin comillas, espacios ni
+/// el comando curl de ejemplo de la consola.
+export function anthropicKey(raw: string | undefined): string {
+  const key = (raw ?? "").trim();
+  if (!key) throw new HttpError(500, "Falta configurar la IA en el servidor.");
+  if (!/^sk-ant-[A-Za-z0-9_-]+$/.test(key)) {
+    console.error("ai-photo", "ANTHROPIC_API_KEY mal configurada: debe ser solo la clave sk-ant-…");
+    throw new HttpError(500, "La clave de la IA está mal configurada en el servidor.");
+  }
+  return key;
+}
+
+/// Nunca dejar una clave en los logs, aunque venga dentro de un error.
+export function redact(text: string): string {
+  return text.replace(/sk-ant-[A-Za-z0-9_-]+/g, "sk-ant-***");
 }
 
 Deno.serve(handle);

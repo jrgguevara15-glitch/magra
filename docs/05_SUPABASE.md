@@ -24,7 +24,9 @@ Cada migración se puede volver a ejecutar sin romper nada.
    Keys → Create Key. Cargar saldo en Billing (cada foto cuesta ~US$0,016).
    La clave no se comparte con nadie ni se pega en el chat ni en el código.
 2. Supabase → **Edge Functions** → **Secrets** → Add new secret:
-   nombre `ANTHROPIC_API_KEY`, valor = la clave → Save.
+   nombre `ANTHROPIC_API_KEY`, valor = **solo la clave** (empieza con
+   `sk-ant-`), sin comillas ni el comando `curl` de ejemplo que muestra
+   la consola → Save.
 3. Supabase → **Edge Functions** → **Deploy a new function** → **Via
    Editor** → nombre `ai-photo` → reemplazar el código de ejemplo por
    `backend/supabase/functions/ai-photo/index.ts` → **Deploy function**.
@@ -60,3 +62,6 @@ BACKLOG.md).
   @supabase/supabase-js 2.117.3; 6 pruebas con un Claude simulado (entrada,
   petición, recorte de valores absurdos, rechazo, respuesta ilegible,
   sesión).
+- La clave mal pegada (con espacios, comillas o el comando curl) se
+  rechaza antes de descontar del límite, y una clave nunca queda en los
+  logs aunque venga dentro de un error.
