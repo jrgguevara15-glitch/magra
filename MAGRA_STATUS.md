@@ -69,8 +69,9 @@
   Food Facts por 100 g/ml, porción del envase, cantidad editable) y
   "Describir" (texto o dictado con el micrófono del teclado → IA → revisar
   y agregar, 50 por día). analyze sin issues; suite 143/143; build web OK.
-- M9b — Crear productos que no están (pedido por el usuario):
-  IMPLEMENTADO, validación del usuario PENDIENTE (requiere migración 0007).
+- M9b — Crear productos que no están (pedido por el usuario): TERMINADO.
+  Validación del usuario APROBADA (migración 0007; crear y volver a
+  encontrar un producto).
   Si un código no está en Open Food Facts o viene sin nutrientes: "Crear
   producto" con valores por 100 g/ml (o "Leer la etiqueta con una foto"),
   queda guardado en la cuenta y se busca primero la próxima vez; los
