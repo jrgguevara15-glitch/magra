@@ -37,12 +37,14 @@
   registrado, "Fuera del plan", catálogo de 41 alimentos filtrado por dieta
   y alergias con cantidad sugerida, ingreso a mano, quitar y navegar días.
   analyze sin issues; suite 92/92; build web OK.
-- M6 — Foto → calorías con IA: IMPLEMENTADO, validación del usuario
-  PENDIENTE (requiere clave de la API de Claude y desplegar ai-photo).
+- M6 — Foto → calorías con IA: IMPLEMENTADO. Validación del usuario
+  APROBADA en Chrome/Windows (foto de pabellón criollo → 4 alimentos con
+  porciones y macros, agregados a la comida). Pendiente: probar la cámara en
+  el celular.
   Edge Function ai-photo (claude-opus-5-5, salida estructurada, fallbacks,
   límite 25/día con migración 0004). En Hoy → Agregar → Foto: plato o
   etiqueta, aclaración, revisar/corregir cantidades y agregar. Permisos de
-  cámara (iOS) y archivos/red (macOS). analyze sin issues; suite 101/101;
+  cámara (iOS) y archivos/red (macOS). analyze sin issues; suite 102/102;
   build web OK.
 - M7 en adelante — NO ABIERTOS.
 
@@ -58,5 +60,5 @@
 ## Decisiones pendientes
 
 - Proyecto Supabase creado (twtkxvbnkxuggsnkihlb, São Paulo).
-- Pendiente: cuenta de la API de Claude (para M6).
+- Cuenta de la API de Claude creada; clave solo como secreto de Supabase.
 - Precio y límites del plan gratis vs premium.
