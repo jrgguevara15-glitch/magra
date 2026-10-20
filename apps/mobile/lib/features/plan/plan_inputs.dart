@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data/providers.dart';
 import '../../core/formulas/formulas.dart';
 import '../../core/recommendation/assessment.dart';
+import '../../core/recommendation/nutrition_plan.dart';
+import '../../core/recommendation/weekly_adjustment.dart';
 import '../profile/user_profile.dart';
 import '../questionnaire/questionnaire.dart';
 
@@ -29,6 +31,7 @@ class PlanInputs {
     required this.questionnaire,
     required this.age,
     required this.today,
+    this.kcalAdjustment = 0,
   });
 
   final UserProfile profile;
@@ -41,6 +44,17 @@ class PlanInputs {
   final Questionnaire questionnaire;
   final int age;
   final DateTime today;
+
+  /// Suma de los ajustes semanales aplicados.
+  final int kcalAdjustment;
+
+  NutritionPlan get nutrition => recommendNutrition(
+        profile: profile,
+        weightKg: weightKg,
+        questionnaire: questionnaire,
+        today: today,
+        kcalAdjustment: kcalAdjustment,
+      );
 
   List<HealthAlert> get alerts => healthAlerts(
       composition: composition, questionnaire: questionnaire, age: age);
@@ -60,16 +74,24 @@ class PlanGate extends ConsumerWidget {
     final profile = ref.watch(profileProvider);
     final measurements = ref.watch(measurementsProvider);
     final questionnaire = ref.watch(questionnaireProvider);
-    if (profile.isLoading || measurements.isLoading || questionnaire.isLoading) {
+    final adjustments = ref.watch(kcalAdjustmentsProvider);
+    if (profile.isLoading ||
+        measurements.isLoading ||
+        questionnaire.isLoading ||
+        adjustments.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (profile.hasError || measurements.hasError || questionnaire.hasError) {
+    if (profile.hasError ||
+        measurements.hasError ||
+        questionnaire.hasError ||
+        adjustments.hasError) {
       return Center(
         child: OutlinedButton(
           onPressed: () {
             ref.invalidate(profileProvider);
             ref.invalidate(measurementsProvider);
             ref.invalidate(questionnaireProvider);
+            ref.invalidate(kcalAdjustmentsProvider);
           },
           child: const Text('No se pudo cargar. Reintentar'),
         ),
@@ -128,6 +150,7 @@ class PlanGate extends ConsumerWidget {
         questionnaire: q!,
         age: p.ageOn(today),
         today: today,
+        kcalAdjustment: totalAdjustment(adjustments.value ?? const []),
       ),
     );
   }

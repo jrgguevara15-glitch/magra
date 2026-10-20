@@ -6,6 +6,7 @@ import '../../features/questionnaire/questionnaire.dart';
 import '../../features/today/activity_log.dart';
 import '../../features/today/food_catalog.dart';
 import '../../features/today/photo_analysis.dart';
+import '../recommendation/weekly_adjustment.dart';
 import 'repositories.dart';
 
 /// Se reemplazan en `main` con las implementaciones de Supabase y en las
@@ -24,6 +25,8 @@ final exerciseLogRepositoryProvider =
     Provider<ExerciseLogRepository>((ref) => throw UnimplementedError());
 final fastRepositoryProvider =
     Provider<FastRepository>((ref) => throw UnimplementedError());
+final kcalAdjustmentRepositoryProvider =
+    Provider<KcalAdjustmentRepository>((ref) => throw UnimplementedError());
 final photoAnalyzerProvider =
     Provider<PhotoAnalyzer>((ref) => throw UnimplementedError());
 final imagePickProvider =
@@ -69,4 +72,21 @@ final exerciseLogProvider =
 final latestFastProvider = FutureProvider<Fast?>((ref) async {
   if (ref.watch(signedInProvider).value != true) return null;
   return ref.watch(fastRepositoryProvider).latest();
+});
+
+/// Ajustes semanales de calorías.
+final kcalAdjustmentsProvider = FutureProvider<List<KcalAdjustment>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const [];
+  return ref.watch(kcalAdjustmentRepositoryProvider).list();
+});
+
+/// Calorías registradas por día en las últimas 3 semanas (para el gasto
+/// real).
+final recentIntakeProvider = FutureProvider<Map<DateTime, double>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const {};
+  final now = ref.watch(clockProvider)();
+  final today = DateTime(now.year, now.month, now.day);
+  return ref
+      .watch(foodLogRepositoryProvider)
+      .dailyKcal(today.subtract(const Duration(days: 21)), today);
 });

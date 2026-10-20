@@ -30,6 +30,8 @@ Future<void> main() async {
         exerciseLogRepositoryProvider
             .overrideWithValue(SupabaseExerciseLogRepository(client)),
         fastRepositoryProvider.overrideWithValue(SupabaseFastRepository(client)),
+        kcalAdjustmentRepositoryProvider
+            .overrideWithValue(SupabaseKcalAdjustmentRepository(client)),
         photoAnalyzerProvider.overrideWithValue(SupabasePhotoAnalyzer(client)),
       ],
       child: const MagraApp(),

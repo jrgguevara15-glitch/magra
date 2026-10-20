@@ -53,7 +53,14 @@
   con explicación por glucosa, TCA, condición supervisada o ≥ 65 años).
   Migración 0005 + RLS validadas en Postgres local. analyze sin issues;
   suite 112/112; build web OK.
-- M8 en adelante — NO ABIERTOS.
+- M8 — Peso de tendencia + gasto adaptativo semanal: IMPLEMENTADO,
+  validación del usuario PENDIENTE (requiere migración 0006). En
+  Progreso: gráfico de 90 días (pesajes + tendencia), ritmo semanal, gasto
+  real estimado con el registro de Hoy y ajuste de la semana (aplicar /
+  ahora no); el Plan y Hoy usan la meta ajustada. Reglas en
+  docs/02_FORMULAS.md. Migración 0006 + RLS validadas en Postgres local.
+  analyze sin issues; suite 133/133; build web OK.
+- M9 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 

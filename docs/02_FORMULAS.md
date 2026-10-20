@@ -81,11 +81,34 @@ porción = porción_base × escala  (redondeo a 5 g)
 - Pérdida < 50 % del ritmo meta → revisar registro; si se repite 2 semanas,
   −100 a −150 kcal o +2.000 pasos.
 
-## Gasto adaptativo (por implementar, Fase 2)
+## Peso de tendencia, gasto real y ajuste semanal (M8)
 
-Gasto real ≈ kcal ingeridas promedio − (Δ peso tendencia × 7.700 / días).
-Media móvil exponencial del peso (α ≈ 0,1) como peso de tendencia. Ajuste
-semanal de la meta con límite de ±150 kcal por semana.
+Código: `lib/core/formulas/trend.dart` y
+`lib/core/recommendation/weekly_adjustment.dart`.
+
+- **Peso de tendencia**: un punto por día, interpolando los días sin
+  pesaje, con media móvil exponencial α = 0,1. Gráfico de 90 días en
+  Progreso (pesajes + línea).
+- **Gasto real** = ingesta promedio − pendiente(kg/sem) × 7.700 / 7.
+  Ventana: 21 días sin contar hoy. Un día cuenta si tiene ≥ 60 % del mínimo
+  seguro registrado. Requiere ≥ 10 días y ≥ 3 pesajes que abarquen
+  ≥ 10 días; fuera de 1.000–6.000 kcal se descarta.
+- **Ajuste semanal** (semana desde el lunes; el usuario aplica o dice
+  "Ahora no"; una decisión por semana):
+  - Condición supervisada: nunca se ajusta. Sin 3 pesajes en 28 días: no.
+  - Pérdida > 1 % del peso/semana: +150.
+  - En ritmo: 0.
+  - Lenta (< 50 % del ritmo meta):
+    - si la ingesta registrada supera la meta en > 150: 0 y "ajústate al
+      plan";
+    - con gasto real: hasta (gasto real − ritmo × 1.000) − meta actual,
+      máximo −150, redondeado a 10;
+    - sin gasto real: la 1.ª semana espera (+2.000 pasos); si la semana
+      anterior también era lenta, −100.
+  - Nunca deja la meta bajo el mínimo seguro; el acumulado se limita a
+    ±500 kcal sobre la fórmula.
+- La meta del Plan y de Hoy = fórmula + ajustes aplicados (macros
+  escalados, sin bajar del mínimo seguro).
 
 ## Motor de recomendación (M4)
 

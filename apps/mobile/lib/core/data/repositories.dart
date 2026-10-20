@@ -6,6 +6,7 @@ import '../../features/questionnaire/questionnaire.dart';
 import '../../features/today/activity_log.dart';
 import '../../features/today/food_catalog.dart';
 import '../format.dart';
+import '../recommendation/weekly_adjustment.dart';
 
 /// Sesión del usuario.
 abstract interface class AuthRepository {
@@ -43,6 +44,17 @@ abstract interface class FoodLogRepository {
   Future<List<FoodEntry>> forDay(DateTime day);
   Future<void> add(FoodEntry entry);
   Future<void> delete(String id);
+
+  /// Calorías registradas por día entre [from] y [to] (ambos incluidos).
+  Future<Map<DateTime, double>> dailyKcal(DateTime from, DateTime to);
+}
+
+abstract interface class KcalAdjustmentRepository {
+  /// Ajustes semanales, del más antiguo al más reciente.
+  Future<List<KcalAdjustment>> list();
+
+  /// Crea o reemplaza la decisión de esa semana.
+  Future<void> save(KcalAdjustment adjustment);
 }
 
 abstract interface class ExerciseLogRepository {
@@ -181,6 +193,41 @@ class SupabaseFoodLogRepository implements FoodLogRepository {
   @override
   Future<void> delete(String id) =>
       _client.from('food_entries').delete().eq('id', id);
+
+  @override
+  Future<Map<DateTime, double>> dailyKcal(DateTime from, DateTime to) async {
+    final rows = await _client
+        .from('food_entries')
+        .select('eaten_on, kcal')
+        .gte('eaten_on', isoDate(from))
+        .lte('eaten_on', isoDate(to));
+    final out = <DateTime, double>{};
+    for (final r in rows) {
+      final day = DateTime.parse(r['eaten_on'] as String);
+      out[day] = (out[day] ?? 0) + (r['kcal'] as num).toDouble();
+    }
+    return out;
+  }
+}
+
+class SupabaseKcalAdjustmentRepository implements KcalAdjustmentRepository {
+  SupabaseKcalAdjustmentRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<List<KcalAdjustment>> list() async {
+    final rows = await _client
+        .from('kcal_adjustments')
+        .select()
+        .order('week_start', ascending: true);
+    return [for (final r in rows) KcalAdjustment.fromRow(r)];
+  }
+
+  @override
+  Future<void> save(KcalAdjustment a) => _client
+      .from('kcal_adjustments')
+      .upsert(a.toRow(), onConflict: 'user_id,week_start');
 }
 
 class SupabaseExerciseLogRepository implements ExerciseLogRepository {

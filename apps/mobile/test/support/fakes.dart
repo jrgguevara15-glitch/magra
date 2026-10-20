@@ -8,6 +8,7 @@ import 'package:magra/app.dart';
 import 'package:magra/core/data/providers.dart';
 import 'package:magra/core/data/repositories.dart';
 import 'package:magra/core/formulas/formulas.dart';
+import 'package:magra/core/recommendation/weekly_adjustment.dart';
 import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
@@ -125,6 +126,35 @@ class FakeFoodLog implements FoodLogRepository {
 
   @override
   Future<void> delete(String id) async => items.removeWhere((e) => e.id == id);
+
+  @override
+  Future<Map<DateTime, double>> dailyKcal(DateTime from, DateTime to) async {
+    final out = <DateTime, double>{};
+    for (final e in items) {
+      final d = DateUtils.dateOnly(e.date);
+      if (d.isBefore(DateUtils.dateOnly(from)) || d.isAfter(DateUtils.dateOnly(to))) {
+        continue;
+      }
+      out[d] = (out[d] ?? 0) + e.kcal;
+    }
+    return out;
+  }
+}
+
+class FakeKcalAdjustments implements KcalAdjustmentRepository {
+  FakeKcalAdjustments([List<KcalAdjustment>? initial]) : items = [...?initial];
+
+  final List<KcalAdjustment> items;
+
+  @override
+  Future<List<KcalAdjustment>> list() async =>
+      [...items]..sort((a, b) => a.weekStart.compareTo(b.weekStart));
+
+  @override
+  Future<void> save(KcalAdjustment a) async {
+    items.removeWhere((x) => x.weekStart == a.weekStart);
+    items.add(a);
+  }
 }
 
 class FakeExerciseLog implements ExerciseLogRepository {
@@ -246,6 +276,7 @@ Widget testApp({
   ImagePickFn? pick,
   ExerciseLogRepository? exerciseLog,
   FastRepository? fasts,
+  KcalAdjustmentRepository? adjustments,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -262,6 +293,8 @@ Widget testApp({
       exerciseLogRepositoryProvider
           .overrideWithValue(exerciseLog ?? FakeExerciseLog()),
       fastRepositoryProvider.overrideWithValue(fasts ?? FakeFasts()),
+      kcalAdjustmentRepositoryProvider
+          .overrideWithValue(adjustments ?? FakeKcalAdjustments()),
       if (clock != null) clockProvider.overrideWithValue(clock),
     ],
     child: const MagraApp(),

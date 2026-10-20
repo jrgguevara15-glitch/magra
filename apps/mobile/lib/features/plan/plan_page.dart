@@ -15,12 +15,7 @@ class PlanPage extends StatelessWidget {
     return PlanGate(
       what: 'tu plan nutricional',
       builder: (context, inputs) {
-        final plan = recommendNutrition(
-          profile: inputs.profile,
-          weightKg: inputs.weightKg,
-          questionnaire: inputs.questionnaire,
-          today: inputs.today,
-        );
+        final plan = inputs.nutrition;
         return NutritionPlanView(plan: plan, inputs: inputs);
       },
     );

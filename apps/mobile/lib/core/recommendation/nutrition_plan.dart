@@ -43,6 +43,8 @@ class NutritionPlan {
     required this.reasons,
     required this.maintenanceOnly,
     this.fastingHours,
+    this.tdee = 0,
+    this.adjustmentKcal = 0,
   });
 
   final double kcal;
@@ -59,6 +61,12 @@ class NutritionPlan {
 
   /// Horas de ayuno diario si el plan lo incluye.
   final int? fastingHours;
+
+  /// Gasto estimado con la fórmula (TMB × actividad).
+  final double tdee;
+
+  /// Ajuste semanal incluido en [kcal] (después del mínimo seguro).
+  final double adjustmentKcal;
 }
 
 int _minutes(TimeOfDay t) => t.hour * 60 + t.minute;
@@ -109,6 +117,7 @@ NutritionPlan recommendNutrition({
   required double weightKg,
   required Questionnaire questionnaire,
   required DateTime today,
+  int kcalAdjustment = 0,
 }) {
   final q = questionnaire;
   final age = profile.ageOn(today);
@@ -135,9 +144,23 @@ NutritionPlan recommendNutrition({
         'bajar ~${fmt(profile.paceKgPerWeek, 2)} kg por semana.'
         '${energy.floorApplied ? ' Quedó en el mínimo seguro; no se baja más.' : ''}');
   }
-  final protein = energy.grams.protein;
-  final carbs = energy.grams.carbs;
-  final fat = energy.grams.lipids;
+  // Ajuste semanal según el progreso real, sin bajar del mínimo seguro.
+  final floor = safeFloorKcal(profile.sex);
+  var kcal = energy.kcal;
+  if (!maintenance && kcalAdjustment != 0) {
+    kcal = energy.kcal + kcalAdjustment;
+    if (kcal < floor) kcal = floor < energy.kcal ? floor : energy.kcal;
+    final applied = kcal - energy.kcal;
+    if (applied != 0) {
+      reasons.add('Incluye tu ajuste semanal de ${applied > 0 ? '+' : '−'}'
+          '${fmt(applied.abs())} kcal según tu progreso real: '
+          '${fmt(kcal)} kcal al día.');
+    }
+  }
+  final scale = kcal / energy.kcal;
+  final protein = energy.grams.protein * scale;
+  final carbs = energy.grams.carbs * scale;
+  final fat = energy.grams.lipids * scale;
 
   // 2. ¿Puede ayunar?
   final noFastReason = fastingBlockReason(questionnaire: q, age: age);
@@ -153,7 +176,7 @@ NutritionPlan recommendNutrition({
       (0.4 * weightKg).clamp(age >= 50 ? 35.0 : 25.0, 45.0).toDouble();
   int meals;
   if (fasting) {
-    meals = energy.kcal < 1800 ? 2 : 3;
+    meals = kcal < 1800 ? 2 : 3;
     reasons.add('Ayuno 16:8 como pediste: $meals comidas en 8 horas.');
   } else if (q.preferredMeals != null) {
     meals = q.preferredMeals!;
@@ -164,9 +187,9 @@ NutritionPlan recommendNutrition({
     // No más de 5 horas entre comidas (primera 30 min tras despertar,
     // última 2,5 h antes de dormir).
     final minByGap = ((q.awakeHours - 3) / 5).ceil() + 1;
-    if (energy.kcal < 1600 && meals > 3 && minByGap <= 3) {
+    if (kcal < 1600 && meals > 3 && minByGap <= 3) {
       meals = 3;
-      why.add('con ${fmt(energy.kcal)} kcal, 3 comidas más grandes sacian '
+      why.add('con ${fmt(kcal)} kcal, 3 comidas más grandes sacian '
           'mejor que muchas pequeñas');
     }
     if (q.awakeHours < 14 && meals > 4) {
@@ -306,7 +329,7 @@ NutritionPlan recommendNutrition({
   ];
 
   return NutritionPlan(
-    kcal: energy.kcal,
+    kcal: kcal,
     protein: protein,
     carbs: carbs,
     fat: fat,
@@ -314,5 +337,7 @@ NutritionPlan recommendNutrition({
     reasons: reasons,
     maintenanceOnly: maintenance,
     fastingHours: fastingHours,
+    tdee: energy.tdee,
+    adjustmentKcal: kcal - energy.kcal,
   );
 }

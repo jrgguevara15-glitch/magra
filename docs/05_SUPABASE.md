@@ -13,7 +13,8 @@ la base de datos nunca van en el repositorio ni en la app.
 2. Pegar el contenido de cada archivo de `backend/supabase/migrations/`,
    en orden: `0001_profiles_measurements.sql` (M2),
    `0002_questionnaires.sql` (M3), `0003_food_entries.sql` (M5),
-   `0004_ai_usage.sql` (M6), `0005_exercise_fasting.sql` (M7).
+   `0004_ai_usage.sql` (M6), `0005_exercise_fasting.sql` (M7),
+   `0006_kcal_adjustments.sql` (M8).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
 Cada migración se puede volver a ejecutar sin romper nada.
@@ -47,7 +48,7 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migraciones 0001 a 0005 idempotentes.
+- Migraciones 0001 a 0006 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
@@ -59,6 +60,9 @@ BACKLOG.md).
   en su cuenta; anónimo no ve nada; un solo ayuno en curso por usuario;
   solo metas de 12, 14 o 16 h; el fin debe ser posterior al inicio;
   minutos entre 1 y 600.
+- Ajustes semanales (M8): una decisión por semana (upsert), la semana debe
+  empezar en lunes, máximo ±150 por semana; B no ve, edita, borra ni
+  inserta en la cuenta de A.
 - Límite de IA: 25 por día y por usuario; la 26.ª falla y no cuenta; cada
   usuario su propio conteo; sin sesión o anónimo no se puede usar; nadie
   puede reiniciar su contador.

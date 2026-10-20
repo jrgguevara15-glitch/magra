@@ -11,6 +11,7 @@ import '../profile/user_profile.dart';
 import '../questionnaire/questionnaire_page.dart';
 import 'measurement.dart';
 import 'measurement_form.dart';
+import 'weekly_check.dart';
 
 /// Pestaña Progreso: perfil, evaluación actual e historial de mediciones.
 class ProgressPage extends ConsumerWidget {
@@ -92,6 +93,8 @@ class _Progress extends ConsumerWidget {
               'cintura para ver tu evaluación.')
         else ...[
           EvaluationCard(profile: profile, measurements: list),
+          const SizedBox(height: 16),
+          WeeklyCheckCard(profile: profile, measurements: list),
           const SizedBox(height: 16),
           _History(profile: profile, measurements: list),
         ],

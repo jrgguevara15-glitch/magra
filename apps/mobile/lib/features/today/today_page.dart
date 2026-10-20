@@ -86,12 +86,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
   @override
   Widget build(BuildContext context) {
     final inputs = widget.inputs;
-    final plan = recommendNutrition(
-      profile: inputs.profile,
-      weightKg: inputs.weightKg,
-      questionnaire: inputs.questionnaire,
-      today: inputs.today,
-    );
+    final plan = inputs.nutrition;
     final log = ref.watch(foodLogProvider(_day));
     final exercise = ref.watch(exerciseLogProvider(_day)).value ?? const [];
     final bonus = exerciseBonusFor(exercise);

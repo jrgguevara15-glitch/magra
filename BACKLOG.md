@@ -52,3 +52,6 @@ activo.
   Health / Health Connect) se importa automáticamente.
 - Ayuno: notificación al cumplir la meta (requiere notificaciones locales)
   e historial/racha de ayunos.
+- Ajuste semanal: cambiar la decisión de la semana, restablecer el
+  acumulado y recordatorio de pesaje (lunes).
+- Gráfico de cintura junto al de peso y rango de fechas elegible.
