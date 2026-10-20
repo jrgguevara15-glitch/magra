@@ -14,12 +14,13 @@
   `lib/core/formulas/` (composición corporal, energía, intercambios,
   ejercicio MET, meta física, tendencia). 29 pruebas contra los valores de
   los informes del nutricionista. analyze sin issues; suite 32/32.
-- M2 — Supabase (cuentas, perfil, mediciones): IMPLEMENTADO, validación del
-  usuario PENDIENTE. Migración + RLS validadas en Postgres local; inicio de
+- M2 — Supabase (cuentas, perfil, mediciones): TERMINADO. Validación del
+  usuario APROBADA (Chrome/Windows: crear cuenta, perfil, medición con y sin
+  perímetros, evaluación completa, cerrar sesión y volver a entrar). Migración + RLS validadas en Postgres local; inicio de
   sesión con correo, perfil, mediciones y evaluación en Progreso.
   analyze sin issues; suite 44/44; build web OK.
-- M3 (cuestionario completo) y M4 (motor de recomendación) — NO ABIERTOS;
-  orden aprobado. Se abren al cerrar M2.
+- M3 — Cuestionario completo: EN IMPLEMENTACIÓN.
+- M4 — Motor de recomendación: NO ABIERTO.
 - M5 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
