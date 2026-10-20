@@ -85,3 +85,46 @@ porción = porción_base × escala  (redondeo a 5 g)
 Gasto real ≈ kcal ingeridas promedio − (Δ peso tendencia × 7.700 / días).
 Media móvil exponencial del peso (α ≈ 0,1) como peso de tendencia. Ajuste
 semanal de la meta con límite de ±150 kcal por semana.
+
+## Motor de recomendación (M4)
+
+Código: `lib/core/recommendation/`. Reglas puras con pruebas.
+
+### Salud
+- Condición supervisada (diabetes tipo 1, enfermedad cardíaca o renal,
+  embarazo, lactancia, TCA): **sin déficit**, plan de mantención y aviso.
+- IMC ≥ 35 o cintura/estatura ≥ 0,6: recomendar control médico.
+- Diabetes tipo 2/prediabetes, hipertensión, ≥ 65 años: avisos específicos.
+
+### Meta por etapas
+- Etapa 1 = 10 % del peso actual; tiempo = kg × 7.700 / (déficit × 7).
+- Meta final = masa magra / (1 − % grasa meta). Si está a menos del 10 %,
+  una sola etapa.
+
+### Comidas
+- Toma de proteína ideal = 0,4 g/kg de peso, entre 25 y 45 g (≥ 50 años:
+  mínimo 35 g). Comidas = proteína diaria / toma, entre 3 y 5.
+- Mínimo para no pasar más de 5 h sin comer: ⌈(horas despierto − 3) / 5⌉ + 1.
+- < 1.600 kcal: 3 comidas si el horario lo permite. < 14 h despierto: máx. 4.
+- Preferencia del usuario manda (2–6), salvo glucosa (diabetes,
+  hipoglicemia): mínimo 4 y sin ayuno.
+- Ayuno 16:8 solo si lo pide y no hay glucosa alterada, TCA, condición
+  supervisada ni ≥ 65 años: 2–3 comidas, ventana que termina 3 h antes de
+  dormir.
+- Horario: primera comida 30 min después de despertar; última 2,5 h antes
+  de dormir; ninguna durante el entreno; una antes (1–4 h) y otra dentro de
+  las 2 h después.
+- Reparto: proteína pareja; carbohidratos ×1,5 post-entreno, ×1,3
+  pre-entreno, ×0,7 última comida; grasa ×0,6–0,7 cerca del entreno.
+- Ejemplos de alimentos filtrados por dieta, alergias y alimentos que no le
+  gustan; porciones caseras hasta 4 unidades.
+
+### Entrenamiento
+- 0 días → 2; 7 días → 6. 1–3 días: cuerpo completo A/B; 4–6: superior/
+  inferior.
+- Sesión: 60 % fuerza (20–60 min) y el resto cardio (mínimo 10 min).
+- Series según experiencia (2–3 × 10–12 a 4 × 6–10, con repeticiones en
+  reserva).
+- Bajo impacto si IMC ≥ 30, rodillas/tobillos/caderas o ≥ 60 años.
+- Reemplazos por lesión (rodilla, espalda baja, hombro, cadera, tobillo,
+  muñeca, cuello). Pasos: 6.000 (IMC ≥ 35) o 7.000, +1.000 cada 2 semanas.

@@ -24,7 +24,12 @@
   local. 4 pasos (rutina, entrenamiento, salud, alimentación) desde
   Progreso; aviso cuando una condición requiere un profesional.
   analyze sin issues; suite 52/52; build web OK.
-- M4 — Motor de recomendación: EN IMPLEMENTACIÓN.
+- M4 — Motor de recomendación: IMPLEMENTADO, validación del usuario
+  PENDIENTE. Pestaña Plan (calorías, n.º de comidas, horarios, qué comer
+  con ejemplos filtrados por dieta/alergias/gustos, porqué), pestaña Entreno
+  (rutina por días/experiencia/equipo/lesiones, cardio, zona 2, pasos),
+  avisos de salud y meta por etapas en Progreso. Reglas en
+  docs/02_FORMULAS.md. analyze sin issues; suite 81/81; build web OK.
 - M5 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario

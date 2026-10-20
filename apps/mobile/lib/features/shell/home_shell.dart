@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/providers.dart';
+import '../plan/plan_inputs.dart';
+import '../plan/plan_page.dart';
 import '../progress/progress_page.dart';
+import '../training/training_page.dart';
 
 /// Una pestaña principal de MAGRA.
 class MagraDestination {
@@ -61,9 +64,6 @@ const magraDestinations = <MagraDestination>[
 /// Ancho desde el que se usa navegación lateral (tablet y escritorio).
 const double kWideLayoutBreakpoint = 720;
 
-/// Índice de la pestaña Progreso.
-const int kProgressTab = 3;
-
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -72,9 +72,9 @@ class HomeShell extends ConsumerStatefulWidget {
 }
 
 class _HomeShellState extends ConsumerState<HomeShell> {
-  int _index = 0;
+  int get _index => ref.watch(homeTabProvider);
 
-  void _select(int index) => setState(() => _index = index);
+  void _select(int index) => ref.read(homeTabProvider.notifier).go(index);
 
   Future<void> _signOut() async {
     final ok = await showDialog<bool>(
@@ -99,9 +99,12 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final destination = magraDestinations[_index];
-    final body = _index == kProgressTab
-        ? const ProgressPage()
-        : _PlaceholderPage(destination: destination);
+    final body = switch (_index) {
+      1 => const PlanPage(),
+      kProgressTab => const ProgressPage(),
+      4 => const TrainingPage(),
+      _ => _PlaceholderPage(destination: destination),
+    };
     final signOutButton = IconButton(
       tooltip: 'Cerrar sesión',
       icon: const Icon(Icons.logout),

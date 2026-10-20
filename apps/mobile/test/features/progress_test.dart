@@ -120,6 +120,7 @@ void main() {
     await openProgress(tester);
     expect(find.text('Completa tu perfil'), findsOneWidget);
 
+    await tester.pumpWidget(const SizedBox()); // cierra la app anterior
     await tester.pumpWidget(testApp(
       auth: FakeAuth(signedIn: true),
       profiles: FakeProfiles(sampleProfile),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
 import '../../core/formulas/formulas.dart';
+import '../../core/recommendation/assessment.dart';
 import '../../core/theme.dart';
 import '../profile/profile_form.dart';
 import '../profile/user_profile.dart';
@@ -181,15 +182,20 @@ class EvaluationCard extends StatelessWidget {
           'C ${fmt(energy.grams.carbs)} g · L ${fmt(energy.grams.lipids)} g'),
     ]);
 
-    PhysicalGoal? goal;
+    StagedGoal? goal;
     if (comp.leanKg != null) {
-      goal = PhysicalGoal.from(
+      goal = stagedGoal(
         weightKg: last.weightKg,
         leanKg: comp.leanKg!,
         goalFatPct: profile.goalFatPct,
         dailyDeficitKcal: energy.deficit,
       );
     }
+    String inTime(double? weeks) => weeks == null
+        ? 'sin déficit'
+        : weeks < 9
+            ? 'en ~${fmt(weeks)} semanas'
+            : 'en ~${fmt(weeks / 4.345, 1)} meses';
 
     final omsRange = omsFatRangeFor(age).forSex(profile.sex);
     return Card(
@@ -204,18 +210,31 @@ class EvaluationCard extends StatelessWidget {
             Wrap(spacing: 10, runSpacing: 10, children: tiles),
             if (goal != null) ...[
               const SizedBox(height: 16),
-              Text('Meta física', style: Theme.of(context).textTheme.titleMedium),
+              Text('Tu meta, por etapas',
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               Wrap(spacing: 10, runSpacing: 10, children: [
-                _Stat('Peso meta', '${fmt(goal.goalWeightKg, 1)} kg',
-                    '${fmt(profile.goalFatPct, 1)} % de grasa'),
-                _Stat('Grasa a eliminar', '${fmt(goal.fatToLoseKg, 1)} kg',
-                    null),
                 _Stat(
-                    'Tiempo estimado',
-                    goal.months == null ? '—' : '${fmt(goal.months, 1)} meses',
-                    goal.weeks == null ? null : '${fmt(goal.weeks)} semanas'),
+                  goal.finalGoal == null ? 'Meta' : 'Etapa 1',
+                  '${fmt(goal.firstStage.targetWeightKg, 1)} kg',
+                  '−${fmt(goal.firstStage.kgToLose, 1)} kg ${inTime(goal.firstStage.weeks)}',
+                ),
+                if (goal.finalGoal != null)
+                  _Stat(
+                    'Meta final',
+                    '${fmt(goal.finalGoal!.targetWeightKg, 1)} kg',
+                    '${fmt(profile.goalFatPct, 1)} % de grasa · ${inTime(goal.finalGoal!.weeks)}',
+                  ),
               ]),
+              if (goal.finalGoal != null) ...[
+                const SizedBox(height: 6),
+                Text(
+                  'Primero el 10 % de tu peso: es la bajada que más mejora tu '
+                  'salud y la más fácil de sostener. Después vamos por la '
+                  'siguiente.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ],
             const SizedBox(height: 12),
             Text(
