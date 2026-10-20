@@ -38,3 +38,9 @@ activo.
   URL de redirección y los correos en español.
 - Inicio de sesión con Google y Apple; recuperar contraseña.
 - Migraciones con Supabase CLI en vez de pegarlas en el SQL Editor.
+- Foto de la carta de un restaurante (qué pedir y qué evitar), como en el
+  prototipo web.
+- Límite de fotos por plan (gratis/premium) en M17; hoy es 25/día para
+  todos.
+- Consentimiento formal y guardado para enviar fotos a la IA (M18); hoy se
+  informa en la pantalla antes de elegir la foto.

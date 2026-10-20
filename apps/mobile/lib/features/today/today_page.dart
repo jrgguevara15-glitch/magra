@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +9,7 @@ import '../../core/theme.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
 import 'food_catalog.dart';
+import 'photo_analysis.dart';
 
 /// Pestaña Hoy: lo que comió el usuario contra su plan.
 class TodayPage extends StatelessWidget {
@@ -43,6 +45,8 @@ class _TodayViewState extends ConsumerState<TodayView> {
     return fmtDate(_day);
   }
 
+  double _remainingKcal = 0;
+
   Future<void> _add(int mealIndex, String title, PlannedMeal? meal) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -56,6 +60,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
         mealProtein: meal?.protein ?? 25,
         mealCarbs: meal?.carbs ?? 30,
         mealFat: meal?.fat ?? 10,
+        remainingKcal: _remainingKcal,
       ),
     );
   }
@@ -123,7 +128,10 @@ class _TodayViewState extends ConsumerState<TodayView> {
             child: const Text('No se pudo cargar el día. Reintentar'),
           ),
         ),
-        data: (entries) => Column(
+        data: (entries) {
+          _remainingKcal =
+              plan.kcal - entries.fold<double>(0, (a, e) => a + e.kcal);
+          return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DaySummary(plan: plan, entries: entries),
@@ -147,7 +155,8 @@ class _TodayViewState extends ConsumerState<TodayView> {
               onDelete: _delete,
             ),
           ],
-        ),
+        );
+        },
       ),
     ]);
   }
@@ -327,7 +336,9 @@ class _MealLog extends StatelessWidget {
   }
 }
 
-/// Hoja para agregar un alimento del catálogo o a mano.
+enum _AddMode { catalog, photo, manual }
+
+/// Hoja para agregar un alimento: del catálogo, por foto o a mano.
 class AddFoodSheet extends ConsumerStatefulWidget {
   const AddFoodSheet({
     super.key,
@@ -338,6 +349,7 @@ class AddFoodSheet extends ConsumerStatefulWidget {
     required this.mealProtein,
     required this.mealCarbs,
     required this.mealFat,
+    this.remainingKcal,
   });
 
   final String title;
@@ -348,12 +360,21 @@ class AddFoodSheet extends ConsumerStatefulWidget {
   final double mealCarbs;
   final double mealFat;
 
+  /// Calorías que le quedan hoy (contexto para la IA).
+  final double? remainingKcal;
+
   @override
   ConsumerState<AddFoodSheet> createState() => _AddFoodSheetState();
 }
 
 class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
-  bool _manual = false;
+  _AddMode _mode = _AddMode.catalog;
+  bool get _manual => _mode == _AddMode.manual;
+  PhotoMode _photoMode = PhotoMode.plate;
+  final _photoNote = TextEditingController();
+  Uint8List? _photo;
+  PhotoAnalysis? _analysis;
+  bool _analyzing = false;
   final _query = TextEditingController();
   final _qty = TextEditingController();
   final _name = TextEditingController();
@@ -367,7 +388,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
 
   @override
   void dispose() {
-    for (final c in [_query, _qty, _name, _kcal, _p, _c, _f]) {
+    for (final c in [_query, _qty, _name, _kcal, _p, _c, _f, _photoNote]) {
       c.dispose();
     }
     super.dispose();
@@ -386,7 +407,81 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     });
   }
 
+  bool get _canUseCamera =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
+  Future<void> _takePhoto({required bool camera}) async {
+    final picked = await ref.read(imagePickProvider)(camera: camera);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _photo = picked.bytes;
+      _analysis = null;
+      _analyzing = true;
+      _error = null;
+    });
+    try {
+      final result = await ref.read(photoAnalyzerProvider).analyze(
+            bytes: picked.bytes,
+            mediaType: mediaTypeFor(picked.name, picked.mimeType),
+            mode: _photoMode,
+            note: _photoNote.text,
+            remainingKcal: widget.remainingKcal,
+          );
+      if (!mounted) return;
+      setState(() {
+        _analysis = result;
+        if (result.items.isEmpty) {
+          _error = result.notes.isNotEmpty
+              ? result.notes
+              : 'No reconocí comida en la foto. Prueba con otra.';
+        }
+      });
+    } on PhotoException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _analyzing = false);
+    }
+  }
+
+  Future<void> _savePhotoItems() async {
+    final items = _analysis?.items.where((i) => i.include).toList() ?? const [];
+    if (items.isEmpty) {
+      setState(() => _error = 'Marca al menos un alimento.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final repo = ref.read(foodLogRepositoryProvider);
+      for (final i in items) {
+        await repo.add(FoodEntry(
+          date: widget.day,
+          mealIndex: widget.mealIndex,
+          name: i.name,
+          quantity: i.quantity > 0 ? i.quantity : null,
+          unit: i.unit,
+          kcal: i.kcal,
+          protein: i.protein,
+          carbs: i.carbs,
+          fat: i.fat,
+          source: 'photo',
+        ));
+      }
+      ref.invalidate(foodLogProvider(widget.day));
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) setState(() => _error = 'No se pudo guardar. Revisa tu conexión.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _save() async {
+    if (_mode == _AddMode.photo) return _savePhotoItems();
     FoodEntry entry;
     if (_manual) {
       final kcal = parseNum(_kcal.text);
@@ -428,6 +523,87 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     }
   }
 
+  List<Widget> _photoSection(ThemeData theme) {
+    final analysis = _analysis;
+    return [
+      SegmentedButton<PhotoMode>(
+        showSelectedIcon: false,
+        segments: const [
+          ButtonSegment(value: PhotoMode.plate, label: Text('Mi plato')),
+          ButtonSegment(value: PhotoMode.label, label: Text('Etiqueta')),
+        ],
+        selected: {_photoMode},
+        onSelectionChanged: (s) => setState(() => _photoMode = s.first),
+      ),
+      const SizedBox(height: 8),
+      TextField(
+        controller: _photoNote,
+        decoration: const InputDecoration(
+          labelText: 'Aclaración (opcional)',
+          hintText: 'Ej: el arroz era integral, la carne era cerdo',
+        ),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          if (_canUseCamera)
+            FilledButton.icon(
+              onPressed: _analyzing ? null : () => _takePhoto(camera: true),
+              icon: const Icon(Icons.photo_camera_outlined),
+              label: const Text('Tomar foto'),
+            ),
+          OutlinedButton.icon(
+            onPressed: _analyzing ? null : () => _takePhoto(camera: false),
+            icon: const Icon(Icons.photo_library_outlined),
+            label: const Text('Elegir foto'),
+          ),
+        ],
+      ),
+      const SizedBox(height: 4),
+      Text(
+        'Tu foto se envía a la IA de Claude (Anthropic) solo para estimar las '
+        'calorías. MAGRA no la guarda. Es una estimación: revísala antes de '
+        'agregar.',
+        style: theme.textTheme.bodySmall,
+      ),
+      if (_photo != null) ...[
+        const SizedBox(height: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(_photo!, height: 160, fit: BoxFit.cover),
+        ),
+      ],
+      if (_analyzing) ...[
+        const SizedBox(height: 12),
+        const LinearProgressIndicator(),
+        const SizedBox(height: 4),
+        const Text('Analizando tu foto…'),
+      ],
+      if (analysis != null && analysis.items.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        Text(
+          'Esto vi (confianza ${analysis.confidence}). Corrige lo que haga falta:',
+          style: theme.textTheme.titleSmall,
+        ),
+        for (final item in analysis.items) _PhotoItemRow(
+          key: ObjectKey(item),
+          item: item,
+          onChanged: () => setState(() {}),
+        ),
+        Text(
+          'Total: ${fmt(analysis.items.where((i) => i.include).fold<double>(0, (a, i) => a + i.kcal))} kcal',
+          style: theme.textTheme.titleMedium,
+        ),
+        if (analysis.notes.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(analysis.notes, style: theme.textTheme.bodyMedium),
+        ],
+      ],
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -445,19 +621,22 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
           children: [
             Text('Agregar a ${widget.title}', style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
-            SegmentedButton<bool>(
+            SegmentedButton<_AddMode>(
+              showSelectedIcon: false,
               segments: const [
-                ButtonSegment(value: false, label: Text('Del catálogo')),
-                ButtonSegment(value: true, label: Text('A mano')),
+                ButtonSegment(value: _AddMode.catalog, label: Text('Catálogo')),
+                ButtonSegment(value: _AddMode.photo, label: Text('Foto')),
+                ButtonSegment(value: _AddMode.manual, label: Text('A mano')),
               ],
-              selected: {_manual},
+              selected: {_mode},
               onSelectionChanged: (s) => setState(() {
-                _manual = s.first;
+                _mode = s.first;
                 _error = null;
               }),
             ),
             const SizedBox(height: 12),
-            if (!_manual && _food == null) ...[
+            if (_mode == _AddMode.photo) ..._photoSection(theme),
+            if (_mode == _AddMode.catalog && _food == null) ...[
               TextField(
                 controller: _query,
                 autofocus: true,
@@ -486,7 +665,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                       ),
               ),
             ],
-            if (!_manual && _food != null) ...[
+            if (_mode == _AddMode.catalog && _food != null) ...[
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(_food!.name, style: theme.textTheme.titleMedium),
@@ -554,7 +733,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
               Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
             ],
             const SizedBox(height: 16),
-            if (_manual || _food != null)
+            if (_manual || (_mode == _AddMode.catalog && _food != null))
               FilledButton(
                 onPressed: _busy ? null : _save,
                 child: const Padding(
@@ -562,8 +741,89 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                   child: Text('Agregar'),
                 ),
               ),
+            if (_mode == _AddMode.photo && (_analysis?.items.isNotEmpty ?? false))
+              FilledButton(
+                onPressed: _busy ? null : _save,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                      'Agregar ${_analysis!.items.where((i) => i.include).length} alimentos'),
+                ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Un alimento reconocido en la foto: incluir o no, nombre y cantidad.
+class _PhotoItemRow extends StatefulWidget {
+  const _PhotoItemRow({super.key, required this.item, required this.onChanged});
+
+  final PhotoItem item;
+  final VoidCallback onChanged;
+
+  @override
+  State<_PhotoItemRow> createState() => _PhotoItemRowState();
+}
+
+class _PhotoItemRowState extends State<_PhotoItemRow> {
+  late final _name = TextEditingController(text: widget.item.name);
+  late final _qty =
+      TextEditingController(text: widget.item.quantity.round().toString());
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _qty.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Checkbox(
+            value: item.include,
+            onChanged: (v) {
+              item.include = v ?? false;
+              widget.onChanged();
+            },
+          ),
+          Expanded(
+            flex: 3,
+            child: TextField(
+              controller: _name,
+              decoration: const InputDecoration(isDense: true),
+              onChanged: (v) => item.name = v.trim().isEmpty ? item.name : v.trim(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 72,
+            child: TextField(
+              controller: _qty,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(isDense: true, suffixText: item.unit == 'unidad' ? 'u' : item.unit),
+              onChanged: (v) {
+                final q = parseNum(v);
+                if (q != null && q > 0) {
+                  item.scaleTo(q);
+                  widget.onChanged();
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 64,
+            child: Text('${fmt(item.kcal)} kcal', textAlign: TextAlign.end),
+          ),
+        ],
       ),
     );
   }

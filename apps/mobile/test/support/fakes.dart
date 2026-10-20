@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart' show DateUtils;
 import 'package:flutter/widgets.dart';
@@ -11,6 +12,7 @@ import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/food_catalog.dart';
+import 'package:magra/features/today/photo_analysis.dart';
 
 class FakeAuth implements AuthRepository {
   FakeAuth({bool signedIn = false}) : _signedIn = signedIn;
@@ -124,6 +126,48 @@ class FakeFoodLog implements FoodLogRepository {
   Future<void> delete(String id) async => items.removeWhere((e) => e.id == id);
 }
 
+class FakePhotoAnalyzer implements PhotoAnalyzer {
+  FakePhotoAnalyzer({this.result, this.error});
+
+  PhotoAnalysis? result;
+  PhotoException? error;
+  PhotoMode? lastMode;
+  String? lastNote;
+  String? lastMediaType;
+  double? lastRemaining;
+  int calls = 0;
+
+  @override
+  Future<PhotoAnalysis> analyze({
+    required Uint8List bytes,
+    required String mediaType,
+    required PhotoMode mode,
+    String? note,
+    double? remainingKcal,
+  }) async {
+    calls++;
+    lastMode = mode;
+    lastNote = note;
+    lastMediaType = mediaType;
+    lastRemaining = remainingKcal;
+    if (error != null) throw error!;
+    return result!;
+  }
+}
+
+/// PNG de 1×1 px para simular una foto.
+final tinyPng = Uint8List.fromList(const [
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+  0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+  0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+  0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0xF8, 0xCF, 0xC0, 0xF0,
+  0x1F, 0x00, 0x05, 0x00, 0x01, 0xFF, 0x89, 0x99, 0x3D, 0x1D, 0x00, 0x00,
+  0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+]);
+
+Future<PickedImage?> fakePick({required bool camera}) async =>
+    (bytes: tinyPng, name: camera ? 'camara.jpg' : 'plato.png', mimeType: null);
+
 /// Perfil de ejemplo: hombre, 180 cm, nacido en 1986.
 final sampleProfile = UserProfile(
   name: 'Alex',
@@ -148,6 +192,8 @@ Widget testApp({
   MeasurementRepository? measurements,
   QuestionnaireRepository? questionnaires,
   FoodLogRepository? foodLog,
+  PhotoAnalyzer? photoAnalyzer,
+  ImagePickFn? pick,
 }) {
   return ProviderScope(
     overrides: [
@@ -158,6 +204,8 @@ Widget testApp({
       questionnaireRepositoryProvider
           .overrideWithValue(questionnaires ?? FakeQuestionnaires()),
       foodLogRepositoryProvider.overrideWithValue(foodLog ?? FakeFoodLog()),
+      photoAnalyzerProvider.overrideWithValue(photoAnalyzer ?? FakePhotoAnalyzer()),
+      imagePickProvider.overrideWithValue(pick ?? fakePick),
     ],
     child: const MagraApp(),
   );

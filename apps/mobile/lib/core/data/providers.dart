@@ -4,6 +4,7 @@ import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
 import '../../features/today/food_catalog.dart';
+import '../../features/today/photo_analysis.dart';
 import 'repositories.dart';
 
 /// Se reemplazan en `main` con las implementaciones de Supabase y en las
@@ -18,6 +19,10 @@ final questionnaireRepositoryProvider =
     Provider<QuestionnaireRepository>((ref) => throw UnimplementedError());
 final foodLogRepositoryProvider =
     Provider<FoodLogRepository>((ref) => throw UnimplementedError());
+final photoAnalyzerProvider =
+    Provider<PhotoAnalyzer>((ref) => throw UnimplementedError());
+final imagePickProvider =
+    Provider<ImagePickFn>((ref) => pickWithImagePicker);
 
 final signedInProvider = StreamProvider<bool>(
   (ref) => ref.watch(authRepositoryProvider).signedInChanges(),
