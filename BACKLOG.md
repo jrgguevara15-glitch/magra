@@ -44,3 +44,6 @@ activo.
   todos.
 - Consentimiento formal y guardado para enviar fotos a la IA (M18); hoy se
   informa en la pantalla antes de elegir la foto.
+- iPhone: hoy se prueba en Safari por Wi-Fi. Para la app nativa en iPhone
+  (y TestFlight/App Store) se necesita una Mac o compilar en la nube
+  (Codemagic) más la cuenta de Apple Developer (US$99/año).

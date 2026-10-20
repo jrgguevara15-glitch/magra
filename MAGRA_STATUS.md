@@ -37,10 +37,9 @@
   registrado, "Fuera del plan", catálogo de 41 alimentos filtrado por dieta
   y alergias con cantidad sugerida, ingreso a mano, quitar y navegar días.
   analyze sin issues; suite 92/92; build web OK.
-- M6 — Foto → calorías con IA: IMPLEMENTADO. Validación del usuario
-  APROBADA en Chrome/Windows (foto de pabellón criollo → 4 alimentos con
-  porciones y macros, agregados a la comida). Pendiente: probar la cámara en
-  el celular.
+- M6 — Foto → calorías con IA: TERMINADO. Validación del usuario APROBADA
+  en Chrome/Windows (foto de pabellón criollo → 4 alimentos con porciones y
+  macros) y en iPhone/Safari por Wi-Fi (tomar foto con la cámara).
   Edge Function ai-photo (claude-opus-5-5, salida estructurada, fallbacks,
   límite 25/día con migración 0004). En Hoy → Agregar → Foto: plato o
   etiqueta, aclaración, revisar/corregir cantidades y agregar. Permisos de
