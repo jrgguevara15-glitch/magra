@@ -82,6 +82,27 @@ String _hhmm(int minutes) {
   return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 }
 
+/// Por qué este usuario no debe ayunar, o `null` si puede hacerlo.
+String? fastingBlockReason({
+  required Questionnaire questionnaire,
+  required int age,
+}) {
+  final conditions = questionnaire.healthConditions;
+  if (conditions.contains(HealthCondition.type1Diabetes) ||
+      conditions.contains(HealthCondition.type2Diabetes) ||
+      conditions.contains(HealthCondition.hypoglycemia)) {
+    return 'por tu glucosa conviene comer a horas regulares';
+  }
+  if (conditions.contains(HealthCondition.eatingDisorder)) {
+    return 'con antecedentes de trastorno alimentario no se recomienda ayunar';
+  }
+  if (questionnaire.needsProfessionalSupervision) {
+    return 'tu plan lo debe guiar un profesional';
+  }
+  if (age >= 65) return 'a tu edad priorizamos proteína repartida en el día';
+  return null;
+}
+
 /// Arma el plan nutricional del día para un usuario.
 NutritionPlan recommendNutrition({
   required UserProfile profile,
@@ -119,17 +140,7 @@ NutritionPlan recommendNutrition({
   final fat = energy.grams.lipids;
 
   // 2. ¿Puede ayunar?
-  final noFastReason = conditions.contains(HealthCondition.type1Diabetes) ||
-          conditions.contains(HealthCondition.type2Diabetes) ||
-          conditions.contains(HealthCondition.hypoglycemia)
-      ? 'por tu glucosa conviene comer a horas regulares'
-      : conditions.contains(HealthCondition.eatingDisorder)
-          ? 'con antecedentes de trastorno alimentario no se recomienda ayunar'
-          : maintenance
-              ? 'tu plan lo debe guiar un profesional'
-              : age >= 65
-                  ? 'a tu edad priorizamos proteína repartida en el día'
-                  : null;
+  final noFastReason = fastingBlockReason(questionnaire: q, age: age);
   final fasting = q.fasting == Fasting.yes && noFastReason == null;
   if (q.fasting == Fasting.yes && noFastReason != null) {
     reasons.add('No incluimos ayuno: $noFastReason.');

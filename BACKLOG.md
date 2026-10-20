@@ -47,3 +47,8 @@ activo.
 - iPhone: hoy se prueba en Safari por Wi-Fi. Para la app nativa en iPhone
   (y TestFlight/App Store) se necesita una Mac o compilar en la nube
   (Codemagic) más la cuenta de Apple Developer (US$99/año).
+- Ejercicio: actividad libre con calorías del reloj, más actividades en el
+  catálogo MET y repetir el entreno de la semana pasada. Con M10 (Apple
+  Health / Health Connect) se importa automáticamente.
+- Ayuno: notificación al cumplir la meta (requiere notificaciones locales)
+  e historial/racha de ayunos.

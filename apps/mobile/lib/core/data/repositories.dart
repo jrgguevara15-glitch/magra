@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
+import '../../features/today/activity_log.dart';
 import '../../features/today/food_catalog.dart';
 import '../format.dart';
 
@@ -41,6 +42,23 @@ abstract interface class FoodLogRepository {
   /// Lo registrado en un día, en el orden en que se anotó.
   Future<List<FoodEntry>> forDay(DateTime day);
   Future<void> add(FoodEntry entry);
+  Future<void> delete(String id);
+}
+
+abstract interface class ExerciseLogRepository {
+  /// Actividades de un día, en el orden en que se anotaron.
+  Future<List<ExerciseEntry>> forDay(DateTime day);
+  Future<void> add(ExerciseEntry entry);
+  Future<void> delete(String id);
+}
+
+abstract interface class FastRepository {
+  /// El ayuno más reciente (en curso o terminado), o `null`.
+  Future<Fast?> latest();
+  Future<void> start(DateTime at, int targetHours);
+  Future<void> end(String id, DateTime at);
+
+  /// Borra un ayuno iniciado por error.
   Future<void> delete(String id);
 }
 
@@ -163,4 +181,59 @@ class SupabaseFoodLogRepository implements FoodLogRepository {
   @override
   Future<void> delete(String id) =>
       _client.from('food_entries').delete().eq('id', id);
+}
+
+class SupabaseExerciseLogRepository implements ExerciseLogRepository {
+  SupabaseExerciseLogRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<List<ExerciseEntry>> forDay(DateTime day) async {
+    final rows = await _client
+        .from('exercise_entries')
+        .select()
+        .eq('done_on', isoDate(day))
+        .order('created_at', ascending: true);
+    return [for (final r in rows) ExerciseEntry.fromRow(r)];
+  }
+
+  @override
+  Future<void> add(ExerciseEntry entry) =>
+      _client.from('exercise_entries').insert(entry.toRow());
+
+  @override
+  Future<void> delete(String id) =>
+      _client.from('exercise_entries').delete().eq('id', id);
+}
+
+class SupabaseFastRepository implements FastRepository {
+  SupabaseFastRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<Fast?> latest() async {
+    final row = await _client
+        .from('fasts')
+        .select()
+        .order('started_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+    return row == null ? null : Fast.fromRow(row);
+  }
+
+  @override
+  Future<void> start(DateTime at, int targetHours) => _client.from('fasts').insert({
+        'started_at': at.toUtc().toIso8601String(),
+        'target_hours': targetHours,
+      });
+
+  @override
+  Future<void> end(String id, DateTime at) => _client
+      .from('fasts')
+      .update({'ended_at': at.toUtc().toIso8601String()}).eq('id', id);
+
+  @override
+  Future<void> delete(String id) => _client.from('fasts').delete().eq('id', id);
 }

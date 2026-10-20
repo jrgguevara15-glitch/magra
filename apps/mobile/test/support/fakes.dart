@@ -11,6 +11,7 @@ import 'package:magra/core/formulas/formulas.dart';
 import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
+import 'package:magra/features/today/activity_log.dart';
 import 'package:magra/features/today/food_catalog.dart';
 import 'package:magra/features/today/photo_analysis.dart';
 
@@ -126,6 +127,55 @@ class FakeFoodLog implements FoodLogRepository {
   Future<void> delete(String id) async => items.removeWhere((e) => e.id == id);
 }
 
+class FakeExerciseLog implements ExerciseLogRepository {
+  final List<ExerciseEntry> items = [];
+  var _next = 0;
+
+  @override
+  Future<List<ExerciseEntry>> forDay(DateTime day) async =>
+      [for (final e in items) if (DateUtils.isSameDay(e.date, day)) e];
+
+  @override
+  Future<void> add(ExerciseEntry e) async => items.add(ExerciseEntry(
+        id: 'x${_next++}',
+        date: e.date,
+        activityId: e.activityId,
+        name: e.name,
+        met: e.met,
+        minutes: e.minutes,
+        kcalNet: e.kcalNet,
+      ));
+
+  @override
+  Future<void> delete(String id) async => items.removeWhere((e) => e.id == id);
+}
+
+class FakeFasts implements FastRepository {
+  final List<Fast> items = [];
+  var _next = 0;
+
+  @override
+  Future<Fast?> latest() async => items.isEmpty
+      ? null
+      : (items.toList()..sort((a, b) => b.start.compareTo(a.start))).first;
+
+  @override
+  Future<void> start(DateTime at, int targetHours) async {
+    if (items.any((f) => f.active)) throw StateError('ya hay un ayuno en curso');
+    items.add(Fast(id: 'a${_next++}', start: at, targetHours: targetHours));
+  }
+
+  @override
+  Future<void> end(String id, DateTime at) async {
+    final i = items.indexWhere((f) => f.id == id);
+    final f = items[i];
+    items[i] = Fast(id: f.id, start: f.start, end: at, targetHours: f.targetHours);
+  }
+
+  @override
+  Future<void> delete(String id) async => items.removeWhere((f) => f.id == id);
+}
+
 class FakePhotoAnalyzer implements PhotoAnalyzer {
   FakePhotoAnalyzer({this.result, this.error});
 
@@ -194,6 +244,9 @@ Widget testApp({
   FoodLogRepository? foodLog,
   PhotoAnalyzer? photoAnalyzer,
   ImagePickFn? pick,
+  ExerciseLogRepository? exerciseLog,
+  FastRepository? fasts,
+  DateTime Function()? clock,
 }) {
   return ProviderScope(
     overrides: [
@@ -206,6 +259,10 @@ Widget testApp({
       foodLogRepositoryProvider.overrideWithValue(foodLog ?? FakeFoodLog()),
       photoAnalyzerProvider.overrideWithValue(photoAnalyzer ?? FakePhotoAnalyzer()),
       imagePickProvider.overrideWithValue(pick ?? fakePick),
+      exerciseLogRepositoryProvider
+          .overrideWithValue(exerciseLog ?? FakeExerciseLog()),
+      fastRepositoryProvider.overrideWithValue(fasts ?? FakeFasts()),
+      if (clock != null) clockProvider.overrideWithValue(clock),
     ],
     child: const MagraApp(),
   );

@@ -61,7 +61,8 @@ porción = porción_base × escala  (redondeo a 5 g)
 ## Ejercicio
 
 - `kcal netas = (MET − 1) × peso(kg) × horas` (el reposo ya está en la TMB).
-- Se suma el 50 % a la meta del día.
+- Se suma el 50 % a la meta del día (Hoy: "meta + N por ejercicio"); los
+  macros objetivo no cambian. Se guarda con el peso del momento.
 - MET del Compendio de Actividad Física (pesas 3,5/6; caminar 3,5–6;
   bici 6,8/8,8; fútbol 7/10; etc.).
 - Zona 2: 60–70 % de FC máx; FC máx = 208 − 0,7 × edad.
@@ -111,6 +112,11 @@ Código: `lib/core/recommendation/`. Reglas puras con pruebas.
 - Ayuno 16:8 solo si lo pide y no hay glucosa alterada, TCA, condición
   supervisada ni ≥ 65 años: 2–3 comidas, ventana que termina 3 h antes de
   dormir.
+- Temporizador (Hoy, M7): protocolos 12:12, 14:10 y 16:8; sugiere el del
+  plan (16:8 si incluye ayuno) o 12:12. Solo se muestra si no eligió "No
+  quiero ayunar"; si una regla lo impide y lo pidió, explica por qué. Meta
+  cumplida → romperlo con proteína; ≥ 24 h → aviso de comer ya. Un solo
+  ayuno en curso; se puede fijar la hora de la última comida.
 - Horario: primera comida 30 min después de despertar; última 2,5 h antes
   de dormir; ninguna durante el entreno; una antes (1–4 h) y otra dentro de
   las 2 h después.

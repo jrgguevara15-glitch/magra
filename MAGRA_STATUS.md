@@ -45,7 +45,15 @@
   etiqueta, aclaración, revisar/corregir cantidades y agregar. Permisos de
   cámara (iOS) y archivos/red (macOS). analyze sin issues; suite 102/102;
   build web OK.
-- M7 en adelante — NO ABIERTOS.
+- M7 — Ejercicio MET + ayuno con avisos: IMPLEMENTADO, validación del
+  usuario PENDIENTE (requiere migración 0005). En Hoy: tarjeta Ejercicio
+  (18 actividades MET, minutos, kcal netas con el peso actual, +50 % a la
+  meta del día) y tarjeta Ayuno (12:12/14:10/16:8, hora de inicio,
+  progreso, avisos de meta cumplida y > 24 h, terminar o borrar; bloqueado
+  con explicación por glucosa, TCA, condición supervisada o ≥ 65 años).
+  Migración 0005 + RLS validadas en Postgres local. analyze sin issues;
+  suite 112/112; build web OK.
+- M8 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 

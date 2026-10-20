@@ -8,6 +8,8 @@ import '../../core/recommendation/nutrition_plan.dart';
 import '../../core/theme.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
+import 'activity_cards.dart';
+import 'activity_log.dart';
 import 'food_catalog.dart';
 import 'photo_analysis.dart';
 
@@ -91,6 +93,9 @@ class _TodayViewState extends ConsumerState<TodayView> {
       today: inputs.today,
     );
     final log = ref.watch(foodLogProvider(_day));
+    final exercise = ref.watch(exerciseLogProvider(_day)).value ?? const [];
+    final bonus = exerciseBonusFor(exercise);
+    final q = inputs.questionnaire;
     final theme = Theme.of(context);
 
     return PlanScroll(children: [
@@ -130,12 +135,23 @@ class _TodayViewState extends ConsumerState<TodayView> {
         ),
         data: (entries) {
           _remainingKcal =
-              plan.kcal - entries.fold<double>(0, (a, e) => a + e.kcal);
+              plan.kcal + bonus - entries.fold<double>(0, (a, e) => a + e.kcal);
+          final blockReason =
+              fastingBlockReason(questionnaire: q, age: inputs.age);
+          final showFasting = _day == _today &&
+              (blockReason == null
+                  ? q.fasting != Fasting.no
+                  : q.fasting == Fasting.yes);
           return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DaySummary(plan: plan, entries: entries),
+            DaySummary(plan: plan, entries: entries, exerciseBonus: bonus),
             const SizedBox(height: 8),
+            if (showFasting)
+              FastingCard(
+                blockReason: blockReason,
+                recommendedHours: plan.fastingHours ?? fastingProtocols.first,
+              ),
             for (var i = 0; i < plan.meals.length; i++)
               _MealLog(
                 title: '${plan.meals[i].time.format(context)} · Comida ${i + 1}',
@@ -154,6 +170,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
               onAdd: () => _add(plan.meals.length, 'Fuera del plan', null),
               onDelete: _delete,
             ),
+            ExerciseCard(day: _day, weightKg: inputs.weightKg),
           ],
         );
         },
@@ -164,10 +181,18 @@ class _TodayViewState extends ConsumerState<TodayView> {
 
 /// Calorías y macros del día contra el plan.
 class DaySummary extends StatelessWidget {
-  const DaySummary({super.key, required this.plan, required this.entries});
+  const DaySummary({
+    super.key,
+    required this.plan,
+    required this.entries,
+    this.exerciseBonus = 0,
+  });
 
   final NutritionPlan plan;
   final List<FoodEntry> entries;
+
+  /// Calorías que suma el ejercicio del día.
+  final double exerciseBonus;
 
   @override
   Widget build(BuildContext context) {
@@ -176,8 +201,9 @@ class DaySummary extends StatelessWidget {
     final protein = entries.fold<double>(0, (a, e) => a + e.protein);
     final carbs = entries.fold<double>(0, (a, e) => a + e.carbs);
     final fat = entries.fold<double>(0, (a, e) => a + e.fat);
-    final left = plan.kcal - kcal;
-    final over = left < -plan.kcal * 0.05;
+    final target = plan.kcal + exerciseBonus;
+    final left = target - kcal;
+    final over = left < -target * 0.05;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -193,10 +219,15 @@ class DaySummary extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('${fmt(kcal)} / ${fmt(plan.kcal)} kcal',
+                    Text('${fmt(kcal)} / ${fmt(target)} kcal',
                         style: theme.textTheme.titleLarge
                             ?.copyWith(fontWeight: FontWeight.w700)),
-                    Text('consumidas', style: theme.textTheme.bodySmall),
+                    Text(
+                        exerciseBonus > 0
+                            ? 'consumidas · meta ${fmt(plan.kcal)} + '
+                                '${fmt(exerciseBonus)} por ejercicio'
+                            : 'consumidas',
+                        style: theme.textTheme.bodySmall),
                   ],
                 ),
                 Text(
@@ -209,7 +240,7 @@ class DaySummary extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            _Bar(value: kcal / plan.kcal, color: over ? MagraColors.bad : null),
+            _Bar(value: kcal / target, color: over ? MagraColors.bad : null),
             const SizedBox(height: 12),
             _MacroRow('Proteína', protein, plan.protein, MagraColors.protein),
             _MacroRow('Carbohidratos', carbs, plan.carbs, MagraColors.carb),
