@@ -45,8 +45,8 @@
   etiqueta, aclaración, revisar/corregir cantidades y agregar. Permisos de
   cámara (iOS) y archivos/red (macOS). analyze sin issues; suite 102/102;
   build web OK.
-- M7 — Ejercicio MET + ayuno con avisos: IMPLEMENTADO, validación del
-  usuario PENDIENTE (requiere migración 0005). En Hoy: tarjeta Ejercicio
+- M7 — Ejercicio MET + ayuno con avisos: TERMINADO. Validación del usuario
+  APROBADA (migración 0005 aplicada; ejercicio y ayuno en Hoy). En Hoy: tarjeta Ejercicio
   (18 actividades MET, minutos, kcal netas con el peso actual, +50 % a la
   meta del día) y tarjeta Ayuno (12:12/14:10/16:8, hora de inicio,
   progreso, avisos de meta cumplida y > 24 h, terminar o borrar; bloqueado
