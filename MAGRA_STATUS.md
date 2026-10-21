@@ -201,6 +201,20 @@
   build web OK. Rendimiento medido en Chromium sin GPU del entorno: dibujo
   ~13 ms por cuadro; la subida de la imagen al GPU emulado limita a ~12–16
   cuadros/s ahí: validar fluidez en el iPhone.
+- U9 — Maniquí realista renderizado (aprobado por el usuario): IMPLEMENTADO,
+  validación PENDIENTE. tools/avatar: avatar.py arma en Blender un maniquí
+  adulto sin rostro y gris a partir de MakeHuman (CC0): camiseta con vivos,
+  calzas (mujer) o jogger (hombre), zapatillas, pelo esculpido (moño en la
+  mujer). render_demos.py toma las poses exportadas desde la app
+  (test/tool/export_demos_test.dart → anims.json) y renderiza cada uno de
+  los 54 movimientos en mujer y hombre y en 3 vistas fijas (frente, lado ¾,
+  espalda), con implementos, sombras y músculos teñidos, como hojas WebP
+  con transparencia en assets/demos (+ miniaturas). App: DemoPlayer
+  (demo_player.dart) muestra la hoja según la fase (pausa, vuelta y fundido
+  entre cuadros), con pausa/reanudar, reiniciar, barra paso a paso,
+  Frente/Lado/Espalda y figura mujer/hombre; reducir movimiento la deja
+  quieta con la barra; si falta una imagen usa el maniquí dibujado (U8).
+  Se quitó el giro libre (vistas fijas, pedido del usuario).
 
 ## PAUSA (21-oct-2026)
 

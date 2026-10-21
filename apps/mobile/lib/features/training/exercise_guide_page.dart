@@ -8,6 +8,8 @@ import '../../core/formulas/formulas.dart' show Sex;
 import '../../core/recommendation/exercise_guides.dart';
 import '../../core/theme.dart';
 import 'body_map.dart';
+import 'demo_assets.dart';
+import 'demo_player.dart';
 import 'mannequin.dart';
 import 'mannequin_poses.dart';
 
@@ -216,14 +218,18 @@ class ExerciseThumb extends ConsumerWidget {
         child: moves.isEmpty
             ? const Icon(Icons.fitness_center, color: MagraColors.lime, size: 22)
             : demo is AnimatedDemo
-                ? MannequinView(
-                    anim: demo.anim,
-                    sex: sex,
-                    primary: split.primary,
-                    secondary: split.secondary,
-                    height: size - 6,
-                    controls: false,
-                    animate: false,
+                ? Image.asset(
+                    demoThumb(moves.first.name, female: (ref.watch(avatarChoiceProvider) ?? sex) == Sex.female),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, e, st) => MannequinView(
+                      anim: demo.anim,
+                      sex: sex,
+                      primary: split.primary,
+                      secondary: split.secondary,
+                      height: size - 6,
+                      controls: false,
+                      animate: false,
+                    ),
                   )
                 : BodyThumb(sex: sex, primary: split.primary, secondary: split.secondary),
       ),
@@ -258,7 +264,8 @@ class MuscleFigure extends StatelessWidget {
         border: Border.all(color: MagraColors.outlineSoft),
       ),
       child: demo is AnimatedDemo
-          ? MannequinView(
+          ? DemoPlayer(
+              name: name!,
               anim: demo.anim,
               sex: sex,
               primary: split.primary,

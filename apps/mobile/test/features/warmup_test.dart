@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magra/core/recommendation/warmup.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
+import 'package:magra/features/training/demo_player.dart';
 import 'package:magra/features/training/guided_routine_page.dart';
 import 'package:magra/features/training/mannequin.dart';
 
@@ -170,7 +171,7 @@ void main() {
     ));
     await tester.pump();
     expect(find.text('Estiramiento de cuádriceps'), findsWidgets);
-    expect(find.byType(MannequinView), findsOneWidget);
+    expect(find.byType(DemoPlayer), findsOneWidget);
     await tester.tap(find.text('Ver fotos del movimiento'));
     await tester.pump();
     expect(find.byType(Image), findsWidgets);

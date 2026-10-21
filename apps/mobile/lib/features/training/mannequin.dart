@@ -185,6 +185,16 @@ class MoveAnim {
     return 1 - (phase - hs - move - he) / move;
   }
 
+  /// Avance 0–1 de la primera a la última pose en [phase] (sin bucle).
+  double progressAt(double phase) => _progress(phase);
+
+  /// El instante del primer tramo (ida) en que el avance vale [p].
+  double phaseForProgress(double p) {
+    final (hs, he) = _holds;
+    final move = (1 - hs - he) / 2;
+    return hs + p.clamp(0.0, 1.0) * move;
+  }
+
   /// La pose en el instante [phase] (0–1) del ciclo.
   Pose at(double phase) {
     if (keys.length == 1) return keys.first;
@@ -691,8 +701,8 @@ class _MannequinViewState extends ConsumerState<MannequinView> with SingleTicker
             spacing: 12,
             alignment: WrapAlignment.center,
             children: [
-              _Dot(color: primaryColor, label: 'Trabaja más'),
-              _Dot(color: secondaryColor, label: 'Ayuda'),
+              LegendDot(color: primaryColor, label: 'Trabaja más'),
+              LegendDot(color: secondaryColor, label: 'Ayuda'),
             ],
           ),
         ],
@@ -709,8 +719,9 @@ class _MannequinViewState extends ConsumerState<MannequinView> with SingleTicker
   }
 }
 
-class _Dot extends StatelessWidget {
-  const _Dot({required this.color, required this.label});
+/// Punto de color con su etiqueta (leyenda de músculos).
+class LegendDot extends StatelessWidget {
+  const LegendDot({super.key, required this.color, required this.label});
 
   final Color color;
   final String label;

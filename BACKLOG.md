@@ -85,3 +85,6 @@ activo.
   modelos 3D con rigging y animaciones de captura de movimiento (artista
   3D o biblioteca licenciada) para un acabado tipo render de la referencia;
   guardar la elección de figura del visor en el perfil.
+- Demostraciones (U9): cuadros a mayor resolución en tablet; ajustar a mano
+  poses puntuales que se vean forzadas en alguna vista; regenerar con
+  tools/avatar cuando se agreguen ejercicios.
