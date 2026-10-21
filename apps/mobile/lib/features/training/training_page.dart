@@ -8,6 +8,7 @@ import '../../core/recommendation/training_plan.dart';
 import '../../core/widgets/hero_card.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
+import 'exercise_guide_page.dart';
 import 'workout_session_page.dart';
 
 /// Pestaña Entreno: la rutina que MAGRA recomienda al usuario.
@@ -82,15 +83,14 @@ class TrainingPlanView extends StatelessWidget {
                     style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
                 for (final e in d.exercises)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(e.name),
-                        Text(e.prescription, style: theme.textTheme.bodySmall),
-                      ],
-                    ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: ExerciseThumb(exercise: e.name),
+                    title: Text(e.name),
+                    subtitle: Text(e.prescription),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => openExerciseGuide(context, e.name,
+                        prescription: e.prescription),
                   ),
                 if (d.cardioMinutes > 0)
                   Text(

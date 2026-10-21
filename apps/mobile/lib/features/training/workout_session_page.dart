@@ -7,6 +7,7 @@ import '../../core/formulas/formulas.dart';
 import '../../core/recommendation/progression.dart';
 import '../../core/recommendation/training_plan.dart';
 import '../today/activity_log.dart';
+import 'exercise_guide_page.dart';
 
 /// Registrar una sesión de fuerza: cada serie con repeticiones y kilos,
 /// partiendo de la carga que MAGRA sugiere según el historial.
@@ -184,8 +185,26 @@ class _WorkoutSessionPageState extends ConsumerState<WorkoutSessionPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(ex.name, style: theme.textTheme.titleMedium),
-            Text(ex.prescription, style: theme.textTheme.bodySmall),
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => openExerciseGuide(context, ex.name, prescription: ex.prescription),
+              child: Row(
+                children: [
+                  ExerciseThumb(exercise: ex.name, size: 44),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(ex.name, style: theme.textTheme.titleMedium),
+                        Text(ex.prescription, style: theme.textTheme.bodySmall),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.info_outline, color: theme.colorScheme.primary),
+                ],
+              ),
+            ),
             const SizedBox(height: 6),
             Text(
               t.kg != null && t.kg! > 0

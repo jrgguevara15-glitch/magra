@@ -115,15 +115,20 @@
 
 ## Mejoras pedidas por el usuario (antes de M18)
 
-- U1 — Nueva interfaz "energía neón" (elegida por el usuario): IMPLEMENTADO,
-  validación PENDIENTE. Tema oscuro #0B0F1A con lima #B6FF3B, violeta
+- U1 — Nueva interfaz "energía neón" (elegida por el usuario): TERMINADO,
+  validación del usuario APROBADA. Tema oscuro #0B0F1A con lima #B6FF3B, violeta
   #7C5CFF y cian; botones píldora, tarjetas redondeadas, campos rellenos,
   wordmark en degradado, cambio de pestaña animado, anillo de calorías y
   barras animadas en Hoy, tarjetas destacadas con degradado y efecto al
   tocar/pasar el mouse (Entreno, Coach), navegación lateral con nombres
   en PC (≥ 1.200 px). analyze sin issues; suite 191/191; build web OK.
-- U2 — Ejercicios tocables con imágenes (Free Exercise DB, dominio
-  público), pasos, equipo, músculos y errores comunes: PENDIENTE.
+- U2 — Ejercicios tocables con imágenes: IMPLEMENTADO, validación
+  PENDIENTE. 28 movimientos con fotos de Free Exercise DB (dominio
+  público, 56 imágenes reducidas a 600 px, 1,7 MB en assets/exercises),
+  ficha en español con fotos que se alternan (inicio/fin), equipo,
+  músculos, pasos y errores comunes; miniatura y acceso desde la rutina y
+  desde la sesión. Prueba que todo ejercicio del motor tiene ficha.
+  analyze sin issues; suite 194/194; build web OK.
 - U3 — Calentamiento y estiramiento guiados con temporizador: PENDIENTE.
 - U4 — Recetas con condimentos, aceites y grasas saludables: PENDIENTE.
 
