@@ -8,6 +8,7 @@ import 'package:magra/app.dart';
 import 'package:magra/core/data/providers.dart';
 import 'package:magra/core/data/repositories.dart';
 import 'package:magra/core/formulas/formulas.dart';
+import 'package:magra/core/recommendation/motivation.dart';
 import 'package:magra/core/recommendation/progression.dart';
 import 'package:magra/core/recommendation/weekly_adjustment.dart';
 import 'package:magra/features/coach/coach.dart';
@@ -133,6 +134,20 @@ class FakeFoodLog implements FoodLogRepository {
   Future<void> delete(String id) async => items.removeWhere((e) => e.id == id);
 
   @override
+  Future<Map<DateTime, DayTotals>> dailyTotals(DateTime from, DateTime to) async {
+    final out = <DateTime, DayTotals>{};
+    for (final e in items) {
+      final d = DateUtils.dateOnly(e.date);
+      if (d.isBefore(DateUtils.dateOnly(from)) || d.isAfter(DateUtils.dateOnly(to))) {
+        continue;
+      }
+      final prev = out[d];
+      out[d] = DayTotals((prev?.kcal ?? 0) + e.kcal, (prev?.protein ?? 0) + e.protein);
+    }
+    return out;
+  }
+
+  @override
   Future<Map<DateTime, double>> dailyKcal(DateTime from, DateTime to) async {
     final out = <DateTime, double>{};
     for (final e in items) {
@@ -144,6 +159,20 @@ class FakeFoodLog implements FoodLogRepository {
     }
     return out;
   }
+}
+
+class FakeBank implements CalorieBankRepository {
+  final Map<DateTime, int> items = {};
+
+  @override
+  Future<Map<DateTime, int>> uses(DateTime from, DateTime to) async => {
+        for (final e in items.entries)
+          if (!e.key.isBefore(from) && !e.key.isAfter(to)) e.key: e.value,
+      };
+
+  @override
+  Future<void> use(DateTime day, int kcal) async =>
+      kcal <= 0 ? items.remove(day) : items[day] = kcal;
 }
 
 class FakeKcalAdjustments implements KcalAdjustmentRepository {
@@ -489,6 +518,7 @@ Widget testApp({
   WorkoutRepository? workouts,
   ProgressPhotoRepository? photos,
   FakeCoach? coach,
+  FakeBank? bank,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -506,6 +536,7 @@ Widget testApp({
       workoutRepositoryProvider.overrideWithValue(workouts ?? FakeWorkouts()),
       progressPhotoRepositoryProvider.overrideWithValue(photos ?? FakePhotos()),
       coachRepositoryProvider.overrideWithValue(coach ?? FakeCoach()),
+      calorieBankRepositoryProvider.overrideWithValue(bank ?? FakeBank()),
       coachClientProvider.overrideWithValue(coach ?? FakeCoach()),
       menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),
       productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),

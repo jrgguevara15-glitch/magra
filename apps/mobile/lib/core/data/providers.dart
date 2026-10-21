@@ -12,6 +12,7 @@ import '../../features/today/activity_log.dart';
 import '../../features/today/barcode.dart';
 import '../../features/today/food_catalog.dart';
 import '../../features/today/photo_analysis.dart';
+import '../recommendation/motivation.dart';
 import '../recommendation/progression.dart';
 import '../recommendation/weekly_adjustment.dart';
 import 'repositories.dart';
@@ -42,6 +43,8 @@ final coachRepositoryProvider =
     Provider<CoachRepository>((ref) => throw UnimplementedError());
 final coachClientProvider =
     Provider<CoachClient>((ref) => throw UnimplementedError());
+final calorieBankRepositoryProvider =
+    Provider<CalorieBankRepository>((ref) => throw UnimplementedError());
 final menuRepositoryProvider =
     Provider<MenuRepository>((ref) => throw UnimplementedError());
 final menuGeneratorProvider =
@@ -150,4 +153,28 @@ final coachMessagesProvider = FutureProvider<List<CoachMessage>>((ref) async {
 final coachConsentProvider = FutureProvider<bool>((ref) async {
   if (ref.watch(signedInProvider).value != true) return false;
   return ref.watch(coachRepositoryProvider).hasConsent();
+});
+
+DateTime _todayOf(Ref ref) {
+  final now = ref.watch(clockProvider)();
+  return DateTime(now.year, now.month, now.day);
+}
+
+/// Calorías y proteína por día de los últimos 120 días (rachas y logros).
+final foodHistoryProvider = FutureProvider<Map<DateTime, DayTotals>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const {};
+  final today = _todayOf(ref);
+  return ref
+      .watch(foodLogRepositoryProvider)
+      .dailyTotals(today.subtract(const Duration(days: 120)), today);
+});
+
+/// Lo usado del banco de calorías esta semana.
+final bankUsesProvider = FutureProvider<Map<DateTime, int>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const {};
+  final today = _todayOf(ref);
+  final monday = DateTime(today.year, today.month, today.day - (today.weekday - 1));
+  return ref
+      .watch(calorieBankRepositoryProvider)
+      .uses(monday, monday.add(const Duration(days: 6)));
 });

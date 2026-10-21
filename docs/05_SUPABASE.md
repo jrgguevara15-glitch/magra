@@ -17,7 +17,7 @@ la base de datos nunca van en el repositorio ni en la app.
    `0006_kcal_adjustments.sql` (M8), `0007_custom_products.sql` (M9b),
    `0008_menus.sql` (M11), `0009_workouts.sql` (M12),
    `0010_progress_photos.sql` (M13, crea el bucket privado
-   `progress-photos` y sus permisos), `0011_coach.sql` (M15).
+   `progress-photos` y sus permisos), `0011_coach.sql` (M15), `0012_calorie_bank.sql` (M16).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
 Cada migración se puede volver a ejecutar sin romper nada.
@@ -71,7 +71,7 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migraciones 0001 a 0011 idempotentes.
+- Migraciones 0001 a 0012 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
@@ -105,6 +105,8 @@ BACKLOG.md).
 - Función ai-coach: compila contra los tipos del SDK; 4 pruebas (normaliza
   la conversación, reglas y datos en el system, revisión semanal,
   rechazo/vacío, sesión). Exige consentimiento antes de llamar a la IA.
+- Banco de calorías (M16): un uso por día (upsert), 1–500 kcal; B no ve
+  ni modifica lo de A.
 - Función ai-menu: compila contra los tipos del SDK; 6 pruebas (petición,
   prompt con metas/alergias/gustos/variedad, 7 llamadas en paralelo,
   respuestas incompletas o rechazadas, saneo, sesión).

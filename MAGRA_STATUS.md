@@ -105,7 +105,13 @@
   resumen de los datos (sin nombre ni correo), sugerencias, revisión
   semanal (destacada domingo/lunes), reintentar, borrar conversación y
   dejar de compartir. analyze sin issues; suite 182/182; build web OK.
-- M10, M14 y M16 en adelante — NO ABIERTOS.
+- M16 — Rachas, logros, semáforo y banco de calorías: IMPLEMENTADO,
+  validación del usuario PENDIENTE (requiere migración 0012). Hoy:
+  rachas (registro, proteína, semanas entrenando), semáforo en el
+  catálogo y en lo registrado, banco de la semana (usar/dejar de usar).
+  Progreso: logros con avance. analyze sin issues; suite 191/191; build
+  web OK.
+- M10, M14 y M17 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 

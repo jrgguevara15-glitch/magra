@@ -129,6 +129,25 @@ Código: `lib/core/recommendation/progression.dart`.
 - Al terminar, los minutos de fuerza van a Ejercicio en Hoy como pesas
   moderadas (intensas si es avanzado), con el peso actual.
 
+## Motivación (M16)
+
+Código: `lib/core/recommendation/motivation.dart`.
+
+- Día registrado: ≥ 60 % del mínimo seguro anotado. Día con proteína:
+  ≥ 90 % de la meta. Rachas hasta hoy; si hoy aún no cumple, hasta ayer.
+- Semanas entrenando: semanas (lunes) con las sesiones del plan; la
+  semana en curso cuenta solo si ya se cumplió.
+- Semáforo (kcal por g): verde < 1,5, amarillo ≤ 4, rojo > 4. Líquidos
+  (kcal por ml): verde ≤ 0,2, amarillo ≤ 0,4, rojo > 0,4. Con ≥ 10 g de
+  proteína por 100 kcal sube un nivel. En unidades no se calcula.
+- Banco: por cada día de la semana (lunes a ayer) registrado, comiendo
+  bajo la meta y sin bajar del mínimo seguro, guarda la diferencia (máx.
+  150/día); se descuenta lo usado; se usa hasta 500 en un día; no pasa a
+  la semana siguiente. No aplica con plan de mantención.
+- Logros: rachas de registro (7/30) y proteína (7), grasa (−1/−5 kg),
+  peso (−5 kg), cintura (−5 cm), primera etapa (−10 % del peso),
+  entrenos (10/50), fotos (primeras y 2 meses).
+
 ## Menú semanal (M11)
 
 - El motor fija las comidas (hora, papel respecto del entreno, kcal y

@@ -9,6 +9,7 @@ import '../../core/theme.dart';
 import '../profile/profile_form.dart';
 import '../profile/user_profile.dart';
 import '../questionnaire/questionnaire_page.dart';
+import 'achievements_card.dart';
 import 'measurement.dart';
 import 'measurement_form.dart';
 import 'progress_photos_card.dart';
@@ -98,6 +99,8 @@ class _Progress extends ConsumerWidget {
           WeeklyCheckCard(profile: profile, measurements: list),
           const SizedBox(height: 16),
           ProgressPhotosCard(profile: profile, measurements: list),
+          const SizedBox(height: 16),
+          AchievementsCard(profile: profile, measurements: list),
           const SizedBox(height: 16),
           _History(profile: profile, measurements: list),
         ],

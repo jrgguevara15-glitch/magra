@@ -8,6 +8,7 @@ import '../../features/today/activity_log.dart';
 import '../../features/today/barcode.dart';
 import '../../features/today/food_catalog.dart';
 import '../format.dart';
+import '../recommendation/motivation.dart';
 import '../recommendation/progression.dart';
 import '../recommendation/weekly_adjustment.dart';
 
@@ -50,6 +51,17 @@ abstract interface class FoodLogRepository {
 
   /// Calorías registradas por día entre [from] y [to] (ambos incluidos).
   Future<Map<DateTime, double>> dailyKcal(DateTime from, DateTime to);
+
+  /// Calorías y proteína por día entre [from] y [to] (ambos incluidos).
+  Future<Map<DateTime, DayTotals>> dailyTotals(DateTime from, DateTime to);
+}
+
+/// Lo usado del banco de calorías cada día.
+abstract interface class CalorieBankRepository {
+  Future<Map<DateTime, int>> uses(DateTime from, DateTime to);
+
+  /// Fija lo usado ese día (0 = no usar).
+  Future<void> use(DateTime day, int kcal);
 }
 
 /// Productos que el usuario creó porque no estaban en Open Food Facts.
@@ -234,6 +246,50 @@ class SupabaseFoodLogRepository implements FoodLogRepository {
     }
     return out;
   }
+
+  @override
+  Future<Map<DateTime, DayTotals>> dailyTotals(DateTime from, DateTime to) async {
+    final rows = await _client
+        .from('food_entries')
+        .select('eaten_on, kcal, protein_g')
+        .gte('eaten_on', isoDate(from))
+        .lte('eaten_on', isoDate(to));
+    final out = <DateTime, DayTotals>{};
+    for (final r in rows) {
+      final day = DateTime.parse(r['eaten_on'] as String);
+      final prev = out[day];
+      out[day] = DayTotals(
+        (prev?.kcal ?? 0) + (r['kcal'] as num).toDouble(),
+        (prev?.protein ?? 0) + (r['protein_g'] as num? ?? 0).toDouble(),
+      );
+    }
+    return out;
+  }
+}
+
+class SupabaseCalorieBankRepository implements CalorieBankRepository {
+  SupabaseCalorieBankRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<Map<DateTime, int>> uses(DateTime from, DateTime to) async {
+    final rows = await _client
+        .from('calorie_bank_uses')
+        .select('used_on, kcal')
+        .gte('used_on', isoDate(from))
+        .lte('used_on', isoDate(to));
+    return {
+      for (final r in rows)
+        DateTime.parse(r['used_on'] as String): (r['kcal'] as num).toInt(),
+    };
+  }
+
+  @override
+  Future<void> use(DateTime day, int kcal) => kcal <= 0
+      ? _client.from('calorie_bank_uses').delete().eq('used_on', isoDate(day))
+      : _client.from('calorie_bank_uses').upsert(
+          {'used_on': isoDate(day), 'kcal': kcal}, onConflict: 'user_id,used_on');
 }
 
 class SupabaseKcalAdjustmentRepository implements KcalAdjustmentRepository {

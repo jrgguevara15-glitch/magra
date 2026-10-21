@@ -4,7 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
+import '../../core/formulas/formulas.dart';
+import '../../core/recommendation/motivation.dart';
 import '../../core/recommendation/nutrition_plan.dart';
+import '../../core/recommendation/training_plan.dart';
 import '../../core/theme.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
@@ -13,6 +16,7 @@ import 'activity_log.dart';
 import 'barcode.dart';
 import 'custom_product_form.dart';
 import 'food_catalog.dart';
+import 'motivation_cards.dart';
 import 'photo_analysis.dart';
 
 /// Pestaña Hoy: lo que comió el usuario contra su plan.
@@ -93,6 +97,12 @@ class _TodayViewState extends ConsumerState<TodayView> {
     final exercise = ref.watch(exerciseLogProvider(_day)).value ?? const [];
     final bonus = exerciseBonusFor(exercise);
     final q = inputs.questionnaire;
+    final isToday = _day == _today;
+    final floor = safeFloorKcal(inputs.profile.sex);
+    final history = ref.watch(foodHistoryProvider).value ?? const {};
+    final uses = ref.watch(bankUsesProvider).value ?? const {};
+    final workouts = ref.watch(workoutsProvider).value ?? const [];
+    final bankToday = isToday ? (uses[_today] ?? 0) : 0;
     final theme = Theme.of(context);
 
     return PlanScroll(children: [
@@ -131,8 +141,23 @@ class _TodayViewState extends ConsumerState<TodayView> {
           ),
         ),
         data: (entries) {
-          _remainingKcal =
-              plan.kcal + bonus - entries.fold<double>(0, (a, e) => a + e.kcal);
+          _remainingKcal = plan.kcal + bonus + bankToday -
+              entries.fold<double>(0, (a, e) => a + e.kcal);
+          // Hoy se cuenta con lo que va registrado; los días pasados, del
+          // historial.
+          final live = {
+            ...history,
+            if (isToday)
+              _today: DayTotals(
+                entries.fold<double>(0, (a, e) => a + e.kcal),
+                entries.fold<double>(0, (a, e) => a + e.protein),
+              ),
+          };
+          final perWeek = recommendTraining(
+            questionnaire: q,
+            composition: inputs.composition,
+            age: inputs.age,
+          ).days.length;
           final blockReason =
               fastingBlockReason(questionnaire: q, age: inputs.age);
           final showFasting = _day == _today &&
@@ -142,8 +167,33 @@ class _TodayViewState extends ConsumerState<TodayView> {
           return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DaySummary(plan: plan, entries: entries, exerciseBonus: bonus),
+            DaySummary(
+              plan: plan,
+              entries: entries,
+              exerciseBonus: bonus,
+              bankKcal: bankToday.toDouble(),
+            ),
             const SizedBox(height: 8),
+            if (isToday) ...[
+              StreaksCard(
+                logDays: currentStreak((d) => loggedDay(live[d], floor), _today),
+                proteinDays: currentStreak((d) => proteinDay(live[d], plan.protein), _today),
+                trainingWeeks: trainingWeekStreak(
+                    [for (final w in workouts) w.date], perWeek, _today),
+              ),
+              if (!plan.maintenanceOnly)
+                BankCard(
+                  today: _today,
+                  available: bankAvailable(
+                    history: history,
+                    targetKcal: plan.kcal,
+                    floorKcal: floor,
+                    uses: uses,
+                    today: _today,
+                  ),
+                  usedToday: bankToday,
+                ),
+            ],
             if (showFasting)
               FastingCard(
                 blockReason: blockReason,
@@ -183,6 +233,7 @@ class DaySummary extends StatelessWidget {
     required this.plan,
     required this.entries,
     this.exerciseBonus = 0,
+    this.bankKcal = 0,
   });
 
   final NutritionPlan plan;
@@ -191,6 +242,9 @@ class DaySummary extends StatelessWidget {
   /// Calorías que suma el ejercicio del día.
   final double exerciseBonus;
 
+  /// Calorías del banco usadas hoy.
+  final double bankKcal;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -198,7 +252,7 @@ class DaySummary extends StatelessWidget {
     final protein = entries.fold<double>(0, (a, e) => a + e.protein);
     final carbs = entries.fold<double>(0, (a, e) => a + e.carbs);
     final fat = entries.fold<double>(0, (a, e) => a + e.fat);
-    final target = plan.kcal + exerciseBonus;
+    final target = plan.kcal + exerciseBonus + bankKcal;
     final left = target - kcal;
     final over = left < -target * 0.05;
     return Card(
@@ -220,10 +274,13 @@ class DaySummary extends StatelessWidget {
                         style: theme.textTheme.titleLarge
                             ?.copyWith(fontWeight: FontWeight.w700)),
                     Text(
-                        exerciseBonus > 0
-                            ? 'consumidas · meta ${fmt(plan.kcal)} + '
-                                '${fmt(exerciseBonus)} por ejercicio'
-                            : 'consumidas',
+                        [
+                          'consumidas',
+                          if (exerciseBonus > 0 || bankKcal > 0)
+                            'meta ${fmt(plan.kcal)}'
+                                '${exerciseBonus > 0 ? ' + ${fmt(exerciseBonus)} por ejercicio' : ''}'
+                                '${bankKcal > 0 ? ' + ${fmt(bankKcal)} del banco' : ''}',
+                        ].join(' · '),
                         style: theme.textTheme.bodySmall),
                   ],
                 ),
@@ -338,6 +395,11 @@ class _MealLog extends StatelessWidget {
               ListTile(
                 dense: true,
                 contentPadding: EdgeInsets.zero,
+                minLeadingWidth: 10,
+                leading: FoodLightDot(
+                  light: foodLight(
+                      kcal: e.kcal, protein: e.protein, quantity: e.quantity, unit: e.unit),
+                ),
                 title: Text(e.name),
                 subtitle: Text([
                   if (e.quantityLabel.isNotEmpty) e.quantityLabel,
@@ -978,6 +1040,11 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                           for (final f in results)
                             ListTile(
                               dense: true,
+                              minLeadingWidth: 10,
+                              leading: FoodLightDot(
+                                light: foodLight(
+                                    kcal: f.kcal, protein: f.protein, quantity: 100, unit: f.unit),
+                              ),
                               title: Text(f.name),
                               subtitle: Text(
                                   '${fmt(f.kcal)} kcal por 100 ${f.unit}'),
