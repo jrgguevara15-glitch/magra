@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/data/providers.dart';
+import '../../core/formulas/formulas.dart' show Sex;
 import '../../core/recommendation/exercise_guides.dart' show imageCredit;
 import '../../core/recommendation/warmup.dart';
 import '../../core/theme.dart';
@@ -15,17 +18,17 @@ Future<void> openGuidedRoutine(BuildContext context, String title, List<Drill> d
 
 /// Rutina guiada paso a paso: foto animada, temporizador por ejercicio
 /// (o repeticiones), avance solo al terminar y controles para saltar.
-class GuidedRoutinePage extends StatefulWidget {
+class GuidedRoutinePage extends ConsumerStatefulWidget {
   const GuidedRoutinePage({super.key, required this.title, required this.drills});
 
   final String title;
   final List<Drill> drills;
 
   @override
-  State<GuidedRoutinePage> createState() => _GuidedRoutinePageState();
+  ConsumerState<GuidedRoutinePage> createState() => _GuidedRoutinePageState();
 }
 
-class _GuidedRoutinePageState extends State<GuidedRoutinePage> {
+class _GuidedRoutinePageState extends ConsumerState<GuidedRoutinePage> {
   int _index = 0;
   int _left = 0;
   bool _running = false;
@@ -121,8 +124,15 @@ class _GuidedRoutinePageState extends State<GuidedRoutinePage> {
                 Text('${_index + 1} de $total', style: theme.textTheme.labelLarge),
                 Text(_drill.name, style: theme.textTheme.headlineSmall),
                 const SizedBox(height: 12),
+                if (_drill.muscles.isNotEmpty)
+                  MuscleFigure(
+                    key: ValueKey('fig$_index'),
+                    sex: ref.watch(profileProvider).value?.sex ?? Sex.male,
+                    muscles: _drill.muscles,
+                    height: 200,
+                  ),
                 if (_drill.images.isNotEmpty)
-                  MoveFrames(key: ValueKey(_index), images: _drill.images, height: 200),
+                  MovementPhotos(key: ValueKey('ph$_index'), images: _drill.images),
                 const SizedBox(height: 12),
                 Text(_drill.cue, style: theme.textTheme.bodyLarge),
                 const SizedBox(height: 16),

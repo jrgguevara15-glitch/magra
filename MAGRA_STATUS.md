@@ -138,7 +138,8 @@
   automático, repeticiones con "Listo", saltar y lista. En Entreno: "1 ·
   Calentar" / "2 · Empezar sesión", botones por día y "Estirar" al
   terminar la sesión. analyze sin issues; suite 200/200; build web OK.
-- U4 — Recetas con sazón saludable: IMPLEMENTADO, validación PENDIENTE
+- U4 — Recetas con sazón saludable: TERMINADO, validación del usuario
+  APROBADA
   (requiere volver a desplegar ai-menu). Cada plato trae "Sazón
   saludable": 2–5 condimentos, aceites o grasas con cantidad casera y
   consejo (oliva extra virgen, palta, frutos secos, semillas, ajo, comino,
@@ -148,8 +149,8 @@
   anteriores siguen funcionando. analyze sin issues; suite 202/202;
   ai-menu 7 pruebas; build web OK.
 
-- U5 — Pantallas resumidas (opción A, índice con tarjetas): IMPLEMENTADO,
-  validación PENDIENTE. SectionList: subtítulos tocables (chips) que
+- U5 — Pantallas resumidas (opción A, índice con tarjetas): TERMINADO,
+  validación del usuario APROBADA. SectionList: subtítulos tocables (chips) que
   abren y llevan a cada sección; cada sección muestra un resumen de una
   línea y se abre/cierra con un toque. Hoy (Comidas abierta; Rachas,
   Ayuno, Ejercicio, Banco), Plan (Comidas y horarios abierta; Por qué,
@@ -159,11 +160,17 @@
   Coach ya estaban divididos (Menú/Compras, chat). analyze sin issues;
   suite 203/203; build web OK. Maqueta:
   https://claude.ai/artifact/4oPHq3QYMfxpxKBftZeK5f
-- U6 — Figura anatómica sin rostro (hombre/mujer según el sexo del
-  usuario), giro frente↔espalda animado y músculos trabajados en rojo
-  (secundarios en naranja): ELEGIDA por el usuario, PENDIENTE. No hay
-  generación de imágenes/3D con IA en este entorno; un 360° real por
-  ejercicio requeriría una biblioteca 3D licenciada.
+- U6 — Figura anatómica: IMPLEMENTADO, validación PENDIENTE. body_map.dart:
+  figura vectorial sin rostro de hombre o mujer según el perfil, 16 zonas
+  musculares (8 de frente, 8 de espalda), principales en rojo con brillo y
+  secundarias en naranja; empieza mirando lo más trabajado y gira con el
+  dedo (arrastre), con un toque o con Frente/Espalda/360. En la ficha de
+  cada ejercicio y en el calentamiento/estiramiento guiado (músculos por
+  ejercicio); miniaturas de la rutina también con la figura. Las fotos
+  reales quedan ocultas tras "Ver fotos del movimiento". Sin IA de
+  imágenes/3D en este entorno: un 360° real por ejercicio requeriría una
+  biblioteca 3D licenciada (BACKLOG). analyze sin issues; suite 206/206;
+  build web OK.
 
 ## PAUSA (21-oct-2026)
 

@@ -11,6 +11,7 @@ class Drill {
     this.reps,
     this.perSide = false,
     required this.cue,
+    this.muscles = const [],
   });
 
   final String name;
@@ -23,6 +24,9 @@ class Drill {
 
   /// Cómo hacerlo, en una o dos frases.
   final String cue;
+
+  /// Zonas que trabaja o estira (las primeras, las principales).
+  final List<String> muscles;
 
   List<String> get images => imageId == null
       ? const []
@@ -71,48 +75,50 @@ List<Drill> warmUp({
           ? (gym ? 'Bicicleta o elíptica suave' : 'Caminata rápida o marcha en el lugar')
           : (gym ? 'Bicicleta, remo o trote suave' : 'Trote suave en el lugar'),
       seconds: 150,
+      muscles: const ['Cuádriceps', 'Pantorrillas', 'Glúteos'],
       cue: 'Ritmo cómodo: que puedas hablar. Sube de a poco la temperatura del cuerpo.',
     ),
-    const Drill('Círculos de brazos', imageId: 'Arm_Circles', seconds: 30,
+    const Drill('Círculos de brazos', muscles: ['Hombros'], imageId: 'Arm_Circles', seconds: 30,
         cue: 'Brazos estirados a los lados, círculos pequeños que se agrandan; cambia de sentido a la mitad.'),
-    const Drill('Rotación de tronco', imageId: 'Torso_Rotation', seconds: 30,
+    const Drill('Rotación de tronco', muscles: ['Core (oblicuos)', 'Espalda baja'], imageId: 'Torso_Rotation', seconds: 30,
         cue: 'Pies fijos, gira el tronco a un lado y al otro de forma controlada.'),
     if (!injured.contains(Injury.wrist))
-      const Drill('Gato-vaca', imageId: 'Cat_Stretch', reps: 8,
+      const Drill('Gato-vaca', muscles: ['Espalda baja', 'Core'], imageId: 'Cat_Stretch', reps: 8,
           cue: 'En cuatro apoyos, redondea la espalda y luego arquéala suave, siguiendo la respiración.'),
     if (lower) ...[
-      const Drill('Círculos de cadera', imageId: 'Standing_Hip_Circles', seconds: 30,
+      const Drill('Círculos de cadera', muscles: ['Glúteos', 'Core'], imageId: 'Standing_Hip_Circles', seconds: 30,
           cue: 'Manos en la cintura, dibuja círculos amplios con la cadera; cambia de sentido.'),
-      const Drill('Círculos de tobillos', imageId: 'Ankle_Circles', seconds: 15, perSide: true,
+      const Drill('Círculos de tobillos', muscles: ['Pantorrillas'], imageId: 'Ankle_Circles', seconds: 15, perSide: true,
           cue: 'Apoyado en una pierna (o sentado), gira el tobillo en ambos sentidos.'),
       if (!injured.contains(Injury.knee) && !injured.contains(Injury.hip))
-        const Drill('El mejor estiramiento del mundo', imageId: 'Worlds_Greatest_Stretch',
+        const Drill('El mejor estiramiento del mundo', muscles: ['Glúteos', 'Isquiotibiales', 'Espalda baja', 'Hombros'], imageId: 'Worlds_Greatest_Stretch',
             reps: 4, perSide: true,
             cue: 'Zancada larga, mano al suelo por dentro del pie y gira el pecho con el otro brazo al techo.'),
       if (injured.contains(Injury.knee))
-        const Drill('Puente de glúteo', imageId: 'Butt_Lift_Bridge', reps: 12,
+        const Drill('Puente de glúteo', muscles: ['Glúteos', 'Isquiotibiales'], imageId: 'Butt_Lift_Bridge', reps: 12,
             cue: 'Activa glúteos sin cargar la rodilla: sube la cadera y aprieta arriba.')
       else ...[
-        const Drill('Sentadillas sin peso', imageId: 'Bodyweight_Squat', reps: 10,
+        const Drill('Sentadillas sin peso', muscles: ['Cuádriceps', 'Glúteos'], imageId: 'Bodyweight_Squat', reps: 10,
             cue: 'Lento y profundo hasta donde estés cómodo, talones apoyados.'),
-        const Drill('Puente de glúteo', imageId: 'Butt_Lift_Bridge', reps: 10,
+        const Drill('Puente de glúteo', muscles: ['Glúteos', 'Isquiotibiales'], imageId: 'Butt_Lift_Bridge', reps: 10,
             cue: 'Sube la cadera y aprieta los glúteos 1 segundo arriba.'),
       ],
     ],
     if (upper) ...[
       if (!injured.contains(Injury.shoulder) && !injured.contains(Injury.neck))
-        const Drill('Círculos de hombros', imageId: 'Shoulder_Circles', seconds: 30,
+        const Drill('Círculos de hombros', muscles: ['Hombros', 'Trapecio'], imageId: 'Shoulder_Circles', seconds: 30,
             cue: 'Sube los hombros a las orejas y gíralos hacia atrás, amplio y lento.'),
       Drill(
         q.equipment == Equipment.bodyweight ? 'Apertura de brazos (sin banda)' : 'Separación con banda',
         imageId: 'Band_Pull_Apart',
         reps: 15,
+        muscles: const ['Romboides', 'Hombros'],
         cue: q.equipment == Equipment.bodyweight
             ? 'Brazos al frente, ábrelos juntando los omóplatos atrás (la foto usa banda).'
             : 'Banda al frente a la altura del pecho, sepárala juntando los omóplatos.',
       ),
       if (!injured.contains(Injury.shoulder) && !injured.contains(Injury.wrist))
-        const Drill('Flexiones inclinadas', imageId: 'Incline_Push-Up', reps: 8,
+        const Drill('Flexiones inclinadas', muscles: ['Pectorales', 'Tríceps'], imageId: 'Incline_Push-Up', reps: 8,
             cue: 'Manos en un banco o pared, cuerpo recto, baja y sube controlado.'),
     ],
     const Drill('Series de aproximación', seconds: 60,
@@ -133,31 +139,31 @@ List<Drill> coolDown({
   return [
     if (lower) ...[
       if (!injured.contains(Injury.knee))
-        const Drill('Estiramiento de cuádriceps', imageId: 'Quad_Stretch', seconds: 30, perSide: true,
+        const Drill('Estiramiento de cuádriceps', muscles: ['Cuádriceps'], imageId: 'Quad_Stretch', seconds: 30, perSide: true,
             cue: 'De pie, lleva el talón al glúteo tomándolo con la mano; rodillas juntas, apóyate si hace falta.'),
-      const Drill('Estiramiento de isquiotibiales', imageId: 'Hamstring_Stretch', seconds: 30, perSide: true,
+      const Drill('Estiramiento de isquiotibiales', muscles: ['Isquiotibiales'], imageId: 'Hamstring_Stretch', seconds: 30, perSide: true,
           cue: 'Pierna estirada al frente, inclínate desde la cadera con la espalda recta hasta sentir tensión.'),
       if (injured.contains(Injury.knee))
-        const Drill('Rodilla al pecho', imageId: 'One_Knee_To_Chest', seconds: 30, perSide: true,
+        const Drill('Rodilla al pecho', muscles: ['Glúteos', 'Espalda baja'], imageId: 'One_Knee_To_Chest', seconds: 30, perSide: true,
             cue: 'Acostado, abraza una rodilla hacia el pecho y relaja la espalda baja.')
       else
-        const Drill('Flexor de cadera de rodillas', imageId: 'Kneeling_Hip_Flexor', seconds: 30, perSide: true,
+        const Drill('Flexor de cadera de rodillas', muscles: ['Cuádriceps', 'Aductores'], imageId: 'Kneeling_Hip_Flexor', seconds: 30, perSide: true,
             cue: 'Una rodilla en el suelo (sobre un cojín), lleva la cadera adelante y aprieta el glúteo de atrás.'),
-      const Drill('Glúteo y espalda baja', imageId: 'Knee_Across_The_Body', seconds: 30, perSide: true,
+      const Drill('Glúteo y espalda baja', muscles: ['Glúteos', 'Espalda baja'], imageId: 'Knee_Across_The_Body', seconds: 30, perSide: true,
           cue: 'Acostado, cruza la rodilla al lado contrario manteniendo los hombros apoyados.'),
       if (focus == SessionFocus.lower)
-        const Drill('Pantorrillas en la pared', imageId: 'Calf_Stretch_Hands_Against_Wall', seconds: 30,
+        const Drill('Pantorrillas en la pared', muscles: ['Pantorrillas'], imageId: 'Calf_Stretch_Hands_Against_Wall', seconds: 30,
             perSide: true, cue: 'Manos en la pared, pierna de atrás estirada y talón apoyado.'),
     ],
     if (upper) ...[
       if (!injured.contains(Injury.shoulder))
-        Drill('Pecho y hombro', imageId: 'Chest_And_Front_Of_Shoulder_Stretch', seconds: 30,
+        Drill('Pecho y hombro', muscles: ['Pectorales', 'Hombros'], imageId: 'Chest_And_Front_Of_Shoulder_Stretch', seconds: 30,
             perSide: focus == SessionFocus.upper,
             cue: 'Brazo apoyado en un marco de puerta, gira el cuerpo suave al lado contrario.'),
-      const Drill('Hombro cruzado', imageId: 'Shoulder_Stretch', seconds: 30, perSide: true,
+      const Drill('Hombro cruzado', muscles: ['Hombros', 'Romboides'], imageId: 'Shoulder_Stretch', seconds: 30, perSide: true,
           cue: 'Lleva un brazo cruzado al pecho y presiónalo suave con el otro.'),
       if (!injured.contains(Injury.knee))
-        const Drill('Postura del niño', imageId: 'Childs_Pose', seconds: 45,
+        const Drill('Postura del niño', muscles: ['Dorsales', 'Espalda baja'], imageId: 'Childs_Pose', seconds: 45,
             cue: 'De rodillas, siéntate en los talones y estira los brazos al frente; respira hacia la espalda.'),
     ],
     const Drill('Respiración para bajar pulsaciones', seconds: 60,
