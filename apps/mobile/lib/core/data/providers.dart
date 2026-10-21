@@ -43,6 +43,19 @@ final coachRepositoryProvider =
     Provider<CoachRepository>((ref) => throw UnimplementedError());
 final coachClientProvider =
     Provider<CoachClient>((ref) => throw UnimplementedError());
+final exerciseSwapRepositoryProvider =
+    Provider<ExerciseSwapRepository>((ref) => throw UnimplementedError());
+
+/// Cambios de ejercicios del usuario. Si la tabla aún no existe (falta la
+/// migración 0013), la rutina se muestra sin cambios.
+final exerciseSwapsProvider = FutureProvider<Map<String, String>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const {};
+  try {
+    return await ref.watch(exerciseSwapRepositoryProvider).all();
+  } catch (_) {
+    return const {};
+  }
+});
 final calorieBankRepositoryProvider =
     Provider<CalorieBankRepository>((ref) => throw UnimplementedError());
 final menuRepositoryProvider =

@@ -108,6 +108,20 @@ class FakeQuestionnaires implements QuestionnaireRepository {
   Future<void> save(Questionnaire q) async => saved = q;
 }
 
+class FakeSwaps implements ExerciseSwapRepository {
+  FakeSwaps([Map<String, String>? initial]) : items = {...?initial};
+  final Map<String, String> items;
+
+  @override
+  Future<Map<String, String>> all() async => {...items};
+
+  @override
+  Future<void> set(String original, String chosen) async => items[original] = chosen;
+
+  @override
+  Future<void> clear(String original) async => items.remove(original);
+}
+
 class FakeFoodLog implements FoodLogRepository {
   final List<FoodEntry> items = [];
   var _next = 0;
@@ -527,6 +541,7 @@ Widget testApp({
   ProgressPhotoRepository? photos,
   FakeCoach? coach,
   FakeBank? bank,
+  FakeSwaps? swaps,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -545,6 +560,7 @@ Widget testApp({
       progressPhotoRepositoryProvider.overrideWithValue(photos ?? FakePhotos()),
       coachRepositoryProvider.overrideWithValue(coach ?? FakeCoach()),
       calorieBankRepositoryProvider.overrideWithValue(bank ?? FakeBank()),
+      exerciseSwapRepositoryProvider.overrideWithValue(swaps ?? FakeSwaps()),
       coachClientProvider.overrideWithValue(coach ?? FakeCoach()),
       menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),
       productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),

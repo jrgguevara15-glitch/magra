@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/providers.dart';
+import '../../core/recommendation/exercise_alternatives.dart';
 import '../../core/recommendation/progression.dart';
 import '../../core/recommendation/training_plan.dart';
 import '../../core/widgets/hero_card.dart';
@@ -66,10 +67,14 @@ class _CoachViewState extends ConsumerState<CoachView> {
     final exercise = await safe(ref.read(exerciseLogProvider(today).future), const <ExerciseEntry>[]);
     final intake = await safe(ref.read(recentIntakeProvider.future), const <DateTime, double>{});
     final workouts = await safe(ref.read(workoutsProvider.future), const <WorkoutSession>[]);
-    final training = recommendTraining(
-      questionnaire: inputs.questionnaire,
-      composition: inputs.composition,
-      age: inputs.age,
+    final swaps = await safe(ref.read(exerciseSwapsProvider.future), const <String, String>{});
+    final training = applySwaps(
+      recommendTraining(
+        questionnaire: inputs.questionnaire,
+        composition: inputs.composition,
+        age: inputs.age,
+      ),
+      swaps,
     );
     return coachContext(
       inputs: inputs,

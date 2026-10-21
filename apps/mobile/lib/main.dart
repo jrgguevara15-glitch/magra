@@ -45,6 +45,8 @@ Future<void> main() async {
         coachClientProvider.overrideWithValue(SupabaseCoachClient(client)),
         calorieBankRepositoryProvider
             .overrideWithValue(SupabaseCalorieBankRepository(client)),
+        exerciseSwapRepositoryProvider
+            .overrideWithValue(SupabaseExerciseSwapRepository(client)),
         menuRepositoryProvider.overrideWithValue(SupabaseMenuRepository(client)),
         menuGeneratorProvider.overrideWithValue(SupabaseMenuGenerator(client)),
         photoAnalyzerProvider.overrideWithValue(SupabasePhotoAnalyzer(client)),

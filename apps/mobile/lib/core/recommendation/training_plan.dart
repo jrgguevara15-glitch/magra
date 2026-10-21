@@ -14,9 +14,16 @@ class Exercise {
     this.repMin = 10,
     this.repMax = 12,
     this.loadStep = 0,
+    this.original,
   });
 
   final String name;
+
+  /// Si el usuario lo cambió: el ejercicio que venía en la rutina.
+  final String? original;
+
+  /// Clave del ejercicio en la rutina (para guardar el cambio).
+  String get slot => original ?? name;
 
   /// Series × repeticiones y esfuerzo, p. ej. "3 × 10–12 · deja 2 en reserva".
   final String prescription;

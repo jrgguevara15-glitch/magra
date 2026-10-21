@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
+import '../../core/recommendation/exercise_alternatives.dart';
+import '../../core/recommendation/exercise_guides.dart' show guideFor;
 import '../../core/recommendation/progression.dart';
 import '../../core/recommendation/training_plan.dart';
 import '../../core/widgets/hero_card.dart';
@@ -15,18 +17,22 @@ import 'guided_routine_page.dart';
 import 'workout_session_page.dart';
 
 /// Pestaña Entreno: la rutina que MAGRA recomienda al usuario.
-class TrainingPage extends StatelessWidget {
+class TrainingPage extends ConsumerWidget {
   const TrainingPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final swaps = ref.watch(exerciseSwapsProvider).value ?? const {};
     return PlanGate(
       what: 'tu plan de entrenamiento',
       builder: (context, inputs) {
-        final plan = recommendTraining(
-          questionnaire: inputs.questionnaire,
-          composition: inputs.composition,
-          age: inputs.age,
+        final plan = applySwaps(
+          recommendTraining(
+            questionnaire: inputs.questionnaire,
+            composition: inputs.composition,
+            age: inputs.age,
+          ),
+          swaps,
         );
         return TrainingPlanView(plan: plan, inputs: inputs);
       },
@@ -78,7 +84,11 @@ class TrainingPlanView extends StatelessWidget {
                           leading: ExerciseThumb(exercise: e.name),
                           title: Text(e.name),
                           subtitle: Text(e.prescription),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: IconButton(
+                            tooltip: 'Cambiar ${e.name}',
+                            icon: const Icon(Icons.swap_horiz),
+                            onPressed: () => showExerciseSwap(context, e, inputs.questionnaire),
+                          ),
                           onTap: () => openExerciseGuide(context, e.name,
                               prescription: e.prescription),
                         ),
@@ -318,6 +328,115 @@ class _RoutineButtons extends StatelessWidget {
           label: Text('Estirar · ${routineMinutes(cool)} min'),
         ),
       ],
+    );
+  }
+}
+
+
+/// Hoja para cambiar un ejercicio de la rutina por otro parecido.
+Future<void> showExerciseSwap(BuildContext context, Exercise e, Questionnaire q) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _SwapSheet(exercise: e, questionnaire: q),
+    );
+
+class _SwapSheet extends ConsumerStatefulWidget {
+  const _SwapSheet({required this.exercise, required this.questionnaire});
+
+  final Exercise exercise;
+  final Questionnaire questionnaire;
+
+  @override
+  ConsumerState<_SwapSheet> createState() => _SwapSheetState();
+}
+
+class _SwapSheetState extends ConsumerState<_SwapSheet> {
+  bool _busy = false;
+  String? _error;
+
+  Future<void> _choose(String? chosen) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final e = widget.exercise;
+    try {
+      final repo = ref.read(exerciseSwapRepositoryProvider);
+      if (chosen == null || chosen == e.slot) {
+        await repo.clear(e.slot);
+      } else {
+        await repo.set(e.slot, chosen);
+      }
+      ref.invalidate(exerciseSwapsProvider);
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'No se pudo guardar el cambio. Revisa tu conexión '
+            '(o que la migración 0013 esté aplicada en Supabase).');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final e = widget.exercise;
+    final options = alternativesFor(e, widget.questionnaire)
+        .where((o) => o.name != e.slot)
+        .toList();
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Cambiar ${e.name}', style: theme.textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(
+                'Opciones que trabajan los mismos músculos, con tu equipo y '
+                'cuidando tus lesiones. Se mantienen las series y repeticiones; '
+                'el progreso del nuevo ejercicio parte de cero.',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              if (e.original != null)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: ExerciseThumb(exercise: e.original!),
+                  title: Text('Volver a ${e.original}'),
+                  subtitle: const Text('El de tu rutina original'),
+                  trailing: const Icon(Icons.undo),
+                  onTap: _busy ? null : () => _choose(null),
+                ),
+              for (final o in options)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: ExerciseThumb(exercise: o.name),
+                  title: Text(o.name),
+                  subtitle: Text(guideFor(o.name).isEmpty
+                      ? ''
+                      : '${guideFor(o.name).first.muscles.take(3).join(', ')} · ${guideFor(o.name).first.equipment}'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _busy ? null : () => _choose(o.name),
+                ),
+              if (options.isEmpty && e.original == null)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text('No hay otra opción parecida con tu equipo y tus cuidados.'),
+                ),
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

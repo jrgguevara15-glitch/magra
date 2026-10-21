@@ -591,4 +591,14 @@ const exerciseGuides = <String, List<GuideMove>>{
 };
 
 /// La ficha de un ejercicio (vacía si no existe).
-List<GuideMove> guideFor(String exercise) => exerciseGuides[exercise] ?? const [];
+List<GuideMove> guideFor(String exercise) {
+  final direct = exerciseGuides[exercise];
+  if (direct != null) return direct;
+  // Un movimiento suelto (p. ej. al sustituir un ejercicio de la rutina).
+  for (final list in exerciseGuides.values) {
+    for (final m in list) {
+      if (m.name == exercise) return [m];
+    }
+  }
+  return const [];
+}

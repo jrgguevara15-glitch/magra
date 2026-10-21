@@ -61,6 +61,13 @@ abstract interface class FoodLogRepository {
 }
 
 /// Lo usado del banco de calorías cada día.
+/// Ejercicios de la rutina que el usuario cambió (original → elegido).
+abstract interface class ExerciseSwapRepository {
+  Future<Map<String, String>> all();
+  Future<void> set(String original, String chosen);
+  Future<void> clear(String original);
+}
+
 abstract interface class CalorieBankRepository {
   Future<Map<DateTime, int>> uses(DateTime from, DateTime to);
 
@@ -279,6 +286,26 @@ class SupabaseFoodLogRepository implements FoodLogRepository {
     }
     return out;
   }
+}
+
+class SupabaseExerciseSwapRepository implements ExerciseSwapRepository {
+  SupabaseExerciseSwapRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<Map<String, String>> all() async {
+    final rows = await _client.from('exercise_swaps').select('original, chosen');
+    return {for (final r in rows) r['original'] as String: r['chosen'] as String};
+  }
+
+  @override
+  Future<void> set(String original, String chosen) => _client.from('exercise_swaps').upsert(
+      {'original': original, 'chosen': chosen, 'updated_at': DateTime.now().toUtc().toIso8601String()});
+
+  @override
+  Future<void> clear(String original) =>
+      _client.from('exercise_swaps').delete().eq('original', original);
 }
 
 class SupabaseCalorieBankRepository implements CalorieBankRepository {
