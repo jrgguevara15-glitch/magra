@@ -180,7 +180,9 @@ class _DemoPlayerState extends ConsumerState<DemoPlayer> with SingleTickerProvid
         height: widget.height,
         width: double.infinity,
         child: _sheet == null
-            ? const Center(child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2)))
+            ? Center(
+                child: Text('Cargando demostración…', style: Theme.of(context).textTheme.bodySmall),
+              )
             : CustomPaint(
                 painter: _SheetPainter(
                   sheet: _sheet!,
