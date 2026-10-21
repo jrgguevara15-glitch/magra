@@ -92,8 +92,9 @@
   sugerida por doble progresión, descarga tras 3 fallos, historial con
   borrar y calorías a Hoy. analyze sin issues; suite 169/169; build web
   OK.
-- M13 — Fotos de progreso y comparador: IMPLEMENTADO, validación del
-  usuario PENDIENTE (requiere migración 0010). Progreso: recordatorio cada
+- M13 — Fotos de progreso y comparador: TERMINADO. Validación del usuario
+  APROBADA (migración 0010; subir, ver y comparar). Publicado en Netlify
+  (https://magrafit.netlify.app) y probado en iPhone. Progreso: recordatorio cada
   30 días, subir frente/perfil/espalda por fecha a un bucket privado,
   última tanda, ver/borrar y comparar dos fechas con peso, cintura y %
   grasa de la medición más cercana. analyze sin issues; suite 176/176;
