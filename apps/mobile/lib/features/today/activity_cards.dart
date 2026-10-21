@@ -7,6 +7,7 @@ import '../../core/data/providers.dart';
 import '../../core/format.dart';
 import '../../core/formulas/formulas.dart';
 import '../../core/theme.dart';
+import '../training/outdoor_page.dart';
 import 'activity_log.dart';
 
 /// Ejercicio del día y cuánto suma a la meta.
@@ -53,7 +54,11 @@ class ExerciseCard extends ConsumerWidget {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
                 title: Text(e.name),
-                subtitle: Text('${e.minutes} min · ${fmt(e.kcalNet)} kcal'),
+                subtitle: Text([
+                  if (e.distanceKm != null) '${fmt(e.distanceKm, 2)} km',
+                  '${e.minutes} min',
+                  '${fmt(e.kcalNet)} kcal',
+                ].join(' · ')),
                 trailing: e.id == null
                     ? null
                     : IconButton(
@@ -82,6 +87,12 @@ class ExerciseCard extends ConsumerWidget {
               icon: const Icon(Icons.add),
               label: const Text('Agregar ejercicio'),
             ),
+            if (DateUtils.isSameDay(day, ref.watch(clockProvider)()))
+              TextButton.icon(
+                onPressed: () => openOutdoor(context, day: day, weightKg: weightKg),
+                icon: const Icon(Icons.directions_run),
+                label: const Text('Correr, caminar o bici con GPS'),
+              ),
           ],
         ),
       ),
@@ -434,4 +445,134 @@ class _FastingCardState extends ConsumerState<FastingCard> {
       ],
     ];
   }
+}
+
+
+/// Pasos del día contra la meta del plan. En el navegador se anotan a mano
+/// (el número sale de la app Salud o Google Fit del teléfono); la app
+/// instalada los leerá sola.
+class StepsCard extends ConsumerWidget {
+  const StepsCard({super.key, required this.day, required this.goal});
+
+  final DateTime day;
+  final int goal;
+
+  Future<void> _edit(BuildContext context, WidgetRef ref, int? current) async {
+    final value = await showDialog<int>(
+      context: context,
+      builder: (_) => _StepsDialog(current: current),
+    );
+    if (value == null) return;
+    try {
+      await ref.read(stepsRepositoryProvider).set(day, value);
+      ref.invalidate(stepsProvider(day));
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('No se pudo guardar. Revisa tu conexión (o la migración 0014).')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final steps = ref.watch(stepsProvider(day)).value;
+    final progress = steps == null ? 0.0 : (steps / goal).clamp(0.0, 1.0);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text('Pasos', style: theme.textTheme.titleMedium)),
+                Text(steps == null ? 'Meta ${fmt(goal)}' : '${fmt(steps)} / ${fmt(goal)}',
+                    style: theme.textTheme.bodySmall),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 10,
+                backgroundColor: MagraColors.outlineSoft,
+                color: progress >= 1 ? MagraColors.lime : MagraColors.cyan,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              steps == null
+                  ? 'Caminar suma: tu meta de hoy es ${fmt(goal)} pasos.'
+                  : steps >= goal
+                      ? '¡Cumpliste tu meta de pasos!'
+                      : 'Te faltan ${fmt(goal - steps)} pasos.',
+              style: theme.textTheme.bodySmall,
+            ),
+            TextButton.icon(
+              onPressed: () => _edit(context, ref, steps),
+              icon: const Icon(Icons.edit_outlined),
+              label: Text(steps == null ? 'Anotar pasos' : 'Corregir pasos'),
+            ),
+            Text(
+              'Los pasos ya están considerados en tu nivel de actividad: no suman '
+              'calorías extra a tu meta. En la app instalada se contarán solos.',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _StepsDialog extends StatefulWidget {
+  const _StepsDialog({this.current});
+
+  final int? current;
+
+  @override
+  State<_StepsDialog> createState() => _StepsDialogState();
+}
+
+class _StepsDialogState extends State<_StepsDialog> {
+  late final _ctrl = TextEditingController(text: widget.current?.toString() ?? '');
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: const Text('Pasos del día'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _ctrl,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Pasos', suffixText: 'pasos'),
+            ),
+            const SizedBox(height: 8),
+            const Text('Míralos en la app Salud (iPhone) o Google Fit (Android) y anótalos aquí.'),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () {
+              final v = int.tryParse(_ctrl.text.replaceAll(RegExp('[^0-9]'), ''));
+              if (v != null && v >= 0 && v <= 150000) Navigator.pop(context, v);
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      );
 }

@@ -170,11 +170,13 @@ class _TodayViewState extends ConsumerState<TodayView> {
                 entries.fold<double>(0, (a, e) => a + e.protein),
               ),
           };
-          final perWeek = recommendTraining(
+          final training = recommendTraining(
             questionnaire: q,
             composition: inputs.composition,
             age: inputs.age,
-          ).days.length;
+          );
+          final perWeek = training.days.length;
+          final steps = ref.watch(stepsProvider(_day)).value;
           final blockReason =
               fastingBlockReason(questionnaire: q, age: inputs.age);
           final showFasting = _day == _today &&
@@ -273,6 +275,14 @@ class _TodayViewState extends ConsumerState<TodayView> {
                     ? '+${fmt(bonus)} kcal a tu meta'
                     : 'Sin ejercicio anotado',
                 child: ExerciseCard(day: _day, weightKg: inputs.weightKg),
+              ),
+              PageSection(
+                title: 'Pasos',
+                icon: Icons.directions_walk,
+                summary: steps == null
+                    ? 'Meta: ${fmt(training.stepsStart)} pasos'
+                    : '${fmt(steps)} de ${fmt(training.stepsStart)} pasos',
+                child: StepsCard(day: _day, goal: training.stepsStart),
               ),
               if (isToday && !plan.maintenanceOnly)
                 PageSection(

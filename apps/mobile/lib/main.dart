@@ -47,6 +47,7 @@ Future<void> main() async {
             .overrideWithValue(SupabaseCalorieBankRepository(client)),
         exerciseSwapRepositoryProvider
             .overrideWithValue(SupabaseExerciseSwapRepository(client)),
+        stepsRepositoryProvider.overrideWithValue(SupabaseStepsRepository(client)),
         menuRepositoryProvider.overrideWithValue(SupabaseMenuRepository(client)),
         menuGeneratorProvider.overrideWithValue(SupabaseMenuGenerator(client)),
         photoAnalyzerProvider.overrideWithValue(SupabasePhotoAnalyzer(client)),

@@ -11,6 +11,7 @@ class ExerciseEntry {
     required this.met,
     required this.minutes,
     required this.kcalNet,
+    this.distanceKm,
   });
 
   /// Calcula las calorías netas con el peso actual del usuario.
@@ -39,6 +40,9 @@ class ExerciseEntry {
   /// (MET − 1) × peso × horas: lo que se quemó además del reposo.
   final double kcalNet;
 
+  /// Kilómetros medidos con GPS (carrera, caminata o bici al aire libre).
+  final double? distanceKm;
+
   factory ExerciseEntry.fromRow(Map<String, dynamic> row) => ExerciseEntry(
         id: row['id'] as String?,
         date: DateTime.parse(row['done_on'] as String),
@@ -47,6 +51,7 @@ class ExerciseEntry {
         met: (row['met'] as num).toDouble(),
         minutes: (row['minutes'] as num).toInt(),
         kcalNet: (row['kcal_net'] as num).toDouble(),
+        distanceKm: (row['distance_km'] as num?)?.toDouble(),
       );
 
   Map<String, dynamic> toRow() => {
@@ -56,6 +61,8 @@ class ExerciseEntry {
         'met': met,
         'minutes': minutes,
         'kcal_net': (kcalNet * 10).round() / 10,
+        // Solo si hay distancia: así no depende de la migración 0014 el resto.
+        if (distanceKm != null) 'distance_km': (distanceKm! * 100).round() / 100,
       };
 }
 

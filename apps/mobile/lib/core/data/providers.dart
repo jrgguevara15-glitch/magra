@@ -43,6 +43,19 @@ final coachRepositoryProvider =
     Provider<CoachRepository>((ref) => throw UnimplementedError());
 final coachClientProvider =
     Provider<CoachClient>((ref) => throw UnimplementedError());
+final stepsRepositoryProvider =
+    Provider<StepsRepository>((ref) => throw UnimplementedError());
+
+/// Pasos anotados en un día (null si no hay; o si falta la migración 0014).
+final stepsProvider = FutureProvider.family<int?, DateTime>((ref, day) async {
+  if (ref.watch(signedInProvider).value != true) return null;
+  try {
+    return await ref.watch(stepsRepositoryProvider).forDay(day);
+  } catch (_) {
+    return null;
+  }
+});
+
 final exerciseSwapRepositoryProvider =
     Provider<ExerciseSwapRepository>((ref) => throw UnimplementedError());
 

@@ -18,6 +18,8 @@ import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/progress/progress_photos.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/activity_log.dart';
+import 'package:magra/features/training/gps_location.dart';
+import 'package:magra/features/training/gps_track.dart';
 import 'package:magra/features/training/mannequin.dart';
 import 'package:magra/features/today/barcode.dart';
 import 'package:magra/features/today/food_catalog.dart';
@@ -106,6 +108,16 @@ class FakeQuestionnaires implements QuestionnaireRepository {
 
   @override
   Future<void> save(Questionnaire q) async => saved = q;
+}
+
+class FakeSteps implements StepsRepository {
+  final Map<DateTime, int> items = {};
+
+  @override
+  Future<int?> forDay(DateTime day) async => items[DateUtils.dateOnly(day)];
+
+  @override
+  Future<void> set(DateTime day, int steps) async => items[DateUtils.dateOnly(day)] = steps;
 }
 
 class FakeSwaps implements ExerciseSwapRepository {
@@ -232,6 +244,7 @@ class FakeExerciseLog implements ExerciseLogRepository {
         met: e.met,
         minutes: e.minutes,
         kcalNet: e.kcalNet,
+        distanceKm: e.distanceKm,
       ));
 
   @override
@@ -548,6 +561,8 @@ Widget testApp({
   FakeCoach? coach,
   FakeBank? bank,
   FakeSwaps? swaps,
+  FakeSteps? steps,
+  LocationStream? locations,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -567,6 +582,8 @@ Widget testApp({
       coachRepositoryProvider.overrideWithValue(coach ?? FakeCoach()),
       calorieBankRepositoryProvider.overrideWithValue(bank ?? FakeBank()),
       exerciseSwapRepositoryProvider.overrideWithValue(swaps ?? FakeSwaps()),
+      stepsRepositoryProvider.overrideWithValue(steps ?? FakeSteps()),
+      locationStreamProvider.overrideWithValue(locations ?? () => const Stream<GeoPoint>.empty()),
       coachClientProvider.overrideWithValue(coach ?? FakeCoach()),
       menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),
       productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),

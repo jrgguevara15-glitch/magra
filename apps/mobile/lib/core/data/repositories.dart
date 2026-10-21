@@ -64,6 +64,12 @@ abstract interface class FoodLogRepository {
 }
 
 /// Lo usado del banco de calorías cada día.
+/// Pasos de cada día.
+abstract interface class StepsRepository {
+  Future<int?> forDay(DateTime day);
+  Future<void> set(DateTime day, int steps);
+}
+
 /// Ejercicios de la rutina que el usuario cambió (original → elegido).
 abstract interface class ExerciseSwapRepository {
   Future<Map<String, String>> all();
@@ -293,6 +299,22 @@ class SupabaseFoodLogRepository implements FoodLogRepository {
     }
     return out;
   }
+}
+
+class SupabaseStepsRepository implements StepsRepository {
+  SupabaseStepsRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<int?> forDay(DateTime day) async {
+    final row = await _client.from('daily_steps').select('steps').eq('day', isoDate(day)).maybeSingle();
+    return (row?['steps'] as num?)?.toInt();
+  }
+
+  @override
+  Future<void> set(DateTime day, int steps) => _client.from('daily_steps').upsert(
+      {'day': isoDate(day), 'steps': steps, 'updated_at': DateTime.now().toUtc().toIso8601String()});
 }
 
 class SupabaseExerciseSwapRepository implements ExerciseSwapRepository {

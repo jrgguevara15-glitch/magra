@@ -226,6 +226,25 @@
   cantidad en porciones o gramos/ml; aviso del alcohol. Si no está: "Crear
   «…»" abre "A mano" con el nombre; "A mano" pide cantidad y unidad y queda
   guardado para la próxima vez. Sin migración (usa food_entries).
+- U11 — Sustituir ejercicios: IMPLEMENTADO, validación PENDIENTE. Botón
+  "Cambiar" en cada ejercicio de la rutina: opciones del mismo patrón de
+  movimiento filtradas por equipo y lesiones (exercise_alternatives.dart),
+  con ficha y animación; se guardan en exercise_swaps (MIGRACIÓN 0013) y se
+  aplican a la rutina, la sesión y el coach; "Volver a …" deshace. Mismas
+  series y repeticiones; el progreso del nuevo parte de cero.
+- U12 — Editar comidas: IMPLEMENTADO, validación PENDIENTE. Tocar un
+  alimento registrado abre "Editar alimento" (cantidad recalcula en
+  proporción, o nutrientes directos). En el menú semanal, "Editar" cambia
+  cantidades, quita o agrega ingredientes de la base y se guarda en el menú;
+  "Lo comí" registra la versión editada. Sin migración.
+- U13 — GPS y pasos: IMPLEMENTADO, validación PENDIENTE. "Correr, caminar o
+  bici con GPS" (Hoy → Ejercicio, solo hoy): distancia filtrada (precisión,
+  saltos, temblor), tiempo con pausa, ritmo o velocidad, recorrido dibujado,
+  MET por velocidad; se guarda como ejercicio con sus km
+  (exercise_entries.distance_km, MIGRACIÓN 0014). En el navegador necesita
+  pantalla encendida. Pasos: sección "Pasos" con la meta del plan y registro
+  manual (daily_steps, migración 0014); conteo automático en la app
+  instalada (M10). Dependencia nueva: geolocator.
 
 ## PAUSA (21-oct-2026)
 
