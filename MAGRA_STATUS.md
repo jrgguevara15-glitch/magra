@@ -99,8 +99,8 @@
   última tanda, ver/borrar y comparar dos fechas con peso, cintura y %
   grasa de la medición más cercana. analyze sin issues; suite 176/176;
   build web OK.
-- M15 — Coach IA (chat y revisión semanal): IMPLEMENTADO, validación del
-  usuario PENDIENTE (requiere migración 0011 y desplegar ai-coach).
+- M15 — Coach IA (chat y revisión semanal): TERMINADO. Validación del
+  usuario APROBADA (migración 0011, ai-coach desplegada; chat y revisión).
   Pestaña Coach: consentimiento explícito antes de enviar datos, chat con
   resumen de los datos (sin nombre ni correo), sugerencias, revisión
   semanal (destacada domingo/lunes), reintentar, borrar conversación y
