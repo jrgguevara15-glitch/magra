@@ -122,14 +122,22 @@
   barras animadas en Hoy, tarjetas destacadas con degradado y efecto al
   tocar/pasar el mouse (Entreno, Coach), navegación lateral con nombres
   en PC (≥ 1.200 px). analyze sin issues; suite 191/191; build web OK.
-- U2 — Ejercicios tocables con imágenes: IMPLEMENTADO, validación
-  PENDIENTE. 28 movimientos con fotos de Free Exercise DB (dominio
+- U2 — Ejercicios tocables con imágenes: TERMINADO, validación del
+  usuario APROBADA. 28 movimientos con fotos de Free Exercise DB (dominio
   público, 56 imágenes reducidas a 600 px, 1,7 MB en assets/exercises),
   ficha en español con fotos que se alternan (inicio/fin), equipo,
   músculos, pasos y errores comunes; miniatura y acceso desde la rutina y
   desde la sesión. Prueba que todo ejercicio del motor tiene ficha.
   analyze sin issues; suite 194/194; build web OK.
-- U3 — Calentamiento y estiramiento guiados con temporizador: PENDIENTE.
+- U3 — Calentamiento y estiramiento guiados: IMPLEMENTADO, validación
+  PENDIENTE. warmup.dart: calentamiento (activación, movilidad de lo que
+  se entrena, series de aproximación) y vuelta a la calma (estiramientos
+  30 s por lado + respiración) según foco (completo/superior/inferior),
+  lesiones, impacto y equipo; 18 fotos más (dominio público). Rutina
+  guiada paso a paso con fotos animadas, temporizador en anillo, avance
+  automático, repeticiones con "Listo", saltar y lista. En Entreno: "1 ·
+  Calentar" / "2 · Empezar sesión", botones por día y "Estirar" al
+  terminar la sesión. analyze sin issues; suite 200/200; build web OK.
 - U4 — Recetas con condimentos, aceites y grasas saludables: PENDIENTE.
 
 ## PAUSA (21-oct-2026)

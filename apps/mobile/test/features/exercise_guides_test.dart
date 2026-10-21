@@ -92,7 +92,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.fitness_center_outlined));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Empezar sesión'));
+    await tester.tap(find.text('2 · Empezar sesión'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.info_outline).first);
     await tester.pumpAndSettle();

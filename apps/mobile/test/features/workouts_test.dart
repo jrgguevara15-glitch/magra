@@ -127,7 +127,7 @@ void main() {
 
     expect(find.text('Hoy te toca'), findsOneWidget);
     expect(find.text('Cuerpo completo A'), findsWidgets);
-    await tester.tap(find.text('Empezar sesión'));
+    await tester.tap(find.text('2 · Empezar sesión'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Primera vez'), findsWidgets);
 
@@ -170,7 +170,7 @@ void main() {
     await tester.pumpWidget(app(workouts));
     await tester.pumpAndSettle();
     await openTraining(tester);
-    await tester.tap(find.text('Empezar sesión'));
+    await tester.tap(find.text('2 · Empezar sesión'));
     await tester.pumpAndSettle();
     expect(find.text('Hoy: 62,5 kg × 10'), findsOneWidget);
     expect(find.widgetWithText(TextField, '62,5'), findsNWidgets(2));
@@ -197,7 +197,7 @@ void main() {
         q: Questionnaire.initial.copyWith(experience: Experience.advanced, trainingDays: 4)));
     await tester.pumpAndSettle();
     await openTraining(tester);
-    await tester.tap(find.text('Empezar sesión'));
+    await tester.tap(find.text('2 · Empezar sesión'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Serie').first);
     await tester.pumpAndSettle();

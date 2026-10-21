@@ -56,9 +56,13 @@ class TrainingPlan {
     required this.stepsStart,
     required this.reasons,
     required this.cautions,
+    this.lowImpact = false,
   });
 
   final List<TrainingDay> days;
+
+  /// Cardio y calentamiento sin impacto (peso, articulaciones o edad).
+  final bool lowImpact;
 
   /// Tipo de cardio recomendado.
   final String cardio;
@@ -305,5 +309,6 @@ TrainingPlan recommendTraining({
     stepsStart: composition.bmi >= 35 ? 6000 : 7000,
     reasons: reasons,
     cautions: cautions,
+    lowImpact: lowImpact,
   );
 }

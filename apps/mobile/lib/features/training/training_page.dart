@@ -8,7 +8,9 @@ import '../../core/recommendation/training_plan.dart';
 import '../../core/widgets/hero_card.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
+import '../../core/recommendation/warmup.dart';
 import 'exercise_guide_page.dart';
+import 'guided_routine_page.dart';
 import 'workout_session_page.dart';
 
 /// Pestaña Entreno: la rutina que MAGRA recomienda al usuario.
@@ -82,6 +84,8 @@ class TrainingPlanView extends StatelessWidget {
                 Text('${weekdayName(d.weekday)} · ${d.title}',
                     style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
+                _RoutineButtons(plan: plan, day: d, questionnaire: inputs.questionnaire),
+                const SizedBox(height: 4),
                 for (final e in d.exercises)
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -158,8 +162,15 @@ class WorkoutCard extends ConsumerWidget {
       ),
     ));
     if (saved == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Sesión guardada. Sus calorías ya están en Hoy.')));
+      final cool = coolDown(focus: focusOf(day), questionnaire: inputs.questionnaire);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Sesión guardada. Sus calorías ya están en Hoy.'),
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: 'Estirar',
+          onPressed: () => openGuidedRoutine(context, 'Estiramiento', cool),
+        ),
+      ));
     }
   }
 
@@ -198,10 +209,28 @@ class WorkoutCard extends ConsumerWidget {
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: async.isLoading ? null : () => _start(context, next, history),
-              icon: const Icon(Icons.play_arrow),
-              label: const Text('Empezar sesión'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => openGuidedRoutine(
+                    context,
+                    'Calentamiento',
+                    warmUp(
+                        focus: focusOf(next),
+                        questionnaire: inputs.questionnaire,
+                        lowImpact: plan.lowImpact),
+                  ),
+                  icon: const Icon(Icons.local_fire_department_outlined),
+                  label: const Text('1 · Calentar'),
+                ),
+                FilledButton.icon(
+                  onPressed: async.isLoading ? null : () => _start(context, next, history),
+                  icon: const Icon(Icons.play_arrow),
+                  label: const Text('2 · Empezar sesión'),
+                ),
+              ],
             ),
             if (recent.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -228,6 +257,38 @@ class WorkoutCard extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Botones de calentamiento y estiramiento de una sesión.
+class _RoutineButtons extends StatelessWidget {
+  const _RoutineButtons({required this.plan, required this.day, required this.questionnaire});
+
+  final TrainingPlan plan;
+  final TrainingDay day;
+  final Questionnaire questionnaire;
+
+  @override
+  Widget build(BuildContext context) {
+    final warm = warmUp(
+        focus: focusOf(day), questionnaire: questionnaire, lowImpact: plan.lowImpact);
+    final cool = coolDown(focus: focusOf(day), questionnaire: questionnaire);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        OutlinedButton.icon(
+          onPressed: () => openGuidedRoutine(context, 'Calentamiento', warm),
+          icon: const Icon(Icons.local_fire_department_outlined),
+          label: Text('Calentar · ${routineMinutes(warm)} min'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => openGuidedRoutine(context, 'Estiramiento', cool),
+          icon: const Icon(Icons.self_improvement),
+          label: Text('Estirar · ${routineMinutes(cool)} min'),
+        ),
+      ],
     );
   }
 }
