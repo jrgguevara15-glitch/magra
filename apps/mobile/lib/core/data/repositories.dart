@@ -314,7 +314,8 @@ class SupabaseStepsRepository implements StepsRepository {
 
   @override
   Future<void> set(DateTime day, int steps) => _client.from('daily_steps').upsert(
-      {'day': isoDate(day), 'steps': steps, 'updated_at': DateTime.now().toUtc().toIso8601String()});
+      {'day': isoDate(day), 'steps': steps, 'updated_at': DateTime.now().toUtc().toIso8601String()},
+      onConflict: 'user_id,day');
 }
 
 class SupabaseExerciseSwapRepository implements ExerciseSwapRepository {
@@ -330,7 +331,8 @@ class SupabaseExerciseSwapRepository implements ExerciseSwapRepository {
 
   @override
   Future<void> set(String original, String chosen) => _client.from('exercise_swaps').upsert(
-      {'original': original, 'chosen': chosen, 'updated_at': DateTime.now().toUtc().toIso8601String()});
+      {'original': original, 'chosen': chosen, 'updated_at': DateTime.now().toUtc().toIso8601String()},
+      onConflict: 'user_id,original');
 
   @override
   Future<void> clear(String original) =>

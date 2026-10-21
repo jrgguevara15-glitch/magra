@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/data/db_errors.dart';
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
 import '../../core/formulas/formulas.dart';
@@ -63,11 +64,23 @@ class _OutdoorPageState extends ConsumerState<OutdoorPage> {
     });
     _sub = ref.read(locationStreamProvider)().listen(
       (p) {
-        if (_status == _Status.running) setState(() => _track.add(p));
+        if (!mounted) return;
+        setState(() {
+          _error = null;
+          if (_status == _Status.running) {
+            _track.add(p);
+          } else {
+            _track.lastAccuracy = p.accuracy;
+          }
+        });
       },
       onError: (Object e) {
-        if (mounted) {
-          setState(() => _error = e is GpsException ? e.message : 'No se pudo leer el GPS.');
+        if (!mounted) return;
+        final gps = e is GpsException ? e : const GpsException(gpsNoSignalMessage);
+        setState(() => _error = gps.message);
+        if (gps.fatal) {
+          _sub?.cancel();
+          _clock.stop();
         }
       },
     );
@@ -118,11 +131,11 @@ class _OutdoorPageState extends ConsumerState<OutdoorPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Guardaste ${_mode.label.toLowerCase()}: ${fmt(_km, 2)} km.')));
       Navigator.of(context).pop();
-    } catch (_) {
+    } catch (err) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'No se pudo guardar. Revisa tu conexión (o que la migración 0014 esté aplicada).';
+          _error = saveErrorMessage(err, migration: '0014_gps_steps.sql');
         });
       }
     }
@@ -143,6 +156,17 @@ class _OutdoorPageState extends ConsumerState<OutdoorPage> {
     if (ok == true) await _finish();
   }
 
+  String _signalText() {
+    final acc = _track.lastAccuracy;
+    if (acc == null) return 'Buscando señal GPS…';
+    if (acc > GpsTrack.maxAccuracy) {
+      return 'Señal débil (±${acc.round()} m). Los km empiezan a contar cuando la '
+          'precisión baje de ${GpsTrack.maxAccuracy.round()} m: sal a un lugar abierto. '
+          'En un computador no hay GPS, úsalo en el teléfono.';
+    }
+    return 'Señal GPS lista (±${acc.round()} m). Empieza a moverte.';
+  }
+
   static String _time(Duration d) {
     final h = d.inHours, m = d.inMinutes % 60, s = d.inSeconds % 60;
     String two(int v) => v.toString().padLeft(2, '0');
@@ -153,7 +177,7 @@ class _OutdoorPageState extends ConsumerState<OutdoorPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final idle = _status == _Status.idle;
-    final kcal = idle ? 0.0 : _entry().kcalNet;
+    final kcal = idle ? 0.0 : _entry().kcalNet * min(1.0, _clock.elapsed.inSeconds / 60);
     return Scaffold(
       appBar: AppBar(title: const Text('Al aire libre con GPS')),
       body: SafeArea(
@@ -195,9 +219,13 @@ class _OutdoorPageState extends ConsumerState<OutdoorPage> {
                   ),
                   child: _track.points.length < 2
                       ? Center(
-                          child: Text(
-                            idle ? 'Tu recorrido aparecerá aquí.' : 'Buscando señal GPS…',
-                            style: theme.textTheme.bodySmall,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Text(
+                              idle ? 'Tu recorrido aparecerá aquí.' : _signalText(),
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodySmall,
+                            ),
                           ),
                         )
                       : CustomPaint(painter: _RoutePainter(_track), size: Size.infinite),

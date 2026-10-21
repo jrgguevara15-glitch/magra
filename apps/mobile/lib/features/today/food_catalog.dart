@@ -42,6 +42,7 @@ class CatalogFood {
     this.unitGrams,
     this.mine = false,
     this.lastQuantity,
+    this.aka = '',
   });
 
   /// Un alimento que el usuario ya anotó: se vuelve a agregar con la misma
@@ -81,6 +82,9 @@ class CatalogFood {
 
   /// Cantidad de la última vez (en [unit]).
   final double? lastQuantity;
+
+  /// Otros nombres para encontrarlo al buscar ('cotufas palomitas').
+  final String aka;
 
   /// Se mide en porciones propias (no en gramos ni ml).
   bool get servingOnly => unitGrams == 1 && unitName == unit;
@@ -134,13 +138,15 @@ const foodCatalog = <CatalogFood>[
   CatalogFood('Legumbres cocidas (lentejas, porotos, garbanzos)', FoodGroup.carb,
       120, 8.5, 20, 0.5),
   CatalogFood('Quinoa cocida', FoodGroup.carb, 120, 4.4, 21, 1.9),
-  CatalogFood('Arepa o tortilla de maíz', FoodGroup.carb, 218, 4.5, 45, 1.5),
+  CatalogFood('Arepa o tortilla de maíz', FoodGroup.carb, 218, 4.5, 45, 1.5,
+      unitName: 'arepa', unitGrams: 100),
   CatalogFood('Avena cruda', FoodGroup.carb, 389, 17, 66, 7,
       tags: {FoodTag.gluten}),
   CatalogFood('Pan integral', FoodGroup.carb, 247, 13, 41, 3.4,
-      tags: {FoodTag.gluten}),
+      tags: {FoodTag.gluten}, unitName: 'rebanada', unitGrams: 28, aka: 'pan de molde integral'),
   CatalogFood('Pan marraqueta', FoodGroup.carb, 267, 9, 56, 1,
-      tags: {FoodTag.gluten}),
+      tags: {FoodTag.gluten}, unitName: 'marraqueta', unitGrams: 100, aka: 'pan frances pan batido'),
+  ..._breads,
   CatalogFood('Pasta cocida', FoodGroup.carb, 131, 5, 25, 1.1,
       tags: {FoodTag.gluten}),
   CatalogFood('Plátano', FoodGroup.carb, 89, 1.1, 23, 0.3,
@@ -148,7 +154,7 @@ const foodCatalog = <CatalogFood>[
   CatalogFood('Manzana', FoodGroup.carb, 52, 0.3, 14, 0.2,
       unitName: 'manzana', unitGrams: 180),
   // Grasas
-  CatalogFood('Palta', FoodGroup.fat, 160, 2, 9, 15),
+  CatalogFood('Palta', FoodGroup.fat, 160, 2, 9, 15, unitName: 'palta', unitGrams: 140, aka: 'aguacate'),
   CatalogFood('Aceite de oliva', FoodGroup.fat, 828, 0, 0, 92, unit: 'ml'),
   CatalogFood('Almendras', FoodGroup.fat, 579, 21, 22, 50,
       tags: {FoodTag.treeNuts}),
@@ -172,14 +178,30 @@ const foodCatalog = <CatalogFood>[
   ..._extraFoods,
 ];
 
-/// Alimentos que el usuario puede elegir, que coinciden con [query].
-List<CatalogFood> searchCatalog(Questionnaire q, String query) {
-  final excluded = excludedFoodTags(q);
+/// Plural de una unidad casera: 'rebanada' → 'rebanadas', 'porción
+/// mediana' → 'porciones medianas'. 'g' y 'ml' no cambian.
+String pluralUnit(String unit) {
+  if (unit == 'g' || unit == 'ml') return unit;
+  String word(String w) {
+    if (w.length < 3 || w == 'de' || w.endsWith('s')) return w;
+    if (w.endsWith('ón')) return '${w.substring(0, w.length - 2)}ones';
+    if (w.endsWith('z')) return '${w.substring(0, w.length - 1)}ces';
+    return 'aeiouáéó'.contains(w[w.length - 1]) ? '${w}s' : '${w}es';
+  }
+
+  return unit.split(' ').map(word).join(' ');
+}
+
+/// Alimentos que coinciden con [query] (por nombre u otros nombres). Con
+/// [restrict] se quitan los que la dieta o alergias excluyen (para armar
+/// menús); al anotar lo que se comió se muestran todos.
+List<CatalogFood> searchCatalog(Questionnaire q, String query, {bool restrict = true}) {
+  final excluded = restrict ? excludedFoodTags(q) : const <FoodTag>{};
   final words = plainText(query).split(' ').where((w) => w.isNotEmpty).toList();
   return [
     for (final f in foodCatalog)
       if (f.tags.intersection(excluded).isEmpty &&
-          words.every((w) => plainText(f.name).contains(w)))
+          words.every((w) => plainText('${f.name} ${f.aka}').contains(w)))
         f,
   ];
 }
@@ -231,14 +253,18 @@ class FoodEntry {
     double grams, {
     required DateTime date,
     required int mealIndex,
+    bool byUnit = false,
   }) {
     final n = food.nutrientsFor(grams);
+    // Por unidad ("2 rebanadas") se guarda en unidades, así se ve y se
+    // vuelve a anotar igual.
+    final units = byUnit && food.unitGrams != null && food.unitName != null;
     return FoodEntry(
       date: date,
       mealIndex: mealIndex,
       name: food.name,
-      quantity: grams,
-      unit: food.unit,
+      quantity: units ? grams / food.unitGrams! : grams,
+      unit: units ? food.unitName! : food.unit,
       kcal: n.kcal,
       protein: n.protein,
       carbs: n.carbs,
@@ -281,8 +307,9 @@ class FoodEntry {
         source: source,
       );
 
-  String get quantityLabel =>
-      quantity == null ? '' : '${fmt(quantity, quantity! % 1 == 0 ? 0 : 1)} $unit';
+  String get quantityLabel => quantity == null
+      ? ''
+      : '${fmt(quantity, quantity! % 1 == 0 ? 0 : 1)} ${quantity! > 1 ? pluralUnit(unit) : unit}';
 
   factory FoodEntry.fromRow(Map<String, dynamic> row) {
     double d(String k) => (row[k] as num? ?? 0).toDouble();

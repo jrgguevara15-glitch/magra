@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
+import 'package:magra/features/training/gps_location.dart';
 import 'package:magra/features/training/gps_track.dart';
 
 import '../support/fakes.dart';
@@ -61,6 +62,36 @@ void main() {
     expect(metFor(OutdoorMode.bike, 40), 12);
     expect(paceLabel(5000, const Duration(minutes: 27, seconds: 30)), '5:30');
     expect(paceLabel(10, const Duration(seconds: 30)), '–');
+  });
+
+  testWidgets('GPS: señal débil, corte pasajero y falta de permiso', (tester) async {
+    setSize(tester, const Size(700, 3000));
+    final gps = StreamController<GeoPoint>.broadcast();
+    await tester.pumpWidget(app(gps: gps));
+    await tester.pumpAndSettle();
+    await openSection(tester, 'Ejercicio');
+    await tester.tap(find.text('Correr, caminar o bici con GPS'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Empezar correr'));
+    await tester.pump();
+    expect(find.text('Buscando señal GPS…'), findsOneWidget);
+    gps.add(north(0, 0, accuracy: 120));
+    await tester.pump();
+    expect(find.textContaining('Señal débil (±120 m)'), findsOneWidget);
+    gps.addError(const GpsException(gpsNoSignalMessage));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(gpsNoSignalMessage), findsOneWidget);
+    gps.add(north(0, 2, accuracy: 8));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(gpsNoSignalMessage), findsNothing); // se recupera solo
+    expect(find.textContaining('Señal GPS lista (±8 m)'), findsOneWidget);
+    gps.addError(const GpsException(gpsDeniedMessage, fatal: true));
+    await tester.pump();
+    await tester.pump();
+    expect(find.textContaining('Sitios web de Safari'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('carrera con GPS: distancia, pausa y se guarda con los km', (tester) async {

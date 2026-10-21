@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/data/db_errors.dart';
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
 import '../../core/formulas/formulas.dart';
@@ -466,10 +467,10 @@ class StepsCard extends ConsumerWidget {
     try {
       await ref.read(stepsRepositoryProvider).set(day, value);
       ref.invalidate(stepsProvider(day));
-    } catch (_) {
+    } catch (err) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('No se pudo guardar. Revisa tu conexión (o la migración 0014).')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(saveErrorMessage(err, migration: '0014_gps_steps.sql'))));
       }
     }
   }

@@ -612,6 +612,12 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     } else if (f.group.byServing && f.unitGrams != null) {
       value = 1;
       byUnit = true;
+    } else if (f.unitGrams != null) {
+      // Pan, huevo, fruta: en unidades (lo que pide el plan, de a media).
+      final g = suggestedGrams(f,
+          mealProtein: widget.mealProtein, mealCarbs: widget.mealCarbs, mealFat: widget.mealFat);
+      value = g / f.unitGrams!;
+      byUnit = true;
     } else {
       value = suggestedGrams(f,
           mealProtein: widget.mealProtein,
@@ -874,7 +880,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
         return;
       }
       entry = FoodEntry.fromCatalog(_food!, qty,
-          date: widget.day, mealIndex: widget.mealIndex);
+          date: widget.day, mealIndex: widget.mealIndex, byUnit: _byUnit && !_food!.servingOnly);
       if (_food!.mine) {
         entry = FoodEntry(
           date: entry.date,
@@ -1150,7 +1156,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
         if (_category == null && matches(e.name)) e,
     ].take(query.isEmpty ? 8 : 20).toList();
     final results = [
-      for (final f in searchCatalog(widget.questionnaire, query))
+      for (final f in searchCatalog(widget.questionnaire, query, restrict: false))
         if (_category == null || f.group == _category) f,
     ];
     final groups = [for (final g in FoodGroup.values) if (foodCatalog.any((f) => f.group == g)) g];
@@ -1232,7 +1238,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                               kcal: f.kcal, protein: f.protein, quantity: 100, unit: f.unit),
                         ),
                         title: Text(f.name),
-                        subtitle: Text(f.group.byServing && f.unitGrams != null
+                        subtitle: Text(f.unitGrams != null
                             ? '1 ${f.unitName} (${fmt(f.unitGrams)} ${f.unit}) · ${fmt(f.kcal * f.unitGrams! / 100)} kcal'
                             : '${fmt(f.kcal)} kcal por 100 ${f.unit}'),
                         onTap: () => _pick(f),
@@ -1340,6 +1346,12 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                   'C ${fmt(preview.carbs)} g · G ${fmt(preview.fat)} g',
                   style: theme.textTheme.titleSmall,
                 ),
+                if ((_byUnit || _food!.servingOnly) && _food!.unitGrams != null)
+                  Text(
+                    'Cada ${_food!.unitName}: ${fmt(_food!.kcal * _food!.unitGrams! / 100)} kcal, '
+                    '${fmt(_food!.protein * _food!.unitGrams! / 100, 1)} g de proteína',
+                    style: theme.textTheme.bodySmall,
+                  ),
               ],
               if (_food!.group == FoodGroup.alcohol) ...[
                 const SizedBox(height: 4),

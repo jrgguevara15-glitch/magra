@@ -125,11 +125,15 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('reducir movimiento: quieto y con la barra paso a paso', (tester) async {
+  testWidgets('reducir movimiento: parte en pausa, pero se puede reproducir', (tester) async {
     await tester.pumpWidget(app('Sentadilla con peso corporal', animate: true, reduceMotion: true));
     await tester.pump(const Duration(seconds: 1));
     expect(find.byTooltip('Pausar'), findsNothing);
     expect(find.byType(Slider), findsOneWidget);
-    expect(find.textContaining('Reducir movimiento está activado'), findsOneWidget);
+    expect(find.textContaining('reducir movimiento'), findsOneWidget);
+    await tester.tap(find.byTooltip('Reproducir'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byTooltip('Pausar'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
   });
 }

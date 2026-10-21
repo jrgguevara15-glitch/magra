@@ -46,7 +46,8 @@ class DemoPlayer extends ConsumerStatefulWidget {
 class _DemoPlayerState extends ConsumerState<DemoPlayer> with SingleTickerProviderStateMixin {
   late DemoView _view = DemoView.closestTo(widget.anim.yaw);
   double _phase = 0.5;
-  bool _playing = true;
+  /// Con «reducir movimiento» del sistema parte en pausa, pero se puede reproducir.
+  late bool _playing = !_reduceMotion;
   bool _failed = false;
   Ticker? _ticker;
   Duration _last = Duration.zero;
@@ -58,7 +59,7 @@ class _DemoPlayerState extends ConsumerState<DemoPlayer> with SingleTickerProvid
 
   bool get _reduceMotion => MediaQuery.maybeOf(context)?.disableAnimations ?? false;
 
-  bool get _canAnimate => widget.animate && ref.read(figureAnimationProvider) && !_reduceMotion;
+  bool get _canAnimate => widget.animate && ref.read(figureAnimationProvider);
 
   bool get _female => (ref.read(avatarChoiceProvider) ?? widget.sex) == Sex.female;
 
@@ -224,11 +225,11 @@ class _DemoPlayerState extends ConsumerState<DemoPlayer> with SingleTickerProvid
           spacing: 6,
           runSpacing: 6,
           children: [
-            if (animated || !_playing)
-              IconButton(
-                tooltip: _playing && animated ? 'Pausar' : 'Reproducir',
-                onPressed: _reduceMotion || !widget.animate || !ref.read(figureAnimationProvider) ? null : _togglePlay,
-                icon: Icon(_playing && animated ? Icons.pause_circle_outline : Icons.play_circle_outline),
+            if (animated)
+              IconButton.filled(
+                tooltip: _playing ? 'Pausar' : 'Reproducir',
+                onPressed: _togglePlay,
+                icon: Icon(_playing ? Icons.pause : Icons.play_arrow),
               ),
             IconButton(
               tooltip: 'Reiniciar',
@@ -270,8 +271,8 @@ class _DemoPlayerState extends ConsumerState<DemoPlayer> with SingleTickerProvid
         ),
         const SizedBox(height: 4),
         Text(
-          _reduceMotion
-              ? 'Reducir movimiento está activado: usa la barra para ver el ejercicio paso a paso.'
+          _reduceMotion && !_playing
+              ? 'Tu equipo tiene «reducir movimiento» activado: toca ▶ para verlo o usa la barra paso a paso.'
               : 'Elige la vista: frente, lado o espalda.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall,

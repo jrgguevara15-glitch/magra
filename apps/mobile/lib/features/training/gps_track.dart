@@ -51,6 +51,9 @@ class GpsTrack {
   final List<List<GeoPoint>> segments = [[]];
   double meters = 0;
 
+  /// Precisión (m) de la última lectura recibida, se use o no.
+  double? lastAccuracy;
+
   /// Lecturas con un error mayor a esto no se usan.
   static const maxAccuracy = 35.0;
 
@@ -58,6 +61,7 @@ class GpsTrack {
 
   /// Suma la lectura si es confiable. Devuelve si se usó.
   bool add(GeoPoint p) {
+    lastAccuracy = p.accuracy;
     if (p.accuracy > maxAccuracy) return false;
     final last = _last;
     if (last == null) {

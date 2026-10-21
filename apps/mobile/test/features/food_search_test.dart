@@ -36,7 +36,10 @@ void main() {
   test('la base trae café, bebidas, alcohol, snacks y golosinas con su porción', () {
     final q = Questionnaire.initial;
     for (final w in ['cafe', 'cerveza', 'vino', 'pisco', 'piscola', 'coca', 'papas fritas', 'chocolate',
-        'gomitas', 'alfajor', 'helado', 'completo', 'mayonesa', 'azucar', 'te o infusion']) {
+        'gomitas', 'alfajor', 'helado', 'completo', 'mayonesa', 'azucar', 'te o infusion', 'gin', 'vodka',
+        'whisky', 'tequila', 'ron', 'margarita', 'pina colada', 'sangria', 'muffin', 'torta', 'cheesecake',
+        'mantequilla', 'margarina', 'cotufas', 'palomitas', 'cabritas', 'zero', 'jugo zero', 'pan de molde',
+        'tostada', 'hallulla', 'marraqueta']) {
       expect(searchCatalog(q, w), isNotEmpty, reason: w);
     }
     final beer = food('Cerveza');
@@ -63,6 +66,35 @@ void main() {
     expect(portion.nutrientsFor(2).kcal, closeTo(80, 1e-9));
   });
 
+  test('plural de las unidades caseras', () {
+    expect(pluralUnit('rebanada'), 'rebanadas');
+    expect(pluralUnit('porción mediana'), 'porciones medianas');
+    expect(pluralUnit('unidad'), 'unidades');
+    expect(pluralUnit('g'), 'g');
+  });
+
+  testWidgets('pan por unidad: 2 marraquetas suman el doble y se guardan en unidades', (tester) async {
+    setSize(tester, const Size(700, 3000));
+    final log = FakeFoodLog();
+    await tester.pumpWidget(app(log));
+    await tester.pumpAndSettle();
+    await openSheet(tester);
+    await search(tester, 'marraqueta');
+    expect(find.textContaining('1 marraqueta (100 g) · 267 kcal'), findsOneWidget);
+    await tester.tap(find.text('Pan marraqueta'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Cantidad'), '2');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('534 kcal'), findsOneWidget);
+    expect(find.textContaining('Cada marraqueta: 267 kcal'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Agregar'));
+    await tester.pumpAndSettle();
+    expect(log.items.single.quantity, 2);
+    expect(log.items.single.unit, 'marraqueta');
+    expect(log.items.single.quantityLabel, '2 marraquetas');
+    expect(log.items.single.kcal, closeTo(534, 1e-9));
+  });
+
   testWidgets('cerveza por lata o por ml', (tester) async {
     setSize(tester, const Size(700, 3000));
     final log = FakeFoodLog();
@@ -73,7 +105,7 @@ void main() {
     await tester.tap(find.text('Cerveza'));
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(find.widgetWithText(TextField, 'Cantidad')).controller!.text, '1');
-    expect(find.textContaining('151 kcal'), findsOneWidget);
+    expect(find.textContaining('151 kcal · P'), findsOneWidget);
     expect(find.textContaining('El alcohol aporta calorías'), findsOneWidget);
     await tester.tap(find.text('ml').last);
     await tester.pumpAndSettle();

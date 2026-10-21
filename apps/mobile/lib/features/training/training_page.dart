@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/data/db_errors.dart';
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
 import '../../core/recommendation/exercise_alternatives.dart';
@@ -371,11 +372,8 @@ class _SwapSheetState extends ConsumerState<_SwapSheet> {
       }
       ref.invalidate(exerciseSwapsProvider);
       if (mounted) Navigator.of(context).pop();
-    } catch (_) {
-      if (mounted) {
-        setState(() => _error = 'No se pudo guardar el cambio. Revisa tu conexión '
-            '(o que la migración 0013 esté aplicada en Supabase).');
-      }
+    } catch (err) {
+      if (mounted) setState(() => _error = saveErrorMessage(err, migration: '0013_exercise_swaps.sql'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

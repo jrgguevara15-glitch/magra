@@ -51,7 +51,7 @@ void main() {
           mealProtein: 34, mealCarbs: 43, mealFat: 15);
       expect(s('Pechuga de pollo cocida'), 110); // 34 / 31 × 100
       expect(s('Arroz cocido'), 155); // 43 / 28 × 100
-      expect(s('Palta'), 100); // 15 / 15 × 100
+      expect(s('Palta'), 70); // 15 / 15 × 100 = 100 g ≈ media palta (140 g)
       // 34 g de proteína serían 5,4 huevos: tope razonable de 4 (200 g).
       expect(s('Huevo'), 200);
       expect(s('Lechuga'), 100);
