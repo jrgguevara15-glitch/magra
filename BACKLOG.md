@@ -70,3 +70,5 @@ activo.
   exacto con la meta (hoy se acepta ±10 % de la IA y se muestra la
   diferencia); recetas paso a paso; exportar/compartir la lista de
   compras (WhatsApp); precios estimados por supermercado.
+- Netlify: publicar automáticamente al hacer push (GitHub Actions con
+  Flutter + token de Netlify) en vez de arrastrar la carpeta.
