@@ -49,6 +49,9 @@ abstract interface class FoodLogRepository {
   Future<void> add(FoodEntry entry);
   Future<void> delete(String id);
 
+  /// Corrige un registro (mismo [FoodEntry.id]).
+  Future<void> update(FoodEntry entry);
+
   /// Lo último que anotó el usuario (más reciente primero, hasta [limit]
   /// registros), para volver a agregarlo con un toque.
   Future<List<FoodEntry>> recent({int limit = 400});
@@ -242,6 +245,10 @@ class SupabaseFoodLogRepository implements FoodLogRepository {
   @override
   Future<void> delete(String id) =>
       _client.from('food_entries').delete().eq('id', id);
+
+  @override
+  Future<void> update(FoodEntry entry) =>
+      _client.from('food_entries').update(entry.toRow()).eq('id', entry.id!);
 
   @override
   Future<List<FoodEntry>> recent({int limit = 400}) async {

@@ -18,6 +18,7 @@ import 'activity_cards.dart';
 import 'activity_log.dart';
 import 'barcode.dart';
 import 'custom_product_form.dart';
+import 'edit_food_sheet.dart';
 import 'food_catalog.dart';
 import 'motivation_cards.dart';
 import 'photo_analysis.dart';
@@ -74,6 +75,19 @@ class _TodayViewState extends ConsumerState<TodayView> {
         remainingKcal: _remainingKcal,
       ),
     );
+  }
+
+  Future<void> _edit(FoodEntry e) async {
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => EditFoodSheet(entry: e),
+    );
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Corregiste ${e.name}.')));
+    }
   }
 
   Future<void> _delete(FoodEntry e) async {
@@ -209,6 +223,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
                         entries: [for (final e in entries) if (e.mealIndex == i) e],
                         onAdd: () => _add(i, 'Comida ${i + 1}', plan.meals[i]),
                         onDelete: _delete,
+                        onEdit: _edit,
                       ),
                     _MealLog(
                       title: 'Fuera del plan',
@@ -219,6 +234,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
                       ],
                       onAdd: () => _add(plan.meals.length, 'Fuera del plan', null),
                       onDelete: _delete,
+                      onEdit: _edit,
                     ),
                   ],
                 ),
@@ -422,6 +438,7 @@ class _MealLog extends StatelessWidget {
     required this.entries,
     required this.onAdd,
     required this.onDelete,
+    required this.onEdit,
   });
 
   final String title;
@@ -429,6 +446,7 @@ class _MealLog extends StatelessWidget {
   final List<FoodEntry> entries;
   final VoidCallback onAdd;
   final ValueChanged<FoodEntry> onDelete;
+  final ValueChanged<FoodEntry> onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -467,6 +485,7 @@ class _MealLog extends StatelessWidget {
                   '${fmt(e.kcal)} kcal',
                   'P ${fmt(e.protein)} · C ${fmt(e.carbs)} · G ${fmt(e.fat)}',
                 ].join(' · ')),
+                onTap: e.id == null ? null : () => onEdit(e),
                 trailing: e.id == null
                     ? null
                     : IconButton(

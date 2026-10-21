@@ -152,6 +152,12 @@ class FakeFoodLog implements FoodLogRepository {
   Future<List<FoodEntry>> recent({int limit = 400}) async => items.reversed.take(limit).toList();
 
   @override
+  Future<void> update(FoodEntry e) async {
+    final i = items.indexWhere((x) => x.id == e.id);
+    if (i >= 0) items[i] = e;
+  }
+
+  @override
   Future<Map<DateTime, DayTotals>> dailyTotals(DateTime from, DateTime to) async {
     final out = <DateTime, DayTotals>{};
     for (final e in items) {

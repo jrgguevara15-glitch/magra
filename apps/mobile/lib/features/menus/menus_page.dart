@@ -9,6 +9,7 @@ import '../../core/recommendation/weekly_adjustment.dart';
 import '../../core/theme.dart';
 import '../plan/plan_inputs.dart';
 import '../today/food_catalog.dart';
+import 'menu_meal_editor.dart';
 import 'weekly_menu.dart';
 
 /// Pestaña Menús: menú de la semana con la IA y lista de compras.
@@ -141,6 +142,29 @@ class _MenusViewState extends ConsumerState<MenusView> {
       if (mounted) setState(() => _error = 'No se pudo guardar. Revisa tu conexión.');
     } finally {
       if (mounted) setState(() => _swapping = null);
+    }
+  }
+
+  Future<void> _edit(WeeklyMenu menu, int day, int meal) async {
+    final slot = meal < menu.slots.length ? menu.slots[meal] : null;
+    final edited = await showModalBottomSheet<MenuMeal>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => MenuMealEditor(
+        meal: menu.days[day][meal],
+        questionnaire: widget.inputs.questionnaire,
+        targetKcal: slot?.kcal,
+      ),
+    );
+    if (edited == null) return;
+    try {
+      final days = [for (final d in menu.days) [...d]];
+      days[day][meal] = edited;
+      await ref.read(menuRepositoryProvider).save(menu.copyWith(days: days));
+      ref.invalidate(menuProvider(menu.weekStart));
+    } catch (_) {
+      if (mounted) setState(() => _error = 'No se pudo guardar. Revisa tu conexión.');
     }
   }
 
@@ -420,6 +444,11 @@ class _MenusViewState extends ConsumerState<MenusView> {
                   onPressed: future || swapping ? null : () => _ate(menu, day, i),
                   icon: const Icon(Icons.check),
                   label: const Text('Lo comí'),
+                ),
+                TextButton.icon(
+                  onPressed: swapping ? null : () => _edit(menu, day, i),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Editar'),
                 ),
                 TextButton.icon(
                   onPressed: _swapping != null || _generating ? null : () => _swap(menu, day, i),

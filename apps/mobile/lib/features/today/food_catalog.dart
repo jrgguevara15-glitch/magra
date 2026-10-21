@@ -258,6 +258,29 @@ class FoodEntry {
   final double fat;
   final String source;
 
+  FoodEntry copyWith({
+    String? name,
+    double? quantity,
+    String? unit,
+    double? kcal,
+    double? protein,
+    double? carbs,
+    double? fat,
+  }) =>
+      FoodEntry(
+        id: id,
+        date: date,
+        mealIndex: mealIndex,
+        name: name ?? this.name,
+        quantity: quantity ?? this.quantity,
+        unit: unit ?? this.unit,
+        kcal: kcal ?? this.kcal,
+        protein: protein ?? this.protein,
+        carbs: carbs ?? this.carbs,
+        fat: fat ?? this.fat,
+        source: source,
+      );
+
   String get quantityLabel =>
       quantity == null ? '' : '${fmt(quantity, quantity! % 1 == 0 ? 0 : 1)} $unit';
 
