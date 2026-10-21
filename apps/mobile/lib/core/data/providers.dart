@@ -88,6 +88,17 @@ final foodLogProvider =
   return ref.watch(foodLogRepositoryProvider).forDay(day);
 });
 
+/// "Tus alimentos": lo que el usuario ya anotó alguna vez, sin repetir
+/// nombres (el registro más reciente de cada uno).
+final myFoodsProvider = FutureProvider<List<FoodEntry>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const [];
+  final seen = <String>{};
+  return [
+    for (final e in await ref.watch(foodLogRepositoryProvider).recent())
+      if (seen.add(e.name.trim().toLowerCase())) e,
+  ];
+});
+
 /// Ejercicio anotado en un día (la clave es la fecha sin hora).
 final exerciseLogProvider =
     FutureProvider.family<List<ExerciseEntry>, DateTime>((ref, day) async {

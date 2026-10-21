@@ -135,6 +135,9 @@ class FakeFoodLog implements FoodLogRepository {
   Future<void> delete(String id) async => items.removeWhere((e) => e.id == id);
 
   @override
+  Future<List<FoodEntry>> recent({int limit = 400}) async => items.reversed.take(limit).toList();
+
+  @override
   Future<Map<DateTime, DayTotals>> dailyTotals(DateTime from, DateTime to) async {
     final out = <DateTime, DayTotals>{};
     for (final e in items) {

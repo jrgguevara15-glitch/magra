@@ -215,6 +215,17 @@
   Frente/Lado/Espalda y figura mujer/hombre; reducir movimiento la deja
   quieta con la barra; si falta una imagen usa el maniquí dibujado (U8).
   Se quitó el giro libre (vistas fijas, pedido del usuario).
+- U10 — Registro de comidas mejorado: IMPLEMENTADO, validación PENDIENTE.
+  Base ampliada dentro de la app (food_catalog_extra.dart, valores de
+  referencia USDA FoodData Central redondeados): café y bebidas calientes,
+  bebidas y jugos, alcoholes (cerveza, vinos, pisco, piscola, tragos),
+  snacks, dulces y golosinas, comida rápida chilena y salsas, cada uno con
+  su porción casera (taza, lata, copa, corrida, unidad). "Buscar"
+  (antes Catálogo) muestra primero "Tus alimentos" —todo lo que el usuario
+  ya anotó, por cualquier vía— y luego la base, con filtros por categoría;
+  cantidad en porciones o gramos/ml; aviso del alcohol. Si no está: "Crear
+  «…»" abre "A mano" con el nombre; "A mano" pide cantidad y unidad y queda
+  guardado para la próxima vez. Sin migración (usa food_entries).
 
 ## PAUSA (21-oct-2026)
 

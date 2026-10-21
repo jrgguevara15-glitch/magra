@@ -49,6 +49,10 @@ abstract interface class FoodLogRepository {
   Future<void> add(FoodEntry entry);
   Future<void> delete(String id);
 
+  /// Lo último que anotó el usuario (más reciente primero, hasta [limit]
+  /// registros), para volver a agregarlo con un toque.
+  Future<List<FoodEntry>> recent({int limit = 400});
+
   /// Calorías registradas por día entre [from] y [to] (ambos incluidos).
   Future<Map<DateTime, double>> dailyKcal(DateTime from, DateTime to);
 
@@ -231,6 +235,16 @@ class SupabaseFoodLogRepository implements FoodLogRepository {
   @override
   Future<void> delete(String id) =>
       _client.from('food_entries').delete().eq('id', id);
+
+  @override
+  Future<List<FoodEntry>> recent({int limit = 400}) async {
+    final rows = await _client
+        .from('food_entries')
+        .select()
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return [for (final r in rows) FoodEntry.fromRow(r)];
+  }
 
   @override
   Future<Map<DateTime, double>> dailyKcal(DateTime from, DateTime to) async {

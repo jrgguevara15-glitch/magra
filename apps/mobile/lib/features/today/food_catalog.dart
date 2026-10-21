@@ -2,8 +2,29 @@ import '../../core/format.dart';
 import '../../core/recommendation/reference_foods.dart';
 import '../questionnaire/questionnaire.dart';
 
-/// Grupo de intercambio al que pertenece un alimento del catálogo.
-enum FoodGroup { protein, carb, fat, vegetable, other }
+part 'food_catalog_extra.dart';
+
+/// Grupo al que pertenece un alimento del catálogo.
+enum FoodGroup {
+  protein('Proteínas'),
+  carb('Carbohidratos'),
+  fat('Grasas'),
+  vegetable('Verduras'),
+  other('Lácteos y otros'),
+  drink('Bebidas y café'),
+  alcohol('Alcohol'),
+  snack('Snacks'),
+  sweet('Dulces y golosinas'),
+  fastFood('Comida rápida'),
+  condiment('Salsas y condimentos');
+
+  const FoodGroup(this.label);
+  final String label;
+
+  /// Se registran por porción casera (lata, copa, unidad), no por gramos
+  /// calculados según el plan.
+  bool get byServing => index >= FoodGroup.drink.index;
+}
 
 /// Alimento del catálogo con sus nutrientes por 100 g o 100 ml, listo para
 /// comer (salvo donde el nombre dice "crudo").
@@ -19,7 +40,26 @@ class CatalogFood {
     this.unit = 'g',
     this.unitName,
     this.unitGrams,
+    this.mine = false,
+    this.lastQuantity,
   });
+
+  /// Un alimento que el usuario ya anotó: se vuelve a agregar con la misma
+  /// porción (o en gramos si se registró en gramos).
+  factory CatalogFood.fromEntry(FoodEntry e) {
+    final q = e.quantity;
+    if (q != null && q > 0 && (e.unit == 'g' || e.unit == 'ml')) {
+      final k = 100 / q;
+      return CatalogFood(e.name, FoodGroup.other, e.kcal * k, e.protein * k, e.carbs * k, e.fat * k,
+          unit: e.unit, mine: true, lastQuantity: q);
+    }
+    // Porciones: se guardan "por 1 porción" (unitGrams = 1).
+    final n = q == null || q <= 0 ? 1.0 : q;
+    final u = q == null ? 'porción' : e.unit;
+    return CatalogFood(e.name, FoodGroup.other, e.kcal / n * 100, e.protein / n * 100,
+        e.carbs / n * 100, e.fat / n * 100,
+        unit: u, unitName: u, unitGrams: 1, mine: true, lastQuantity: n);
+  }
 
   final String name;
   final FoodGroup group;
@@ -35,6 +75,15 @@ class CatalogFood {
   /// Unidad casera opcional ('huevo', 'plátano') y cuánto pesa.
   final String? unitName;
   final double? unitGrams;
+
+  /// Viene de lo que el usuario ya anotó ("Tus alimentos").
+  final bool mine;
+
+  /// Cantidad de la última vez (en [unit]).
+  final double? lastQuantity;
+
+  /// Se mide en porciones propias (no en gramos ni ml).
+  bool get servingOnly => unitGrams == 1 && unitName == unit;
 
   /// Nutrientes de [grams] g (o ml).
   ({double kcal, double protein, double carbs, double fat}) nutrientsFor(
@@ -120,6 +169,7 @@ const foodCatalog = <CatalogFood>[
       tags: {FoodTag.dairy}, unit: 'ml'),
   CatalogFood('Leche entera', FoodGroup.other, 61, 3.2, 4.8, 3.3,
       tags: {FoodTag.dairy}, unit: 'ml'),
+  ..._extraFoods,
 ];
 
 /// Alimentos que el usuario puede elegir, que coinciden con [query].
@@ -143,12 +193,13 @@ double suggestedGrams(
   required double mealCarbs,
   required double mealFat,
 }) {
+  if (food.group.byServing) return food.unitGrams ?? 100;
   final grams = switch (food.group) {
     FoodGroup.protein => mealProtein / food.protein * 100,
     FoodGroup.carb => mealCarbs / food.carbs * 100,
     FoodGroup.fat => mealFat / food.fat * 100,
     FoodGroup.vegetable => 100.0,
-    FoodGroup.other => 200.0,
+    _ => 200.0,
   };
   if (food.unitGrams != null) {
     final units = ((grams / food.unitGrams! * 2).round() / 2)

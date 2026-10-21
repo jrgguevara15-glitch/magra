@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
-import '../../core/formulas/formulas.dart';
+import '../../core/formulas/formulas.dart' hide FoodGroup;
 import '../../core/recommendation/motivation.dart';
 import '../../core/recommendation/nutrition_plan.dart';
+import '../../core/recommendation/reference_foods.dart' show plainText;
 import '../../core/recommendation/training_plan.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/progress_ring.dart';
@@ -487,7 +488,7 @@ class _MealLog extends StatelessWidget {
 }
 
 enum _AddMode {
-  catalog('Catálogo'),
+  catalog('Buscar'),
   photo('Foto'),
   text('Describir'),
   barcode('Código'),
@@ -553,6 +554,12 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
   final _c = TextEditingController();
   final _f = TextEditingController();
   CatalogFood? _food;
+
+  /// La cantidad se escribe en porciones caseras (lata, copa, unidad).
+  bool _byUnit = false;
+  FoodGroup? _category;
+  final _manualQty = TextEditingController();
+  String _manualUnit = 'porción';
   bool _busy = false;
   String? _error;
 
@@ -560,7 +567,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
   void dispose() {
     for (final c in [
       _query, _qty, _name, _kcal, _p, _c, _f, _photoNote, _describe, _code,
-      _codeQty,
+      _codeQty, _manualQty,
     ]) {
       c.dispose();
     }
@@ -568,14 +575,55 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
   }
 
   void _pick(CatalogFood f) {
-    final g = suggestedGrams(f,
-        mealProtein: widget.mealProtein,
-        mealCarbs: widget.mealCarbs,
-        mealFat: widget.mealFat);
+    double value;
+    bool byUnit;
+    if (f.mine) {
+      value = f.lastQuantity ?? 1;
+      byUnit = f.servingOnly;
+    } else if (f.group.byServing && f.unitGrams != null) {
+      value = 1;
+      byUnit = true;
+    } else {
+      value = suggestedGrams(f,
+          mealProtein: widget.mealProtein,
+          mealCarbs: widget.mealCarbs,
+          mealFat: widget.mealFat);
+      byUnit = false;
+    }
     setState(() {
       _food = f;
+      _byUnit = byUnit;
       // Sin separador de miles: el campo se vuelve a leer con parseNum.
-      _qty.text = g.round().toString();
+      _qty.text = _numText(value);
+      _error = null;
+    });
+  }
+
+  static String _numText(double v) =>
+      v % 1 == 0 ? v.round().toString() : v.toStringAsFixed(1).replaceAll('.', ',');
+
+  /// Gramos (o ml, o porciones propias) de lo escrito en Cantidad.
+  double? get _grams {
+    final q = parseNum(_qty.text);
+    if (q == null || _food == null) return null;
+    return _byUnit && !_food!.servingOnly ? q * _food!.unitGrams! : q;
+  }
+
+  void _setByUnit(bool byUnit) {
+    final f = _food;
+    final q = parseNum(_qty.text);
+    if (f == null || f.unitGrams == null || byUnit == _byUnit) return;
+    setState(() {
+      _byUnit = byUnit;
+      if (q != null) _qty.text = _numText(byUnit ? q / f.unitGrams! : q * f.unitGrams!);
+    });
+  }
+
+  /// Pasa a "A mano" con el nombre que se buscó.
+  void _createFromQuery() {
+    setState(() {
+      _mode = _AddMode.manual;
+      _name.text = _query.text.trim();
       _error = null;
     });
   }
@@ -731,6 +779,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
         ));
       }
       ref.invalidate(foodLogProvider(widget.day));
+      ref.invalidate(myFoodsProvider);
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
       if (mounted) setState(() => _error = 'No se pudo guardar. Revisa tu conexión.');
@@ -772,10 +821,17 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
         setState(() => _error = 'Escribe un nombre y las calorías (0–5.000).');
         return;
       }
+      final mq = parseNum(_manualQty.text);
+      if (mq != null && (mq <= 0 || mq > 3000)) {
+        setState(() => _error = 'La cantidad va de 0 a 3.000.');
+        return;
+      }
       entry = FoodEntry(
         date: widget.day,
         mealIndex: widget.mealIndex,
         name: _name.text.trim(),
+        quantity: mq ?? 1,
+        unit: mq == null ? 'porción' : _manualUnit,
         kcal: kcal,
         protein: parseNum(_p.text) ?? 0,
         carbs: parseNum(_c.text) ?? 0,
@@ -783,13 +839,27 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
         source: 'manual',
       );
     } else {
-      final qty = parseNum(_qty.text);
+      final qty = _grams;
       if (_food == null || qty == null || qty <= 0 || qty > 3000) {
         setState(() => _error = 'Elige un alimento y una cantidad válida.');
         return;
       }
       entry = FoodEntry.fromCatalog(_food!, qty,
           date: widget.day, mealIndex: widget.mealIndex);
+      if (_food!.mine) {
+        entry = FoodEntry(
+          date: entry.date,
+          mealIndex: entry.mealIndex,
+          name: entry.name,
+          quantity: entry.quantity,
+          unit: entry.unit,
+          kcal: entry.kcal,
+          protein: entry.protein,
+          carbs: entry.carbs,
+          fat: entry.fat,
+          source: 'manual',
+        );
+      }
     }
     setState(() {
       _busy = true;
@@ -798,6 +868,7 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     try {
       await ref.read(foodLogRepositoryProvider).add(entry);
       ref.invalidate(foodLogProvider(widget.day));
+      ref.invalidate(myFoodsProvider);
       if (mounted) Navigator.of(context).pop();
     } catch (_) {
       if (mounted) setState(() => _error = 'No se pudo guardar. Revisa tu conexión.');
@@ -1040,11 +1111,123 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
     ];
   }
 
+  /// Buscar: tus alimentos primero, luego la base (filtrable por categoría).
+  List<Widget> _searchSection(ThemeData theme) {
+    final query = _query.text.trim();
+    final words = plainText(query).split(' ').where((w) => w.isNotEmpty).toList();
+    bool matches(String name) => words.every((w) => plainText(name).contains(w));
+    final mine = [
+      for (final e in ref.watch(myFoodsProvider).value ?? const <FoodEntry>[])
+        if (_category == null && matches(e.name)) e,
+    ].take(query.isEmpty ? 8 : 20).toList();
+    final results = [
+      for (final f in searchCatalog(widget.questionnaire, query))
+        if (_category == null || f.group == _category) f,
+    ];
+    final groups = [for (final g in FoodGroup.values) if (foodCatalog.any((f) => f.group == g)) g];
+    Widget header(String t) => Padding(
+          padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+          child: Text(t, style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.primary)),
+        );
+    return [
+      TextField(
+        controller: _query,
+        autofocus: true,
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.search),
+          labelText: 'Buscar alimento',
+          hintText: 'Ej: café, cerveza, papas fritas, pollo',
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+      const SizedBox(height: 8),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final g in <FoodGroup?>[null, ...groups])
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: ChoiceChip(
+                  showCheckmark: false,
+                  label: Text(g?.label ?? 'Todo'),
+                  selected: _category == g,
+                  onSelected: (_) => setState(() => _category = g),
+                ),
+              ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 4),
+      SizedBox(
+        height: 300,
+        child: mine.isEmpty && results.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(query.isEmpty ? 'No hay alimentos en esta categoría.' : 'No encontré «$query».',
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                    if (query.isNotEmpty)
+                      FilledButton.tonalIcon(
+                        onPressed: _createFromQuery,
+                        icon: const Icon(Icons.add),
+                        label: Text('Crear «$query»'),
+                      ),
+                  ],
+                ),
+              )
+            : ListView(
+                children: [
+                  if (mine.isNotEmpty) ...[
+                    header('Tus alimentos'),
+                    for (final e in mine)
+                      ListTile(
+                        dense: true,
+                        minLeadingWidth: 10,
+                        leading: const Icon(Icons.history, size: 18),
+                        title: Text(e.name),
+                        subtitle: Text('${e.quantity == null ? '1 porción' : e.quantityLabel} · ${fmt(e.kcal)} kcal'),
+                        onTap: () => _pick(CatalogFood.fromEntry(e)),
+                      ),
+                  ],
+                  if (results.isNotEmpty) ...[
+                    if (mine.isNotEmpty) header('Base de alimentos'),
+                    for (final f in results)
+                      ListTile(
+                        dense: true,
+                        minLeadingWidth: 10,
+                        leading: FoodLightDot(
+                          light: foodLight(
+                              kcal: f.kcal, protein: f.protein, quantity: 100, unit: f.unit),
+                        ),
+                        title: Text(f.name),
+                        subtitle: Text(f.group.byServing && f.unitGrams != null
+                            ? '1 ${f.unitName} (${fmt(f.unitGrams)} ${f.unit}) · ${fmt(f.kcal * f.unitGrams! / 100)} kcal'
+                            : '${fmt(f.kcal)} kcal por 100 ${f.unit}'),
+                        onTap: () => _pick(f),
+                      ),
+                  ],
+                ],
+              ),
+      ),
+      if (query.isNotEmpty && (mine.isNotEmpty || results.isNotEmpty))
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _createFromQuery,
+            icon: const Icon(Icons.add, size: 18),
+            label: Text('¿No está? Crear «$query»'),
+          ),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final results = searchCatalog(widget.questionnaire, _query.text);
-    final qty = parseNum(_qty.text);
+    final qty = _grams;
     final preview = _food != null && qty != null ? _food!.nutrientsFor(qty) : null;
     const decimal = TextInputType.numberWithOptions(decimal: true);
 
@@ -1080,59 +1263,44 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
             if (_mode == _AddMode.photo) ..._photoSection(theme),
             if (_mode == _AddMode.text) ..._describeSection(theme),
             if (_mode == _AddMode.barcode) ..._barcodeSection(theme),
-            if (_mode == _AddMode.catalog && _food == null) ...[
-              TextField(
-                controller: _query,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search),
-                  labelText: 'Buscar alimento',
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 280,
-                child: results.isEmpty
-                    ? const Center(child: Text('No encontré ese alimento. Agrégalo a mano.'))
-                    : ListView(
-                        children: [
-                          for (final f in results)
-                            ListTile(
-                              dense: true,
-                              minLeadingWidth: 10,
-                              leading: FoodLightDot(
-                                light: foodLight(
-                                    kcal: f.kcal, protein: f.protein, quantity: 100, unit: f.unit),
-                              ),
-                              title: Text(f.name),
-                              subtitle: Text(
-                                  '${fmt(f.kcal)} kcal por 100 ${f.unit}'),
-                              onTap: () => _pick(f),
-                            ),
-                        ],
-                      ),
-              ),
-            ],
+            if (_mode == _AddMode.catalog && _food == null) ..._searchSection(theme),
             if (_mode == _AddMode.catalog && _food != null) ...[
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(_food!.name, style: theme.textTheme.titleMedium),
-                subtitle: _food!.unitGrams == null
-                    ? null
-                    : Text('1 ${_food!.unitName} ≈ ${fmt(_food!.unitGrams)} g'),
+                subtitle: _food!.mine
+                    ? const Text('De tus alimentos')
+                    : _food!.unitGrams == null
+                        ? null
+                        : Text('1 ${_food!.unitName} ≈ ${fmt(_food!.unitGrams)} ${_food!.unit}'),
                 trailing: TextButton(
                   onPressed: () => setState(() => _food = null),
                   child: const Text('Cambiar'),
                 ),
               ),
+              if (_food!.unitGrams != null && !_food!.servingOnly) ...[
+                SegmentedButton<bool>(
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment(value: true, label: Text(_food!.unitName!)),
+                    ButtonSegment(value: false, label: Text(_food!.unit)),
+                  ],
+                  selected: {_byUnit},
+                  onSelectionChanged: (v) => _setByUnit(v.first),
+                ),
+                const SizedBox(height: 8),
+              ],
               TextField(
                 controller: _qty,
                 keyboardType: decimal,
                 decoration: InputDecoration(
                   labelText: 'Cantidad',
-                  suffixText: _food!.unit,
-                  helperText: 'Sugerida para esta comida según tu plan',
+                  suffixText: _byUnit || _food!.servingOnly ? _food!.unitName : _food!.unit,
+                  helperText: _food!.mine
+                      ? 'La misma cantidad de la última vez'
+                      : _food!.group.byServing
+                          ? null
+                          : 'Sugerida para esta comida según tu plan',
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -1144,6 +1312,14 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                   style: theme.textTheme.titleSmall,
                 ),
               ],
+              if (_food!.group == FoodGroup.alcohol) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'El alcohol aporta calorías (7 por gramo) sin nutrientes y frena '
+                  'la quema de grasa por unas horas. Mejor ocasional y con agua.',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
             ],
             if (_manual) ...[
               TextField(
@@ -1152,11 +1328,38 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                 decoration: const InputDecoration(labelText: 'Qué comiste'),
               ),
               const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _manualQty,
+                      keyboardType: decimal,
+                      decoration: const InputDecoration(
+                          labelText: 'Cantidad', hintText: '1'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      initialValue: _manualUnit,
+                      decoration: const InputDecoration(labelText: 'Unidad'),
+                      items: [
+                        for (final u in const ['porción', 'unidad', 'taza', 'vaso', 'lata', 'g', 'ml'])
+                          DropdownMenuItem(value: u, child: Text(u)),
+                      ],
+                      onChanged: (u) => setState(() => _manualUnit = u ?? 'porción'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               TextField(
                 controller: _kcal,
                 keyboardType: decimal,
                 decoration: const InputDecoration(
-                    labelText: 'Calorías', suffixText: 'kcal'),
+                    labelText: 'Calorías', suffixText: 'kcal',
+                    helperText: 'De esa cantidad'),
               ),
               const SizedBox(height: 8),
               Row(
@@ -1174,8 +1377,11 @@ class _AddFoodSheetState extends ConsumerState<AddFoodSheet> {
                 ],
               ),
               const SizedBox(height: 4),
-              Text('Proteína, carbos y grasas son opcionales.',
-                  style: theme.textTheme.bodySmall),
+              Text(
+                'Proteína, carbos y grasas son opcionales. Queda guardado en '
+                '"Tus alimentos": la próxima vez lo encuentras al buscar.',
+                style: theme.textTheme.bodySmall,
+              ),
             ],
             if (_error != null) ...[
               const SizedBox(height: 8),
