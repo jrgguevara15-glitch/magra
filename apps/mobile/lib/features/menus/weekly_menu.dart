@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/format.dart';
@@ -348,10 +350,10 @@ class SupabaseMenuGenerator implements MenuGenerator {
 
   final SupabaseClient _client;
 
-  Future<Map<String, dynamic>> _invoke(Map<String, dynamic> body) async {
+  Future<Object?> _invoke(Map<String, dynamic> body) async {
     try {
       final res = await _client.functions.invoke('ai-menu', body: body);
-      return (res.data as Map).cast<String, dynamic>();
+      return res.data;
     } on FunctionException catch (e) {
       throw MenuException(menuErrorMessage(e.status, e.details));
     } catch (_) {
@@ -369,13 +371,7 @@ class SupabaseMenuGenerator implements MenuGenerator {
       'slots': [for (final s in slots) s.toJson()],
       'prefs': prefs,
     });
-    return [
-      for (final d in data['days'] as List)
-        [
-          for (final m in d as List)
-            MenuMeal.fromJson((m as Map).cast<String, dynamic>()),
-        ],
-    ];
+    return parseWeek(data);
   }
 
   @override
@@ -394,6 +390,36 @@ class SupabaseMenuGenerator implements MenuGenerator {
       'meal': meal,
       'avoid': avoid,
     });
-    return MenuMeal.fromJson((data['meal'] as Map).cast<String, dynamic>());
+    try {
+      return MenuMeal.fromJson(((data as Map)['meal'] as Map).cast<String, dynamic>());
+    } catch (_) {
+      throw MenuException(unexpectedReply(data));
+    }
+  }
+}
+
+/// Mensaje cuando la función responde otra cosa (p. ej. el código de
+/// ejemplo de Supabase en vez de ai-menu).
+String unexpectedReply(Object? data) {
+  final text = data is Map || data is List ? jsonEncode(data) : '$data';
+  final short = text.length > 120 ? '${text.substring(0, 120)}…' : text;
+  return 'El servidor respondió algo inesperado: $short. Revisa que la '
+      'función ai-menu tenga el código de MAGRA.';
+}
+
+/// Los 7 días que devuelve `ai-menu`.
+List<List<MenuMeal>> parseWeek(Object? data) {
+  try {
+    final days = (data as Map)['days'] as List;
+    if (days.length != 7) throw const FormatException('días');
+    return [
+      for (final d in days)
+        [
+          for (final m in d as List)
+            MenuMeal.fromJson((m as Map).cast<String, dynamic>()),
+        ],
+    ];
+  } catch (_) {
+    throw MenuException(unexpectedReply(data));
   }
 }

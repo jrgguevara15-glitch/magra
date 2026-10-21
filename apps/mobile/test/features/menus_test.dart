@@ -98,6 +98,27 @@ void main() {
       expect(menuFor(const [slot, slot]).outdatedFor(plan), isTrue);
     });
 
+    test('respuesta inesperada del servidor da un mensaje claro', () {
+      expect(() => parseWeek({'message': 'Hello undefined!'}),
+          throwsA(isA<MenuException>().having((e) => e.message, 'message',
+              allOf(contains('Hello undefined!'), contains('ai-menu')))));
+      expect(() => parseWeek({'days': []}), throwsA(isA<MenuException>()));
+      expect(() => parseWeek('x' * 300),
+          throwsA(isA<MenuException>().having((e) => e.message, 'message', contains('…'))));
+      final ok = parseWeek({
+        'days': [
+          for (var d = 0; d < 7; d++)
+            [
+              {'name': 'Plato', 'prep': '', 'items': [
+                {'food': 'Arroz', 'quantity': 60, 'unit': 'g', 'kcal': 210, 'protein_g': 4, 'carbs_g': 46, 'fat_g': 0.5, 'category': 'Abarrotes', 'brand': ''},
+              ]},
+            ],
+        ],
+      });
+      expect(ok.length, 7);
+      expect(ok[6][0].items.single.kcal, 210);
+    });
+
     test('preferencias y metas que recibe la IA', () {
       final prefs = menuPrefs(q);
       expect(prefs['allergies'], ['Maní']);
