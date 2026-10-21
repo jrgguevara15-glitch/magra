@@ -85,7 +85,13 @@
   por día, "Lo comí" (registra en Hoy), "Cambiar" una comida, nuevo menú
   y lista de compras por sección con marcas sugeridas y checks guardados.
   analyze sin issues; suite 156/156; build web OK.
-- M10 y M12 en adelante — NO ABIERTOS.
+- M12 — Rutinas adaptativas de fuerza: IMPLEMENTADO, validación del
+  usuario PENDIENTE (requiere migración 0009). Entreno: "Hoy te toca" con
+  la sesión de la rotación, registrar series (reps y kg) con la carga
+  sugerida por doble progresión, descarga tras 3 fallos, historial con
+  borrar y calorías a Hoy. analyze sin issues; suite 169/169; build web
+  OK.
+- M10 y M13 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 

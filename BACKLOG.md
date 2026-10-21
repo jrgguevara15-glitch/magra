@@ -72,3 +72,6 @@ activo.
   compras (WhatsApp); precios estimados por supermercado.
 - Netlify: publicar automáticamente al hacer push (GitHub Actions con
   Flutter + token de Netlify) en vez de arrastrar la carpeta.
+- Entreno: temporizador de descanso entre series, gráfico de progreso por
+  ejercicio, semana de descarga automática cada 6.ª semana y cambiar un
+  ejercicio por otro del mismo patrón.

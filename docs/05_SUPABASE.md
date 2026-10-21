@@ -15,7 +15,7 @@ la base de datos nunca van en el repositorio ni en la app.
    `0002_questionnaires.sql` (M3), `0003_food_entries.sql` (M5),
    `0004_ai_usage.sql` (M6), `0005_exercise_fasting.sql` (M7),
    `0006_kcal_adjustments.sql` (M8), `0007_custom_products.sql` (M9b),
-   `0008_menus.sql` (M11).
+   `0008_menus.sql` (M11), `0009_workouts.sql` (M12).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
 Cada migración se puede volver a ejecutar sin romper nada.
@@ -62,7 +62,7 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migraciones 0001 a 0008 idempotentes.
+- Migraciones 0001 a 0009 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
@@ -84,6 +84,8 @@ BACKLOG.md).
 - Menús (M11): uno por semana (lunes) y usuario, 7 días obligatorios; B no
   ve ni modifica el de A; food_entries acepta origen 'menu' y rechaza
   otros desconocidos.
+- Sesiones de fuerza (M12): 1–20 ejercicios y 1–300 minutos; B no ve,
+  borra ni inserta en la cuenta de A.
 - Función ai-menu: compila contra los tipos del SDK; 6 pruebas (petición,
   prompt con metas/alergias/gustos/variedad, 7 llamadas en paralelo,
   respuestas incompletas o rechazadas, saneo, sesión).

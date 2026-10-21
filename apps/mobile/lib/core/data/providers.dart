@@ -8,6 +8,7 @@ import '../../features/today/activity_log.dart';
 import '../../features/today/barcode.dart';
 import '../../features/today/food_catalog.dart';
 import '../../features/today/photo_analysis.dart';
+import '../recommendation/progression.dart';
 import '../recommendation/weekly_adjustment.dart';
 import 'repositories.dart';
 
@@ -29,6 +30,8 @@ final fastRepositoryProvider =
     Provider<FastRepository>((ref) => throw UnimplementedError());
 final kcalAdjustmentRepositoryProvider =
     Provider<KcalAdjustmentRepository>((ref) => throw UnimplementedError());
+final workoutRepositoryProvider =
+    Provider<WorkoutRepository>((ref) => throw UnimplementedError());
 final menuRepositoryProvider =
     Provider<MenuRepository>((ref) => throw UnimplementedError());
 final menuGeneratorProvider =
@@ -107,4 +110,10 @@ final menuProvider =
     FutureProvider.family<WeeklyMenu?, DateTime>((ref, weekStart) async {
   if (ref.watch(signedInProvider).value != true) return null;
   return ref.watch(menuRepositoryProvider).forWeek(weekStart);
+});
+
+/// Últimas sesiones de fuerza (de la más antigua a la más reciente).
+final workoutsProvider = FutureProvider<List<WorkoutSession>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const [];
+  return ref.watch(workoutRepositoryProvider).recent();
 });

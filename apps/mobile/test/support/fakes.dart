@@ -8,6 +8,7 @@ import 'package:magra/app.dart';
 import 'package:magra/core/data/providers.dart';
 import 'package:magra/core/data/repositories.dart';
 import 'package:magra/core/formulas/formulas.dart';
+import 'package:magra/core/recommendation/progression.dart';
 import 'package:magra/core/recommendation/weekly_adjustment.dart';
 import 'package:magra/features/menus/weekly_menu.dart';
 import 'package:magra/features/profile/user_profile.dart';
@@ -258,6 +259,24 @@ class FakeCustomProducts implements CustomProductRepository {
   Future<void> save(Product p) async => items[p.code] = p;
 }
 
+class FakeWorkouts implements WorkoutRepository {
+  FakeWorkouts([List<WorkoutSession>? initial]) : items = [...?initial];
+
+  final List<WorkoutSession> items;
+  var _next = 0;
+
+  @override
+  Future<List<WorkoutSession>> recent({int limit = 60}) async => [...items];
+
+  @override
+  Future<void> add(WorkoutSession s) async => items.add(WorkoutSession(
+      id: 'w${_next++}', date: s.date, title: s.title, minutes: s.minutes,
+      exercises: s.exercises));
+
+  @override
+  Future<void> delete(String id) async => items.removeWhere((s) => s.id == id);
+}
+
 class FakeMenus implements MenuRepository {
   final Map<DateTime, WeeklyMenu> items = {};
   int saves = 0;
@@ -388,6 +407,7 @@ Widget testApp({
   BarcodeScanFn? scan,
   MenuRepository? menus,
   MenuGenerator? menuGenerator,
+  WorkoutRepository? workouts,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -402,6 +422,7 @@ Widget testApp({
       photoAnalyzerProvider.overrideWithValue(photoAnalyzer ?? FakePhotoAnalyzer()),
       imagePickProvider.overrideWithValue(pick ?? fakePick),
       menuRepositoryProvider.overrideWithValue(menus ?? FakeMenus()),
+      workoutRepositoryProvider.overrideWithValue(workouts ?? FakeWorkouts()),
       menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),
       productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),
       customProductRepositoryProvider

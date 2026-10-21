@@ -8,6 +8,7 @@ import '../../features/today/activity_log.dart';
 import '../../features/today/barcode.dart';
 import '../../features/today/food_catalog.dart';
 import '../format.dart';
+import '../recommendation/progression.dart';
 import '../recommendation/weekly_adjustment.dart';
 
 /// Sesión del usuario.
@@ -57,6 +58,13 @@ abstract interface class CustomProductRepository {
 
   /// Crea o reemplaza el producto de ese código.
   Future<void> save(Product product);
+}
+
+abstract interface class WorkoutRepository {
+  /// Últimas sesiones, de la más antigua a la más reciente.
+  Future<List<WorkoutSession>> recent({int limit = 60});
+  Future<void> add(WorkoutSession session);
+  Future<void> delete(String id);
 }
 
 abstract interface class MenuRepository {
@@ -343,4 +351,29 @@ class SupabaseMenuRepository implements MenuRepository {
   Future<void> save(WeeklyMenu menu) => _client.from('menus').upsert(
       {...menu.toRow(), 'updated_at': DateTime.now().toUtc().toIso8601String()},
       onConflict: 'user_id,week_start');
+}
+
+class SupabaseWorkoutRepository implements WorkoutRepository {
+  SupabaseWorkoutRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<List<WorkoutSession>> recent({int limit = 60}) async {
+    final rows = await _client
+        .from('workout_sessions')
+        .select()
+        .order('done_on', ascending: false)
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return [for (final r in rows.reversed) WorkoutSession.fromRow(r)];
+  }
+
+  @override
+  Future<void> add(WorkoutSession session) =>
+      _client.from('workout_sessions').insert(session.toRow());
+
+  @override
+  Future<void> delete(String id) =>
+      _client.from('workout_sessions').delete().eq('id', id);
 }

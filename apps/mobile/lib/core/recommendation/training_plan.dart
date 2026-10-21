@@ -6,12 +6,29 @@ import '../formulas/formulas.dart';
 enum Pattern { squat, hinge, lunge, pushH, pullH, pushV, pullV, core }
 
 class Exercise {
-  const Exercise(this.name, this.prescription);
+  const Exercise(
+    this.name,
+    this.prescription, {
+    this.pattern = Pattern.core,
+    this.sets = 3,
+    this.repMin = 10,
+    this.repMax = 12,
+    this.loadStep = 0,
+  });
 
   final String name;
 
   /// Series × repeticiones y esfuerzo, p. ej. "3 × 10–12 · deja 2 en reserva".
   final String prescription;
+  final Pattern pattern;
+
+  /// Series de trabajo que cuentan para progresar.
+  final int sets;
+  final int repMin;
+  final int repMax;
+
+  /// Cuánto subir la carga (kg); 0 = peso corporal, se progresa en reps.
+  final double loadStep;
 }
 
 class TrainingDay {
@@ -161,6 +178,12 @@ TrainingPlan recommendTraining({
         'cuando descansa.');
   }
 
+  // Series y rango de repeticiones para registrar y progresar.
+  final (sets, repMin, repMax) = switch (q.experience) {
+    Experience.none || Experience.beginner => (2, 10, 12),
+    Experience.intermediate => (3, 8, 12),
+    Experience.advanced => (4, 6, 10),
+  };
   final prescription = switch (q.experience) {
     Experience.none || Experience.beginner =>
       '2–3 × 10–12 · deja 3 repeticiones en reserva',
@@ -217,11 +240,26 @@ TrainingPlan recommendTraining({
         'aire, y evita esfuerzos al máximo.');
   }
 
+  double loadStep(Pattern p) {
+    if (p == Pattern.core || q.equipment == Equipment.bodyweight) return 0;
+    // Piernas y bisagra toleran saltos más grandes que el tren superior.
+    return p == Pattern.squat || p == Pattern.hinge ? 2.5 : 1;
+  }
+
   List<Exercise> session(List<Pattern> patterns) {
     final names = <String>{};
     return [
       for (final p in patterns)
-        if (names.add(exerciseFor(p))) Exercise(exerciseFor(p), prescription),
+        if (names.add(exerciseFor(p)))
+          Exercise(
+            exerciseFor(p),
+            prescription,
+            pattern: p,
+            sets: sets,
+            repMin: repMin,
+            repMax: repMax,
+            loadStep: loadStep(p),
+          ),
     ];
   }
 

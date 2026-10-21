@@ -110,6 +110,25 @@ Código: `lib/core/formulas/trend.dart` y
 - La meta del Plan y de Hoy = fórmula + ajustes aplicados (macros
   escalados, sin bajar del mínimo seguro).
 
+## Rutinas adaptativas (M12)
+
+Código: `lib/core/recommendation/progression.dart`.
+
+- Series de trabajo y rango: principiante 2 × 10–12, intermedio 3 × 8–12,
+  avanzado 4 × 6–10.
+- Carga de trabajo = la mayor de la sesión (el calentamiento no cuenta).
+- Doble progresión: si todas las series llegan al tope del rango, +2,5 kg
+  en sentadilla y bisagra, +1 kg en el resto (o el siguiente disponible) y
+  se vuelve al mínimo; si no, misma carga y una repetición más que la
+  serie más baja.
+- 3 sesiones seguidas bajo el mínimo con la misma carga → descarga del
+  10 % (redondeo a 0,5 kg).
+- Peso corporal y core: al tope, más repeticiones o variante más difícil.
+- Sesión que toca: la siguiente de la rotación (A/B o superior/inferior)
+  después de la última registrada.
+- Al terminar, los minutos de fuerza van a Ejercicio en Hoy como pesas
+  moderadas (intensas si es avanzado), con el peso actual.
+
 ## Menú semanal (M11)
 
 - El motor fija las comidas (hora, papel respecto del entreno, kcal y
