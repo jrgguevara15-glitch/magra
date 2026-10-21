@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
@@ -41,6 +42,10 @@ class _MenusViewState extends ConsumerState<MenusView> {
   String? _swapping;
   String? _error;
 
+  /// Menú que la IA ya armó pero no se pudo guardar: se reintenta sin
+  /// volver a pagar la generación.
+  WeeklyMenu? _pending;
+
   DateTime get _today => DateTime(widget.inputs.today.year,
       widget.inputs.today.month, widget.inputs.today.day);
 
@@ -55,15 +60,38 @@ class _MenusViewState extends ConsumerState<MenusView> {
             slots: slots,
             prefs: menuPrefs(widget.inputs.questionnaire),
           );
-      await ref.read(menuRepositoryProvider).save(
-          WeeklyMenu(weekStart: week, slots: slots, days: days));
-      ref.invalidate(menuProvider(week));
+      _pending = WeeklyMenu(weekStart: week, slots: slots, days: days);
+      await _savePending();
     } on MenuException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
-      if (mounted) setState(() => _error = 'No se pudo guardar el menú. Revisa tu conexión.');
+      if (mounted) {
+        setState(() => _error = 'La IA respondió algo inesperado. Intenta de nuevo.');
+      }
     } finally {
       if (mounted) setState(() => _generating = false);
+    }
+  }
+
+  Future<void> _savePending() async {
+    final menu = _pending;
+    if (menu == null) return;
+    try {
+      await ref.read(menuRepositoryProvider).save(menu);
+      _pending = null;
+      if (mounted) setState(() => _error = null);
+      ref.invalidate(menuProvider(menu.weekStart));
+    } on PostgrestException catch (e) {
+      if (mounted) {
+        setState(() => _error = 'El menú quedó listo pero no se pudo guardar '
+            '(${e.code ?? 'error'}: ${e.message}). ¿Ejecutaste la migración '
+            '0008 en Supabase?');
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error =
+            'El menú quedó listo pero no se pudo guardar. Revisa tu conexión.');
+      }
     }
   }
 
@@ -174,6 +202,14 @@ class _MenusViewState extends ConsumerState<MenusView> {
       const SizedBox(height: 12),
       if (_error != null) ...[
         Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+        const SizedBox(height: 8),
+      ],
+      if (_pending != null && !_generating) ...[
+        FilledButton.tonalIcon(
+          onPressed: _savePending,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Reintentar guardar (sin volver a generar)'),
+        ),
         const SizedBox(height: 8),
       ],
       async.when(

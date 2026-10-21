@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:magra/core/recommendation/nutrition_plan.dart';
 import 'package:magra/core/recommendation/weekly_adjustment.dart';
 import 'package:magra/features/menus/weekly_menu.dart';
@@ -210,6 +211,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Llegaste al límite de 3 menús por hoy.'), findsOneWidget);
     expect(menus.items[week]!.slots.length, 2);
+  });
+
+  testWidgets('si no se puede guardar, reintenta sin volver a generar',
+      (tester) async {
+    setSize(tester, const Size(700, 4000));
+    final menus = FakeMenus()
+      ..saveError = const PostgrestException(
+          message: 'relation "public.menus" does not exist', code: '42P01');
+    final gen = FakeMenuGenerator();
+    await tester.pumpWidget(app(menus: menus, generator: gen));
+    await tester.pumpAndSettle();
+    await openMenus(tester);
+    await tester.tap(find.text('Generar menú de la semana'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('42P01'), findsOneWidget);
+    expect(find.textContaining('migración 0008'), findsOneWidget);
+
+    menus.saveError = null;
+    await tester.tap(find.text('Reintentar guardar (sin volver a generar)'));
+    await tester.pumpAndSettle();
+    expect(gen.weeks, 1);
+    expect(menus.items[week], isNotNull);
+    expect(find.text('Plato $todayIndex-0'), findsOneWidget);
+    expect(find.textContaining('42P01'), findsNothing);
   });
 
   testWidgets('teléfono de 360 px: menú y compras sin desbordes', (tester) async {

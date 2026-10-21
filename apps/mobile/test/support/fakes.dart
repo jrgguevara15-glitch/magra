@@ -261,6 +261,7 @@ class FakeCustomProducts implements CustomProductRepository {
 class FakeMenus implements MenuRepository {
   final Map<DateTime, WeeklyMenu> items = {};
   int saves = 0;
+  Object? saveError;
 
   @override
   Future<WeeklyMenu?> forWeek(DateTime weekStart) async => items[weekStart];
@@ -268,6 +269,7 @@ class FakeMenus implements MenuRepository {
   @override
   Future<void> save(WeeklyMenu menu) async {
     saves++;
+    if (saveError != null) throw saveError!;
     items[menu.weekStart] = menu;
   }
 }
