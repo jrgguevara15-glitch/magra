@@ -1,4 +1,4 @@
-// MAGRA · M11 — Edge Function "ai-menu".
+// MAGRA · M11/U4 — Edge Function "ai-menu".
 //
 // Arma el menú de la semana (o reemplaza una comida) dentro de los números
 // que fija el motor de la app: cuántas comidas, a qué hora y cuántas
@@ -82,10 +82,18 @@ export interface MenuItem {
   brand: string;
 }
 
+/** Condimento, aceite o grasa saludable con su cantidad. */
+export interface Seasoning {
+  item: string;
+  amount: string;
+  tip: string;
+}
+
 export interface MenuMeal {
   name: string;
   prep: string;
   items: MenuItem[];
+  seasoning: Seasoning[];
 }
 
 const ITEM_SCHEMA = {
@@ -105,14 +113,26 @@ const ITEM_SCHEMA = {
   },
 } as const;
 
+const SEASONING_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["item", "amount", "tip"],
+  properties: {
+    item: { type: "string" },
+    amount: { type: "string" },
+    tip: { type: "string" },
+  },
+} as const;
+
 const MEAL_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["name", "prep", "items"],
+  required: ["name", "prep", "items", "seasoning"],
   properties: {
     name: { type: "string" },
     prep: { type: "string" },
     items: { type: "array", items: ITEM_SCHEMA },
+    seasoning: { type: "array", items: SEASONING_SCHEMA },
   },
 } as const;
 
@@ -225,6 +245,16 @@ export function buildPrompt(req: MenuRequest, day: number, only?: number): strin
     "cantidad en crudo en g, ml o unidad, sus nutrientes y la categoría del supermercado. " +
     "brand: una marca chilena común solo si es un producto envasado y estás seguro; si no, \"\".",
     "Proteína repartida, verduras en almuerzo y cena, y más carbohidratos cerca del entrenamiento.",
+    "Sazón saludable (obligatorio en cada comida): en seasoning pon 2 a 5 condimentos, " +
+    "aceites o grasas con cantidad casera (ej. \"1 cdta (5 ml)\", \"1/4 palta\", \"a gusto\") y " +
+    "un consejo corto de uso. Prefiere aceite de oliva extra virgen o de canola en crudo o " +
+    "salteado corto, palta, frutos secos o semillas (chía, linaza, sésamo) en porciones medidas, " +
+    "y hierbas y especias chilenas: ajo, comino, orégano, merkén, ají de color, pimentón, " +
+    "cilantro, perejil, limón, pimienta, cúrcuma, jengibre. Evita margarina, frituras, " +
+    "cubitos de caldo y salsas industriales; poca sal.",
+    "Todo aceite o grasa del seasoning con calorías (aceite, palta, frutos secos, semillas) " +
+    "también va en items con sus gramos y nutrientes, para que los totales sean reales.",
+    "En prep indica una técnica saludable: plancha, horno, vapor, salteado corto o crudo.",
   ].filter(Boolean).join("\n");
 }
 
@@ -236,9 +266,13 @@ const clamp = (v: unknown, max: number) => {
 export function sanitizeMeal(raw: unknown): MenuMeal {
   const m = raw as Partial<MenuMeal> | null;
   const items = Array.isArray(m?.items) ? m!.items.slice(0, 12) : [];
+  const seasoning = Array.isArray(m?.seasoning) ? m!.seasoning.slice(0, 6) : [];
   return {
     name: str(m?.name, 80) || "Comida",
     prep: str(m?.prep, 200),
+    seasoning: seasoning
+      .filter((s) => s && typeof s.item === "string" && s.item.trim().length > 0)
+      .map((s) => ({ item: str(s.item, 60), amount: str(s.amount, 40), tip: str(s.tip, 140) })),
     items: items
       .filter((i) => i && typeof i.food === "string" && i.food.trim().length > 0)
       .map((i) => ({

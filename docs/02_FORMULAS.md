@@ -163,6 +163,9 @@ Código: `lib/core/recommendation/motivation.dart`.
   1.000; unidades hacia arriba.
 - Si el plan cambia (otro n.º de comidas o ±5 % de kcal) se avisa que el
   menú quedó desactualizado.
+- Sazón saludable (U4): cada comida trae 2–5 condimentos o grasas con
+  cantidad casera; aceites, palta, frutos secos y semillas también se
+  cuentan en los ingredientes.
 
 ## Motor de recomendación (M4)
 

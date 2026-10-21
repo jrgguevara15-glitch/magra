@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/format.dart';
 import '../../core/recommendation/nutrition_plan.dart';
+import '../../core/recommendation/seasoning.dart';
 import '../../core/recommendation/reference_foods.dart';
 import '../../core/theme.dart';
 import 'plan_inputs.dart';
@@ -59,6 +60,14 @@ class NutritionPlanView extends StatelessWidget {
       ),
       const SizedBox(height: 8),
       ReasonList(title: 'Por qué este plan', reasons: plan.reasons),
+      const SizedBox(height: 8),
+      ReasonList(
+          title: 'Grasas saludables recomendadas',
+          reasons: healthyFatTips(inputs.questionnaire)),
+      const SizedBox(height: 8),
+      ReasonList(
+          title: 'Condimentos y sazón',
+          reasons: seasoningTipsFor(inputs.questionnaire)),
       const SizedBox(height: 8),
       for (var i = 0; i < plan.meals.length; i++) _MealCard(index: i, meal: plan.meals[i]),
       const SizedBox(height: 8),

@@ -421,6 +421,10 @@ class FakeMenuGenerator implements MenuGenerator {
           MenuItem(food: 'Palta', quantity: 0.5, unit: 'unidad', kcal: s.kcal * 0.1,
               fat: s.fat, category: 'Verduras y frutas'),
         ],
+        seasoning: const [
+          Seasoning(item: 'Aceite de oliva extra virgen', amount: '1 cdta (5 ml)', tip: 'En crudo'),
+          Seasoning(item: 'Merkén', amount: 'a gusto'),
+        ],
       );
 
   @override

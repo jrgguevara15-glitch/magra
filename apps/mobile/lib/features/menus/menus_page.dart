@@ -383,6 +383,32 @@ class _MenusViewState extends ConsumerState<MenusView> {
                 child: Text('${item.quantityLabel} ${item.food} · ${fmt(item.kcal)} kcal'),
               ),
             Text('Proteína ${fmt(meal.protein)} g', style: theme.textTheme.bodySmall),
+            if (meal.seasoning.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Sazón saludable', style: theme.textTheme.titleSmall
+                  ?.copyWith(color: theme.colorScheme.primary)),
+              const SizedBox(height: 4),
+              for (final s in meal.seasoning)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.eco_outlined, size: 18, color: theme.colorScheme.primary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text.rich(TextSpan(children: [
+                          TextSpan(text: s.item,
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                          if (s.amount.isNotEmpty) TextSpan(text: ' · ${s.amount}'),
+                          if (s.tip.isNotEmpty)
+                            TextSpan(text: ' — ${s.tip}', style: theme.textTheme.bodySmall),
+                        ])),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
             if (swapping) ...[
               const SizedBox(height: 8),
               const LinearProgressIndicator(),

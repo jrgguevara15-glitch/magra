@@ -129,8 +129,8 @@
   músculos, pasos y errores comunes; miniatura y acceso desde la rutina y
   desde la sesión. Prueba que todo ejercicio del motor tiene ficha.
   analyze sin issues; suite 194/194; build web OK.
-- U3 — Calentamiento y estiramiento guiados: IMPLEMENTADO, validación
-  PENDIENTE. warmup.dart: calentamiento (activación, movilidad de lo que
+- U3 — Calentamiento y estiramiento guiados: TERMINADO, validación del
+  usuario APROBADA. warmup.dart: calentamiento (activación, movilidad de lo que
   se entrena, series de aproximación) y vuelta a la calma (estiramientos
   30 s por lado + respiración) según foco (completo/superior/inferior),
   lesiones, impacto y equipo; 18 fotos más (dominio público). Rutina
@@ -138,7 +138,15 @@
   automático, repeticiones con "Listo", saltar y lista. En Entreno: "1 ·
   Calentar" / "2 · Empezar sesión", botones por día y "Estirar" al
   terminar la sesión. analyze sin issues; suite 200/200; build web OK.
-- U4 — Recetas con condimentos, aceites y grasas saludables: PENDIENTE.
+- U4 — Recetas con sazón saludable: IMPLEMENTADO, validación PENDIENTE
+  (requiere volver a desplegar ai-menu). Cada plato trae "Sazón
+  saludable": 2–5 condimentos, aceites o grasas con cantidad casera y
+  consejo (oliva extra virgen, palta, frutos secos, semillas, ajo, comino,
+  merkén, limón…; sin margarina, frituras ni cubitos); las grasas con
+  calorías se suman a los ingredientes. Plan: "Grasas saludables
+  recomendadas" y "Condimentos y sazón" según dieta y alergias. Menús
+  anteriores siguen funcionando. analyze sin issues; suite 202/202;
+  ai-menu 7 pruebas; build web OK.
 
 ## PAUSA (21-oct-2026)
 

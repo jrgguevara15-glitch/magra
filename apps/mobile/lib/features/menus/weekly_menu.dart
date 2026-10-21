@@ -69,9 +69,33 @@ class MenuItem {
       };
 }
 
+/// Condimento, aceite o grasa saludable recomendado para un plato.
+class Seasoning {
+  const Seasoning({required this.item, this.amount = '', this.tip = ''});
+
+  factory Seasoning.fromJson(Map<String, dynamic> j) => Seasoning(
+        item: j['item'] as String? ?? '',
+        amount: j['amount'] as String? ?? '',
+        tip: j['tip'] as String? ?? '',
+      );
+
+  final String item;
+
+  /// Cantidad casera: "1 cdta (5 ml)", "a gusto".
+  final String amount;
+  final String tip;
+
+  Map<String, dynamic> toJson() => {'item': item, 'amount': amount, 'tip': tip};
+}
+
 /// Un plato del menú.
 class MenuMeal {
-  const MenuMeal({required this.name, this.prep = '', required this.items});
+  const MenuMeal({
+    required this.name,
+    this.prep = '',
+    required this.items,
+    this.seasoning = const [],
+  });
 
   factory MenuMeal.fromJson(Map<String, dynamic> j) => MenuMeal(
         name: j['name'] as String? ?? 'Comida',
@@ -80,11 +104,18 @@ class MenuMeal {
           for (final i in (j['items'] as List? ?? const []))
             MenuItem.fromJson((i as Map).cast<String, dynamic>()),
         ],
+        seasoning: [
+          for (final s in (j['seasoning'] as List? ?? const []))
+            Seasoning.fromJson((s as Map).cast<String, dynamic>()),
+        ],
       );
 
   final String name;
   final String prep;
   final List<MenuItem> items;
+
+  /// Sazón saludable (menús anteriores a U4 no la traen).
+  final List<Seasoning> seasoning;
 
   double get kcal => items.fold(0, (a, i) => a + i.kcal);
   double get protein => items.fold(0, (a, i) => a + i.protein);
@@ -93,6 +124,7 @@ class MenuMeal {
         'name': name,
         'prep': prep,
         'items': [for (final i in items) i.toJson()],
+        'seasoning': [for (final s in seasoning) s.toJson()],
       };
 }
 

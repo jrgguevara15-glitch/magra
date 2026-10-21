@@ -90,6 +90,8 @@ void main() {
       expect(back.days[0][0].items[1].brand, 'Tucapel');
       expect(back.slots[0].role, 'post');
       expect(back.checked, {'arroz|g'});
+      expect(back.days[1][0].seasoning.first.amount, '1 cdta (5 ml)');
+      expect(MenuMeal.fromJson(const {'name': 'Viejo', 'items': []}).seasoning, isEmpty);
       expect(back.dateOf(6), week.add(const Duration(days: 6)));
 
       final plan = currentPlan();
@@ -148,6 +150,8 @@ void main() {
     expect(menus.items[week]!.days.length, 7);
     expect(find.text('Plato $todayIndex-0'), findsOneWidget);
     expect(find.textContaining('120 g Pechuga de pollo'), findsWidgets);
+    expect(find.text('Sazón saludable'), findsWidgets);
+    expect(find.textContaining('Aceite de oliva extra virgen'), findsWidgets);
     expect(find.text('Tu plan cambió'), findsNothing);
   });
 
