@@ -245,6 +245,10 @@
   pantalla encendida. Pasos: sección "Pasos" con la meta del plan y registro
   manual (daily_steps, migración 0014); conteo automático en la app
   instalada (M10). Dependencia nueva: geolocator.
+- U14 — Katch-McArdle: IMPLEMENTADO, validación PENDIENTE. Si hay % de
+  grasa válido (medidas de cuello/cintura/cadera), el metabolismo basal sale
+  de 370 + 21,6 × masa magra; si no, Mifflin-St Jeor. Se aplica al plan, la
+  revisión semanal, los logros y Progreso, y se explica cuál se usó.
 
 ## PAUSA (21-oct-2026)
 

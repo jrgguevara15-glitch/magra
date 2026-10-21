@@ -325,4 +325,26 @@ void main() {
       expect(t.kgPerWeek, closeTo(-0.5, 1e-6));
     });
   });
+
+  group('Katch-McArdle', () {
+    test('metabolismo basal según masa magra', () {
+      expect(bmrKatchMcArdle(70), closeTo(1882, 1e-9)); // 370 + 21,6 × 70
+    });
+
+    test('se usa con % de grasa válido; si no, Mifflin', () {
+      final katch = energyTarget(sex: Sex.male, weightKg: 100, heightCm: 180, age: 35, bodyFatPct: 30);
+      expect(katch.formula, BmrFormula.katch);
+      expect(katch.bmr, closeTo(370 + 21.6 * 70, 1e-9));
+      expect(katch.tdee, closeTo(katch.bmr * 1.2, 1e-9));
+      final mifflin = energyTarget(sex: Sex.male, weightKg: 100, heightCm: 180, age: 35);
+      expect(mifflin.formula, BmrFormula.mifflin);
+      expect(mifflin.bmr, closeTo(10 * 100 + 6.25 * 180 - 5 * 35 + 5, 1e-9));
+      // Un % de grasa imposible no se usa.
+      expect(energyTarget(sex: Sex.male, weightKg: 100, heightCm: 180, age: 35, bodyFatPct: 2).formula,
+          BmrFormula.mifflin);
+      // El mínimo seguro sigue rigiendo.
+      final small = energyTarget(sex: Sex.female, weightKg: 50, heightCm: 155, age: 40, bodyFatPct: 35, paceKgPerWeek: 1);
+      expect(small.kcal, 1200);
+    });
+  });
 }

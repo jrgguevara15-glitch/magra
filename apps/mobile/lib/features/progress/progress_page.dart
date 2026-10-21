@@ -187,6 +187,7 @@ class EvaluationCard extends StatelessWidget {
       activityFactor: profile.activityFactor,
       paceKgPerWeek: profile.paceKgPerWeek,
       split: profile.split,
+      bodyFatPct: comp.fatPct,
     );
 
     final tiles = <Widget>[
@@ -208,7 +209,7 @@ class EvaluationCard extends StatelessWidget {
       ]);
     }
     tiles.addAll([
-      _Stat('Metabolismo basal', '${fmt(energy.bmr)} kcal', 'Mifflin-St Jeor'),
+      _Stat('Metabolismo basal', '${fmt(energy.bmr)} kcal', energy.formula.label),
       _Stat('Meta diaria', '${fmt(energy.kcal)} kcal',
           'déficit ${fmt(energy.deficit)} kcal'),
       _Stat('Proteína', '${fmt(energy.grams.protein)} g',

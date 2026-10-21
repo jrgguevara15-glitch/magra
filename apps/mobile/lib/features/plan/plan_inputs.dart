@@ -54,6 +54,7 @@ class PlanInputs {
         questionnaire: questionnaire,
         today: today,
         kcalAdjustment: kcalAdjustment,
+        bodyFatPct: composition.fatPct,
       );
 
   List<HealthAlert> get alerts => healthAlerts(

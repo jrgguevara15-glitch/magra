@@ -84,6 +84,7 @@ class _WeeklyCheckCardState extends ConsumerState<WeeklyCheckCard> {
             questionnaire: q,
             today: today,
             kcalAdjustment: total,
+            bodyFatPct: latestBodyFat(widget.measurements, profile),
           );
     final suggestion = plan == null
         ? null

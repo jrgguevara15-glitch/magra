@@ -43,6 +43,7 @@ class AchievementsCard extends ConsumerWidget {
             questionnaire: q,
             today: today,
             kcalAdjustment: totalAdjustment(adjustments),
+            bodyFatPct: latestBodyFat(measurements, profile),
           ).protein;
 
     final list = achievements(

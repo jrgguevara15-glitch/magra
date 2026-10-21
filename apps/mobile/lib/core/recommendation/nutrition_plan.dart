@@ -118,6 +118,7 @@ NutritionPlan recommendNutrition({
   required Questionnaire questionnaire,
   required DateTime today,
   int kcalAdjustment = 0,
+  double? bodyFatPct,
 }) {
   final q = questionnaire;
   final age = profile.ageOn(today);
@@ -133,6 +134,7 @@ NutritionPlan recommendNutrition({
     activityFactor: profile.activityFactor,
     paceKgPerWeek: q.needsProfessionalSupervision ? 0 : profile.paceKgPerWeek,
     split: profile.split,
+    bodyFatPct: bodyFatPct,
   );
   final maintenance = q.needsProfessionalSupervision;
   if (maintenance) {
@@ -144,6 +146,13 @@ NutritionPlan recommendNutrition({
         'bajar ~${fmt(profile.paceKgPerWeek, 2)} kg por semana.'
         '${energy.floorApplied ? ' Quedó en el mínimo seguro; no se baja más.' : ''}');
   }
+  reasons.add(energy.formula == BmrFormula.katch
+      ? 'Tu metabolismo en reposo (${fmt(energy.bmr)} kcal) se calcula con '
+          'Katch-McArdle a partir de tu masa magra (${fmt(weightKg * (1 - bodyFatPct! / 100), 1)} kg, '
+          'con ${fmt(bodyFatPct, 1)} % de grasa según tus medidas).'
+      : 'Tu metabolismo en reposo (${fmt(energy.bmr)} kcal) se calcula con '
+          'Mifflin-St Jeor. Si registras cuello y cintura (y cadera, en mujeres), '
+          'MAGRA usará Katch-McArdle con tu masa magra, que es más precisa.');
   // Ajuste semanal según el progreso real, sin bajar del mínimo seguro.
   final floor = safeFloorKcal(profile.sex);
   var kcal = energy.kcal;

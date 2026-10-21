@@ -36,6 +36,11 @@ la fórmula, no con el 18,74 % informado).
 
 - **TMB — Mifflin-St Jeor**: `10·peso + 6,25·estatura − 5·edad + 5`
   (hombre; mujer −161). Verificado: 110,9 kg, 180 cm, 35 años → 2.064.
+- **TMB — Katch-McArdle** (desde U14, se usa si hay % de grasa válido entre
+  4 y 60 %, calculado con las medidas de la última medición completa):
+  `370 + 21,6 · masa magra (kg)`, con masa magra = peso actual × (1 − %grasa).
+  Ej.: 100 kg con 30 % → 70 kg magros → 1.882 kcal. Sin % de grasa se
+  mantiene Mifflin. La app indica cuál usó (Plan → Por qué; Progreso).
 - **Gasto** = TMB × factor de actividad (1,2 sedentario; usado por el nutri).
 - **Meta** = gasto − déficit; déficit = ritmo(kg/semana) × 1.000 kcal/día.
   Verificado: 2.064 × 1,2 − 500 = 1.976,8.

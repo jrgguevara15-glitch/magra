@@ -61,3 +61,13 @@ class Measurement {
         'source': source,
       };
 }
+
+/// % de grasa de la última medición con perímetros ([ms] de la más antigua
+/// a la más reciente), o null si nunca se midió.
+double? latestBodyFat(List<Measurement> ms, UserProfile profile) {
+  for (final m in ms.reversed) {
+    final f = m.compositionFor(profile).fatPct;
+    if (f != null) return f;
+  }
+  return null;
+}
