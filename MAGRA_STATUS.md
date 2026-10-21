@@ -148,6 +148,15 @@
   anteriores siguen funcionando. analyze sin issues; suite 202/202;
   ai-menu 7 pruebas; build web OK.
 
+- U5 — Pantallas resumidas con subtítulos tocables: PENDIENTE de que el
+  usuario elija entre A (índice con tarjetas desplegables) y B (pestañas
+  internas); maqueta: https://claude.ai/artifact/4oPHq3QYMfxpxKBftZeK5f
+- U6 — Figura anatómica sin rostro (hombre/mujer según el sexo del
+  usuario), giro frente↔espalda animado y músculos trabajados en rojo
+  (secundarios en naranja): ELEGIDA por el usuario, PENDIENTE. No hay
+  generación de imágenes/3D con IA en este entorno; un 360° real por
+  ejercicio requeriría una biblioteca 3D licenciada.
+
 ## PAUSA (21-oct-2026)
 
 El usuario pidió pausar antes de M18 para proponer mejoras. Al retomar:
