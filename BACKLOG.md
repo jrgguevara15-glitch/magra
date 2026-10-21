@@ -77,3 +77,6 @@ activo.
   ejercicio por otro del mismo patrón.
 - Fotos de progreso: guía de silueta en la cámara para encuadrar igual,
   deslizador antes/después superpuesto y exportar el comparativo.
+- Coach: respuestas en streaming, que el coach proponga acciones con un
+  botón (p. ej. "registrar esta cena", "aplicar ajuste"), y revisión
+  semanal automática con notificación (requiere M14 y app nativa).

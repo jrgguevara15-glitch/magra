@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/coach/coach.dart';
 import '../../features/menus/weekly_menu.dart';
 import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
@@ -37,6 +38,10 @@ final workoutRepositoryProvider =
     Provider<WorkoutRepository>((ref) => throw UnimplementedError());
 final progressPhotoRepositoryProvider =
     Provider<ProgressPhotoRepository>((ref) => throw UnimplementedError());
+final coachRepositoryProvider =
+    Provider<CoachRepository>((ref) => throw UnimplementedError());
+final coachClientProvider =
+    Provider<CoachClient>((ref) => throw UnimplementedError());
 final menuRepositoryProvider =
     Provider<MenuRepository>((ref) => throw UnimplementedError());
 final menuGeneratorProvider =
@@ -133,4 +138,16 @@ final progressPhotosProvider = FutureProvider<List<ProgressPhoto>>((ref) async {
 final photoBytesProvider =
     FutureProvider.family<Uint8List, ProgressPhoto>((ref, photo) async {
   return ref.watch(progressPhotoRepositoryProvider).bytes(photo);
+});
+
+/// Conversación con el coach.
+final coachMessagesProvider = FutureProvider<List<CoachMessage>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const [];
+  return ref.watch(coachRepositoryProvider).messages();
+});
+
+/// Si aceptó compartir sus datos con el coach.
+final coachConsentProvider = FutureProvider<bool>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return false;
+  return ref.watch(coachRepositoryProvider).hasConsent();
 });

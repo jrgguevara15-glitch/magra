@@ -17,7 +17,7 @@ la base de datos nunca van en el repositorio ni en la app.
    `0006_kcal_adjustments.sql` (M8), `0007_custom_products.sql` (M9b),
    `0008_menus.sql` (M11), `0009_workouts.sql` (M12),
    `0010_progress_photos.sql` (M13, crea el bucket privado
-   `progress-photos` y sus permisos).
+   `progress-photos` y sus permisos), `0011_coach.sql` (M15).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
 Cada migración se puede volver a ejecutar sin romper nada.
@@ -39,6 +39,13 @@ Desde M9 la misma función también recibe texto (`mode: "text"`, lo que
 comió escrito o dictado), con su propio límite de 50 por día
 (`ai_consume('text', 50)`); no requiere migración nueva. Al actualizar el
 archivo hay que volver a desplegarla (Code → pegar → Deploy).
+
+## 2c. Función del coach "ai-coach" (M15)
+
+Igual que ai-menu: Deploy a new function → Via Editor → nombre `ai-coach`
+→ pegar `backend/supabase/functions/ai-coach/index.ts` → Deploy. Solo
+responde si la persona aceptó compartir sus datos (tabla `ai_consents`).
+Límites: 30 mensajes y 3 revisiones semanales por día.
 
 ## 2b. Función de menús "ai-menu" (M11)
 
@@ -64,7 +71,7 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migraciones 0001 a 0010 idempotentes.
+- Migraciones 0001 a 0011 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
@@ -92,6 +99,12 @@ BACKLOG.md).
   (JPG/PNG/WebP); cada usuario solo sube, ve y borra en su carpeta
   `<user_id>/`; la ruta de la fila debe estar en su carpeta; anónimo no
   ve nada.
+- Coach (M15): mensajes solo 'user'/'assistant' (1–8.000 caracteres) y
+  consentimiento solo 'coach'; B no ve, borra ni inserta en la cuenta de
+  A; retirar el consentimiento y borrar la conversación funciona.
+- Función ai-coach: compila contra los tipos del SDK; 4 pruebas (normaliza
+  la conversación, reglas y datos en el system, revisión semanal,
+  rechazo/vacío, sesión). Exige consentimiento antes de llamar a la IA.
 - Función ai-menu: compila contra los tipos del SDK; 6 pruebas (petición,
   prompt con metas/alergias/gustos/variedad, 7 llamadas en paralelo,
   respuestas incompletas o rechazadas, saneo, sesión).

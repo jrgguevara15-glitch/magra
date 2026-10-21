@@ -10,6 +10,7 @@ import 'package:magra/core/data/repositories.dart';
 import 'package:magra/core/formulas/formulas.dart';
 import 'package:magra/core/recommendation/progression.dart';
 import 'package:magra/core/recommendation/weekly_adjustment.dart';
+import 'package:magra/features/coach/coach.dart';
 import 'package:magra/features/menus/weekly_menu.dart';
 import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
@@ -311,6 +312,50 @@ class FakePhotos implements ProgressPhotoRepository {
       items.removeWhere((p) => p.path == photo.path);
 }
 
+class FakeCoach implements CoachRepository, CoachClient {
+  FakeCoach({this.consent = false});
+
+  bool consent;
+  final List<CoachMessage> items = [];
+  CoachException? error;
+  String reply = 'Cena pollo con verduras.';
+  String? lastMode;
+  List<CoachMessage>? lastHistory;
+  Map<String, dynamic>? lastContext;
+  int asks = 0;
+
+  @override
+  Future<List<CoachMessage>> messages() async => [...items];
+
+  @override
+  Future<void> add(CoachMessage m) async => items.add(CoachMessage(
+      id: 'c${items.length}', role: m.role, kind: m.kind, content: m.content,
+      createdAt: DateTime.now()));
+
+  @override
+  Future<void> clear() async => items.clear();
+
+  @override
+  Future<bool> hasConsent() async => consent;
+
+  @override
+  Future<void> setConsent(bool accepted) async => consent = accepted;
+
+  @override
+  Future<String> ask({
+    required String mode,
+    required List<CoachMessage> history,
+    required Map<String, dynamic> context,
+  }) async {
+    asks++;
+    lastMode = mode;
+    lastHistory = history;
+    lastContext = context;
+    if (error != null) throw error!;
+    return reply;
+  }
+}
+
 class FakeMenus implements MenuRepository {
   final Map<DateTime, WeeklyMenu> items = {};
   int saves = 0;
@@ -443,6 +488,7 @@ Widget testApp({
   MenuGenerator? menuGenerator,
   WorkoutRepository? workouts,
   ProgressPhotoRepository? photos,
+  FakeCoach? coach,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -459,6 +505,8 @@ Widget testApp({
       menuRepositoryProvider.overrideWithValue(menus ?? FakeMenus()),
       workoutRepositoryProvider.overrideWithValue(workouts ?? FakeWorkouts()),
       progressPhotoRepositoryProvider.overrideWithValue(photos ?? FakePhotos()),
+      coachRepositoryProvider.overrideWithValue(coach ?? FakeCoach()),
+      coachClientProvider.overrideWithValue(coach ?? FakeCoach()),
       menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),
       productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),
       customProductRepositoryProvider

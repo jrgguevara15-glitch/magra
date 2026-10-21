@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/providers.dart';
+import '../coach/coach_page.dart';
 import '../menus/menus_page.dart';
 import '../plan/plan_inputs.dart';
 import '../plan/plan_page.dart';
@@ -107,6 +108,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       2 => const MenusPage(),
       kProgressTab => const ProgressPage(),
       4 => const TrainingPage(),
+      5 => const CoachPage(),
       _ => _PlaceholderPage(destination: destination),
     };
     final signOutButton = IconButton(
