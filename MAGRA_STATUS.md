@@ -113,6 +113,41 @@
   web OK.
 - M10, M14 y M17 en adelante — NO ABIERTOS.
 
+## PAUSA (21-oct-2026)
+
+El usuario pidió pausar antes de M18 para proponer mejoras. Al retomar:
+primero sus mejoras (como bloques cerrados, con su validación), después
+la hoja de ruta de abajo.
+
+## Próximos pasos (hoja de ruta acordada)
+
+1. Mejoras que pida el usuario (pendiente que las describa).
+2. M18 — Legal: términos, política de privacidad, consentimiento al
+   crear la cuenta, exportar datos y borrar la cuenta con todo su
+   contenido (obligatorio antes de vender: datos de salud).
+3. M20 — PDF para el nutricionista (medidas, evolución, plan, registro).
+4. Preparar compilación nativa: cuenta Apple Developer (US$99/año) +
+   Codemagic (no hay Mac); Android con APK.
+5. M10 — Apple Health / Health Connect (requiere app nativa).
+6. M14 — Notificaciones (requiere app nativa).
+7. M17 — Suscripciones con RevenueCat, gratis vs premium.
+8. M19 — Publicación en App Store, Google Play, Windows y macOS.
+
+Antes de abrir al público: reactivar "Confirm email" y "Allow new users
+to sign up" en Supabase, login con Google/Apple, recuperar contraseña y
+publicación automática en Netlify (ver BACKLOG.md).
+
+## Cómo actualizar el entorno del usuario (recordatorio)
+
+- `git restore .` + `git pull` en `apps/mobile` (los archivos generados
+  bloquean el pull).
+- Migraciones: `Get-Content <archivo> -Raw -Encoding UTF8 | Set-Clipboard`
+  → Supabase SQL Editor → Run (aplicadas: 0001–0012).
+- Funciones: ai-photo, ai-menu, ai-coach (pegar con -Encoding UTF8 y
+  revisar la primera línea antes de Deploy).
+- Web: `flutter build web --release` → `explorer build` → arrastrar
+  `web` a Netlify → magrafit → Deploys (https://magrafit.netlify.app).
+
 ## Decisiones tomadas por el usuario
 
 - Tecnología: Flutter (móvil y escritorio).

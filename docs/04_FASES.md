@@ -9,7 +9,7 @@ Artifact privado de Claude: registro, foto→calorías, plan de intercambios,
 días sin carbohidratos, ayuno, ejercicio MET, menús con marcas, lista de
 compras, evaluación, evolución, entrenamiento y coach IA.
 
-## Fase 2 — Núcleo nativo
+## Fase 2 — Núcleo nativo (TERMINADA: M0–M9 y M9b)
 
 | Bloque | Contenido |
 |---|---|
@@ -27,7 +27,7 @@ compras, evaluación, evolución, entrenamiento y coach IA.
 Orden aprobado por el usuario: primero que MAGRA evalúe y recomiende
 (M3–M4), después el registro diario.
 
-## Fase 3 — Conectado
+## Fase 3 — Conectado (M11, M12, M13 terminados; M10 y M14 requieren app nativa)
 
 | Bloque | Contenido |
 |---|---|
@@ -37,7 +37,7 @@ Orden aprobado por el usuario: primero que MAGRA evalúe y recomiende
 | M13 | Fotos de progreso y comparador |
 | M14 | Notificaciones inteligentes |
 
-## Fase 4 — Producto vendible
+## Fase 4 — Producto vendible (M15 y M16 terminados; sigue M18 tras las mejoras del usuario)
 
 | Bloque | Contenido |
 |---|---|
