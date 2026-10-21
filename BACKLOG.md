@@ -81,5 +81,5 @@ activo.
   botón (p. ej. "registrar esta cena", "aplicar ajuste"), y revisión
   semanal automática con notificación (requiere M14 y app nativa).
 - Ejercicios: animación 3D real (360°) por ejercicio con cuerpos sin rostro
-  hombre/mujer: requiere licenciar una biblioteca 3D o encargar los modelos;
-  hoy hay figura anatómica girable + fotos opcionales.
+  hombre/mujer: hecho con maniquí 3D propio (U7). Mejora futura: modelos
+  3D con malla y músculos detallados (biblioteca licenciada o encargo).

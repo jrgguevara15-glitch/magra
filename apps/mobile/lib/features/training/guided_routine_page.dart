@@ -129,7 +129,8 @@ class _GuidedRoutinePageState extends ConsumerState<GuidedRoutinePage> {
                     key: ValueKey('fig$_index'),
                     sex: ref.watch(profileProvider).value?.sex ?? Sex.male,
                     muscles: _drill.muscles,
-                    height: 200,
+                    name: _drill.name,
+                    height: 220,
                   ),
                 if (_drill.images.isNotEmpty)
                   MovementPhotos(key: ValueKey('ph$_index'), images: _drill.images),

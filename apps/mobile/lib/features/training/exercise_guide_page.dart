@@ -8,6 +8,8 @@ import '../../core/formulas/formulas.dart' show Sex;
 import '../../core/recommendation/exercise_guides.dart';
 import '../../core/theme.dart';
 import 'body_map.dart';
+import 'mannequin.dart';
+import 'mannequin_poses.dart';
 
 /// Abre la ficha de un ejercicio.
 Future<void> openExerciseGuide(BuildContext context, String exercise, {String? prescription}) =>
@@ -76,7 +78,7 @@ class _MoveSection extends StatelessWidget {
             Text(move.name, style: theme.textTheme.titleLarge),
             const SizedBox(height: 8),
           ],
-          MuscleFigure(sex: sex, muscles: move.muscles),
+          MuscleFigure(sex: sex, muscles: move.muscles, name: move.name),
           if (move.images.isNotEmpty)
             MovementPhotos(images: move.images, note: move.note),
           const SizedBox(height: 12),
@@ -203,6 +205,7 @@ class ExerciseThumb extends ConsumerWidget {
     final moves = guideFor(exercise);
     final sex = ref.watch(profileProvider).value?.sex ?? Sex.male;
     final split = splitMuscles(moves.isEmpty ? const [] : moves.first.muscles);
+    final anim = moves.isEmpty ? null : animFor(moves.first.name);
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -212,23 +215,36 @@ class ExerciseThumb extends ConsumerWidget {
         padding: const EdgeInsets.all(3),
         child: moves.isEmpty
             ? const Icon(Icons.fitness_center, color: MagraColors.lime, size: 22)
-            : BodyThumb(sex: sex, primary: split.primary, secondary: split.secondary),
+            : anim != null
+                ? MannequinView(
+                    anim: anim,
+                    sex: sex,
+                    primary: split.primary,
+                    secondary: split.secondary,
+                    height: size - 6,
+                    controls: false,
+                    animate: false,
+                  )
+                : BodyThumb(sex: sex, primary: split.primary, secondary: split.secondary),
       ),
     );
   }
 }
 
-/// Figura anatómica con los músculos de la lista destacados.
+/// El maniquí 3D haciendo el ejercicio [name] con los músculos de la lista
+/// destacados; si el movimiento no tiene animación, la figura anatómica.
 class MuscleFigure extends StatelessWidget {
-  const MuscleFigure({super.key, required this.sex, required this.muscles, this.height = 280});
+  const MuscleFigure({super.key, required this.sex, required this.muscles, this.name, this.height = 280});
 
   final Sex sex;
   final List<String> muscles;
+  final String? name;
   final double height;
 
   @override
   Widget build(BuildContext context) {
     final split = splitMuscles(muscles);
+    final anim = name == null ? null : animFor(name!);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
@@ -236,12 +252,20 @@ class MuscleFigure extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: MagraColors.outlineSoft),
       ),
-      child: BodyMap(
-        sex: sex,
-        primary: split.primary,
-        secondary: split.secondary,
-        height: height,
-      ),
+      child: anim != null
+          ? MannequinView(
+              anim: anim,
+              sex: sex,
+              primary: split.primary,
+              secondary: split.secondary,
+              height: height,
+            )
+          : BodyMap(
+              sex: sex,
+              primary: split.primary,
+              secondary: split.secondary,
+              height: height,
+            ),
     );
   }
 }

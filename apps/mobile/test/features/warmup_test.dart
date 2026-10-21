@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:magra/core/recommendation/warmup.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
-import 'package:magra/features/training/body_map.dart';
 import 'package:magra/features/training/guided_routine_page.dart';
+import 'package:magra/features/training/mannequin.dart';
 
 import '../support/fakes.dart';
 import '../widget_test.dart' show setSize;
@@ -160,6 +160,7 @@ void main() {
   testWidgets('teléfono de 360 px sin desbordes', (tester) async {
     setSize(tester, const Size(360, 2000));
     await tester.pumpWidget(ProviderScope(
+      overrides: [figureAnimationProvider.overrideWithValue(false)],
       child: MaterialApp(
         home: GuidedRoutinePage(
           title: 'Estiramiento',
@@ -169,7 +170,7 @@ void main() {
     ));
     await tester.pump();
     expect(find.text('Estiramiento de cuádriceps'), findsWidgets);
-    expect(find.byType(BodyMap), findsOneWidget);
+    expect(find.byType(MannequinView), findsOneWidget);
     await tester.tap(find.text('Ver fotos del movimiento'));
     await tester.pump();
     expect(find.byType(Image), findsWidgets);

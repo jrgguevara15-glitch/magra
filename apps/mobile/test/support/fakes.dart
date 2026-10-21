@@ -18,6 +18,7 @@ import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/progress/progress_photos.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/activity_log.dart';
+import 'package:magra/features/training/mannequin.dart';
 import 'package:magra/features/today/barcode.dart';
 import 'package:magra/features/today/food_catalog.dart';
 import 'package:magra/features/today/photo_analysis.dart';
@@ -553,6 +554,7 @@ Widget testApp({
       kcalAdjustmentRepositoryProvider
           .overrideWithValue(adjustments ?? FakeKcalAdjustments()),
       if (clock != null) clockProvider.overrideWithValue(clock),
+      figureAnimationProvider.overrideWithValue(false),
     ],
     child: const MagraApp(),
   );

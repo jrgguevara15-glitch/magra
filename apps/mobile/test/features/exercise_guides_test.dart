@@ -9,6 +9,7 @@ import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/training/body_map.dart';
 import 'package:magra/features/training/exercise_guide_page.dart';
+import 'package:magra/features/training/mannequin.dart';
 
 import '../support/fakes.dart';
 import '../widget_test.dart' show setSize;
@@ -76,8 +77,9 @@ void main() {
     expect(find.text('Cómo hacerlo'), findsNWidgets(2));
     expect(find.textContaining('Rodillas que se van hacia adentro'), findsOneWidget);
     expect(find.text(imageCredit), findsOneWidget);
-    // Figura anatómica primero; las fotos reales, solo si se piden.
-    expect(find.byType(BodyMap), findsNWidgets(2));
+    // Maniquí 3D primero; las fotos reales, solo si se piden.
+    expect(find.byType(MannequinView), findsNWidgets(2));
+    expect(find.byType(BodyMap), findsNothing);
     expect(find.byType(Image), findsNothing);
     await tester.tap(find.text('Ver fotos del movimiento').first);
     await tester.pumpAndSettle();

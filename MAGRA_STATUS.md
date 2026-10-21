@@ -170,7 +170,20 @@
   reales quedan ocultas tras "Ver fotos del movimiento". Sin IA de
   imágenes/3D en este entorno: un 360° real por ejercicio requeriría una
   biblioteca 3D licenciada (BACKLOG). analyze sin issues; suite 206/206;
-  build web OK.
+  build web OK. Reemplazada en la ficha y la rutina guiada por U7 (queda
+  como respaldo si un movimiento no tiene animación).
+- U7 — Maniquí 3D animado: IMPLEMENTADO, validación PENDIENTE.
+  mannequin.dart: motor 3D propio (cinemática directa + cámara con
+  perspectiva, sin dependencias ni licencias) que dibuja un maniquí sin
+  rostro de mujer u hombre según el perfil; hace el ejercicio en bucle,
+  gira 360° arrastrando el dedo o con Frente/Lado/Espalda, se pausa, y
+  pinta en rojo lo que más trabaja y en naranja lo que ayuda. Incluye
+  implementos (barra, mancuernas, banco, cajón, prensa, poleas, banda,
+  pared, colchoneta). mannequin_poses.dart: animación para todos los
+  ejercicios de las fichas y todos los pasos de calentamiento/estiramiento
+  (54 animaciones; una prueba exige que no falte ninguna).
+  Miniaturas de la rutina con el maniquí quieto. Respeta "reducir
+  movimiento" del teléfono. analyze sin issues; suite 212/212; build web OK.
 
 ## PAUSA (21-oct-2026)
 
