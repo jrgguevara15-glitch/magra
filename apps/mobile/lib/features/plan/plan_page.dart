@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/format.dart';
 import '../../core/recommendation/nutrition_plan.dart';
 import '../../core/recommendation/seasoning.dart';
+import '../../core/widgets/sections.dart';
 import '../../core/recommendation/reference_foods.dart';
 import '../../core/theme.dart';
 import 'plan_inputs.dart';
@@ -58,26 +59,51 @@ class NutritionPlanView extends StatelessWidget {
           ),
         ),
       ),
-      const SizedBox(height: 8),
-      ReasonList(title: 'Por qué este plan', reasons: plan.reasons),
-      const SizedBox(height: 8),
-      ReasonList(
-          title: 'Grasas saludables recomendadas',
-          reasons: healthyFatTips(inputs.questionnaire)),
-      const SizedBox(height: 8),
-      ReasonList(
-          title: 'Condimentos y sazón',
-          reasons: seasoningTipsFor(inputs.questionnaire)),
-      const SizedBox(height: 8),
-      for (var i = 0; i < plan.meals.length; i++) _MealCard(index: i, meal: plan.meals[i]),
-      const SizedBox(height: 8),
-      Text(
-        'Cada grupo muestra opciones equivalentes: elige una de proteína, una '
-        'de carbohidratos y una de grasa, y agrega vegetales a gusto. Pesa '
-        'avena, pasta y harinas en crudo; lo demás, cocido. MAGRA orienta y '
-        'no reemplaza a un nutricionista o médico.',
-        style: theme.textTheme.bodySmall,
-      ),
+      const SizedBox(height: 12),
+      SectionList(sections: [
+        PageSection(
+          title: 'Comidas y horarios',
+          icon: Icons.schedule,
+          initiallyOpen: true,
+          summary: [for (final m in plan.meals) m.time.format(context)].join(' · '),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < plan.meals.length; i++)
+                _MealCard(index: i, meal: plan.meals[i]),
+              Text(
+                'Cada grupo muestra opciones equivalentes: elige una de proteína, una '
+                'de carbohidratos y una de grasa, y agrega vegetales a gusto. Pesa '
+                'avena, pasta y harinas en crudo; lo demás, cocido. MAGRA orienta y '
+                'no reemplaza a un nutricionista o médico.',
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        PageSection(
+          title: 'Por qué',
+          icon: Icons.lightbulb_outline,
+          summary: plan.reasons.isEmpty ? null : plan.reasons.first,
+          child: ReasonList(title: 'Por qué este plan', reasons: plan.reasons),
+        ),
+        PageSection(
+          title: 'Grasas saludables',
+          icon: Icons.water_drop_outlined,
+          summary: 'Oliva, palta, semillas: cuánto y cómo',
+          child: ReasonList(
+              title: 'Grasas saludables recomendadas',
+              reasons: healthyFatTips(inputs.questionnaire)),
+        ),
+        PageSection(
+          title: 'Condimentos',
+          icon: Icons.eco_outlined,
+          summary: 'Sabor sin calorías ni exceso de sal',
+          child: ReasonList(
+              title: 'Condimentos y sazón',
+              reasons: seasoningTipsFor(inputs.questionnaire)),
+        ),
+      ]),
     ]);
   }
 }

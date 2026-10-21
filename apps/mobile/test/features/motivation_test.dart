@@ -9,6 +9,7 @@ import 'package:magra/features/today/food_catalog.dart';
 import 'package:magra/features/today/motivation_cards.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -147,8 +148,11 @@ void main() {
     await tester.pumpWidget(app(log: log, bank: bank));
     await tester.pumpAndSettle();
 
+    await openSection(tester, 'Rachas');
+    await openSection(tester, 'Banco de calorías');
     expect(find.text('4 días registrando'), findsNothing); // hoy lleva 540: no cuenta aún
-    expect(find.textContaining('días registrando'), findsOneWidget);
+    expect(find.descendant(of: find.byType(StreaksCard), matching: find.textContaining('días registrando')),
+        findsOneWidget);
     expect(find.textContaining('días con tu proteína'), findsOneWidget);
     final red = tester.widget<FoodLightDot>(find.byType(FoodLightDot).first);
     expect(red.light, FoodLight.red);
@@ -185,6 +189,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.monitor_weight_outlined));
     await tester.pumpAndSettle();
+    await openSection(tester, 'Logros');
     expect(find.textContaining('Logros ('), findsOneWidget);
     expect(find.text('10 entrenos'), findsOneWidget);
     expect(find.text('−5 kg en la balanza'), findsOneWidget);
@@ -196,9 +201,11 @@ void main() {
     setSize(tester, const Size(360, 6000));
     await tester.pumpWidget(app());
     await tester.pumpAndSettle();
+    await openSection(tester, 'Rachas');
     expect(find.byType(StreaksCard), findsOneWidget);
     await tester.tap(find.byIcon(Icons.monitor_weight_outlined));
     await tester.pumpAndSettle();
+    await openSection(tester, 'Logros');
     expect(find.textContaining('Logros ('), findsOneWidget);
   });
 }

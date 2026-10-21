@@ -7,6 +7,7 @@ import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/food_catalog.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -44,6 +45,7 @@ Widget app(
 Future<void> openProgress(WidgetTester tester) async {
   await tester.tap(find.byIcon(Icons.monitor_weight_outlined));
   await tester.pumpAndSettle();
+  await openSection(tester, 'Tendencia y ajuste');
 }
 
 void main() {
@@ -73,6 +75,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.restaurant_menu_outlined));
     await tester.pumpAndSettle();
+    await openSection(tester, 'Por qué');
     expect(find.textContaining('ajuste semanal de +150 kcal'), findsOneWidget);
   });
 

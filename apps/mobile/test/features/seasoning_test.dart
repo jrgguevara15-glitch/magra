@@ -5,6 +5,7 @@ import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -40,6 +41,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.restaurant_menu_outlined));
     await tester.pumpAndSettle();
+    await openSection(tester, 'Grasas saludables');
+    await openSection(tester, 'Condimentos');
     expect(find.text('Grasas saludables recomendadas'), findsOneWidget);
     expect(find.text('Condimentos y sazón'), findsOneWidget);
     expect(find.textContaining('Aceite de oliva extra virgen'), findsOneWidget);

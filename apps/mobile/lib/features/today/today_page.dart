@@ -10,6 +10,7 @@ import '../../core/recommendation/nutrition_plan.dart';
 import '../../core/recommendation/training_plan.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/progress_ring.dart';
+import '../../core/widgets/sections.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
 import 'activity_cards.dart';
@@ -165,6 +166,22 @@ class _TodayViewState extends ConsumerState<TodayView> {
               (blockReason == null
                   ? q.fasting != Fasting.no
                   : q.fasting == Fasting.yes);
+          final logDays = currentStreak((d) => loggedDay(live[d], floor), _today);
+          final proteinDays =
+              currentStreak((d) => proteinDay(live[d], plan.protein), _today);
+          final bank = bankAvailable(
+            history: history,
+            targetKcal: plan.kcal,
+            floorKcal: floor,
+            uses: uses,
+            today: _today,
+          );
+          final fast = ref.watch(latestFastProvider).value;
+          final fastNow = DateTime.now();
+          final withLog = {for (final e in entries) e.mealIndex}
+              .where((i) => i < plan.meals.length)
+              .length;
+          final eaten = entries.fold<double>(0, (a, e) => a + e.kcal);
           return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -174,51 +191,82 @@ class _TodayViewState extends ConsumerState<TodayView> {
               exerciseBonus: bonus,
               bankKcal: bankToday.toDouble(),
             ),
-            const SizedBox(height: 8),
-            if (isToday) ...[
-              StreaksCard(
-                logDays: currentStreak((d) => loggedDay(live[d], floor), _today),
-                proteinDays: currentStreak((d) => proteinDay(live[d], plan.protein), _today),
-                trainingWeeks: trainingWeekStreak(
-                    [for (final w in workouts) w.date], perWeek, _today),
-              ),
-              if (!plan.maintenanceOnly)
-                BankCard(
-                  today: _today,
-                  available: bankAvailable(
-                    history: history,
-                    targetKcal: plan.kcal,
-                    floorKcal: floor,
-                    uses: uses,
-                    today: _today,
-                  ),
-                  usedToday: bankToday,
+            const SizedBox(height: 12),
+            SectionList(sections: [
+              PageSection(
+                title: 'Comidas',
+                icon: Icons.restaurant,
+                initiallyOpen: true,
+                summary: '$withLog de ${plan.meals.length} con registro · ${fmt(eaten)} kcal',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < plan.meals.length; i++)
+                      _MealLog(
+                        title: '${plan.meals[i].time.format(context)} · Comida ${i + 1}',
+                        targetKcal: plan.meals[i].kcal,
+                        entries: [for (final e in entries) if (e.mealIndex == i) e],
+                        onAdd: () => _add(i, 'Comida ${i + 1}', plan.meals[i]),
+                        onDelete: _delete,
+                      ),
+                    _MealLog(
+                      title: 'Fuera del plan',
+                      targetKcal: null,
+                      entries: [
+                        for (final e in entries)
+                          if (e.mealIndex >= plan.meals.length) e,
+                      ],
+                      onAdd: () => _add(plan.meals.length, 'Fuera del plan', null),
+                      onDelete: _delete,
+                    ),
+                  ],
                 ),
-            ],
-            if (showFasting)
-              FastingCard(
-                blockReason: blockReason,
-                recommendedHours: plan.fastingHours ?? fastingProtocols.first,
               ),
-            for (var i = 0; i < plan.meals.length; i++)
-              _MealLog(
-                title: '${plan.meals[i].time.format(context)} · Comida ${i + 1}',
-                targetKcal: plan.meals[i].kcal,
-                entries: [for (final e in entries) if (e.mealIndex == i) e],
-                onAdd: () => _add(i, 'Comida ${i + 1}', plan.meals[i]),
-                onDelete: _delete,
+              if (isToday)
+                PageSection(
+                  title: 'Rachas',
+                  icon: Icons.local_fire_department_outlined,
+                  summary: '$logDays ${logDays == 1 ? 'día' : 'días'} registrando · '
+                      '$proteinDays con tu proteína',
+                  child: StreaksCard(
+                    logDays: logDays,
+                    proteinDays: proteinDays,
+                    trainingWeeks: trainingWeekStreak(
+                        [for (final w in workouts) w.date], perWeek, _today),
+                  ),
+                ),
+              if (showFasting)
+                PageSection(
+                  title: 'Ayuno',
+                  icon: Icons.timer_outlined,
+                  summary: blockReason != null
+                      ? 'No recomendado para ti'
+                      : fast != null && fast.active
+                          ? 'En curso · ${fmtDuration(fast.elapsed(fastNow))} de ${fast.targetHours} h'
+                          : 'Sin ayuno en curso',
+                  child: FastingCard(
+                    blockReason: blockReason,
+                    recommendedHours: plan.fastingHours ?? fastingProtocols.first,
+                  ),
+                ),
+              PageSection(
+                title: 'Ejercicio',
+                icon: Icons.directions_run,
+                summary: bonus > 0
+                    ? '+${fmt(bonus)} kcal a tu meta'
+                    : 'Sin ejercicio anotado',
+                child: ExerciseCard(day: _day, weightKg: inputs.weightKg),
               ),
-            _MealLog(
-              title: 'Fuera del plan',
-              targetKcal: null,
-              entries: [
-                for (final e in entries)
-                  if (e.mealIndex >= plan.meals.length) e,
-              ],
-              onAdd: () => _add(plan.meals.length, 'Fuera del plan', null),
-              onDelete: _delete,
-            ),
-            ExerciseCard(day: _day, weightKg: inputs.weightKg),
+              if (isToday && !plan.maintenanceOnly)
+                PageSection(
+                  title: 'Banco de calorías',
+                  icon: Icons.savings_outlined,
+                  summary: bankToday > 0
+                      ? 'Hoy usas $bankToday kcal'
+                      : '${fmt(bank)} kcal guardadas esta semana',
+                  child: BankCard(today: _today, available: bank, usedToday: bankToday),
+                ),
+            ]),
           ],
         );
         },

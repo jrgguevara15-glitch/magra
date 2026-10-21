@@ -4,6 +4,7 @@ import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final today = DateTime.now();
@@ -59,6 +60,9 @@ void main() {
 
     expect(find.text('Tu plan nutricional'), findsOneWidget);
     expect(find.text('Recomendamos un control médico'), findsOneWidget);
+    for (final s in ['Por qué', 'Grasas saludables', 'Condimentos']) {
+      await openSection(tester, s);
+    }
     expect(find.text('Por qué este plan'), findsOneWidget);
     expect(find.textContaining('· Comida 1'), findsOneWidget);
     expect(find.text('Después de entrenar'), findsOneWidget);
@@ -96,8 +100,9 @@ void main() {
     expect(find.text('Martes · Tren inferior'), findsOneWidget);
     expect(find.text('Sentadilla a un cajón alto (rango sin dolor)'),
         findsNWidgets(2));
-    expect(find.text('Cuidados'), findsOneWidget);
-    expect(find.textContaining('Cardio de bajo impacto'), findsOneWidget);
+    expect(find.widgetWithText(ActionChip, 'Cuidados'), findsOneWidget);
+    await openSection(tester, 'Por qué');
+    expect(find.textContaining('Cardio de bajo impacto'), findsWidgets);
   });
 
   testWidgets('Progreso muestra la meta por etapas', (tester) async {

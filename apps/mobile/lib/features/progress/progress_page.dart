@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/formulas/formulas.dart';
 import '../../core/recommendation/assessment.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/sections.dart';
 import '../profile/profile_form.dart';
 import '../profile/user_profile.dart';
 import '../questionnaire/questionnaire_page.dart';
@@ -93,17 +94,40 @@ class _Progress extends ConsumerWidget {
         if (list.isEmpty)
           const Text('Aún no tienes mediciones. Registra tu peso, cuello y '
               'cintura para ver tu evaluación.')
-        else ...[
-          EvaluationCard(profile: profile, measurements: list),
-          const SizedBox(height: 16),
-          WeeklyCheckCard(profile: profile, measurements: list),
-          const SizedBox(height: 16),
-          ProgressPhotosCard(profile: profile, measurements: list),
-          const SizedBox(height: 16),
-          AchievementsCard(profile: profile, measurements: list),
-          const SizedBox(height: 16),
-          _History(profile: profile, measurements: list),
-        ],
+        else
+          SectionList(sections: [
+            PageSection(
+              title: 'Evaluación',
+              icon: Icons.monitor_heart_outlined,
+              initiallyOpen: true,
+              summary: _evaluationSummary(profile, list),
+              child: EvaluationCard(profile: profile, measurements: list),
+            ),
+            PageSection(
+              title: 'Tendencia y ajuste',
+              icon: Icons.show_chart,
+              summary: 'Peso de tendencia, gasto real y ajuste de la semana',
+              child: WeeklyCheckCard(profile: profile, measurements: list),
+            ),
+            PageSection(
+              title: 'Fotos',
+              icon: Icons.photo_camera_outlined,
+              summary: 'Frente, perfil y espalda cada mes',
+              child: ProgressPhotosCard(profile: profile, measurements: list),
+            ),
+            PageSection(
+              title: 'Logros',
+              icon: Icons.emoji_events_outlined,
+              summary: 'Medallas por hitos reales',
+              child: AchievementsCard(profile: profile, measurements: list),
+            ),
+            PageSection(
+              title: 'Historial',
+              icon: Icons.history,
+              summary: '${list.length} ${list.length == 1 ? 'medición' : 'mediciones'}',
+              child: _History(profile: profile, measurements: list),
+            ),
+          ]),
       ]),
     );
   }
@@ -496,4 +520,10 @@ class QuestionnaireCard extends ConsumerWidget {
             ),
     );
   }
+}
+
+String _evaluationSummary(UserProfile profile, List<Measurement> list) {
+  final last = list.last;
+  final fat = last.compositionFor(profile).fatPct;
+  return '${fmt(last.weightKg, 1)} kg${fat == null ? '' : ' · ${fmt(fat, 1)} % grasa'} · ${fmtDate(last.date)}';
 }

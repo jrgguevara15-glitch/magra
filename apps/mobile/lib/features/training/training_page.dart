@@ -6,6 +6,7 @@ import '../../core/format.dart';
 import '../../core/recommendation/progression.dart';
 import '../../core/recommendation/training_plan.dart';
 import '../../core/widgets/hero_card.dart';
+import '../../core/widgets/sections.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
 import '../../core/recommendation/warmup.dart';
@@ -50,7 +51,57 @@ class TrainingPlanView extends StatelessWidget {
           alerts: [for (final a in inputs.alerts) if (a.blocking) a]),
       WorkoutCard(plan: plan, inputs: inputs),
       const SizedBox(height: 8),
-      Card(
+      SectionList(sections: [
+        PageSection(
+          title: 'Rutina de la semana',
+          icon: Icons.calendar_month_outlined,
+          initiallyOpen: true,
+          summary: [for (final d in plan.days) '${weekdayName(d.weekday).substring(0, 3)} ${d.title.replaceAll('Cuerpo completo ', '')}'].join(' · '),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+            for (final d in plan.days)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${weekdayName(d.weekday)} · ${d.title}',
+                          style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      _RoutineButtons(plan: plan, day: d, questionnaire: inputs.questionnaire),
+                      const SizedBox(height: 4),
+                      for (final e in d.exercises)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: ExerciseThumb(exercise: e.name),
+                          title: Text(e.name),
+                          subtitle: Text(e.prescription),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => openExerciseGuide(context, e.name,
+                              prescription: e.prescription),
+                        ),
+                      if (d.cardioMinutes > 0)
+                        Text(
+                          'Cardio ${d.cardioMinutes} min: ${plan.cardio.toLowerCase()}, '
+                          'en zona 2 (${plan.zone2.$1}–${plan.zone2.$2} ppm, puedes '
+                          'hablar en frases cortas).',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontStyle: FontStyle.italic),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        PageSection(
+          title: 'Resumen',
+          icon: Icons.insights_outlined,
+          summary: '${plan.days.length} días · zona 2: ${plan.zone2.$1}–${plan.zone2.$2} ppm',
+          child: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Wrap(
@@ -67,55 +118,33 @@ class TrainingPlanView extends StatelessWidget {
           ),
         ),
       ),
-      const SizedBox(height: 8),
-      ReasonList(title: 'Por qué esta rutina', reasons: plan.reasons),
-      if (plan.cautions.isNotEmpty) ...[
-        const SizedBox(height: 8),
-        ReasonList(title: 'Cuidados', reasons: plan.cautions),
-      ],
-      const SizedBox(height: 8),
-      for (final d in plan.days)
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${weekdayName(d.weekday)} · ${d.title}',
-                    style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
-                _RoutineButtons(plan: plan, day: d, questionnaire: inputs.questionnaire),
-                const SizedBox(height: 4),
-                for (final e in d.exercises)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: ExerciseThumb(exercise: e.name),
-                    title: Text(e.name),
-                    subtitle: Text(e.prescription),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => openExerciseGuide(context, e.name,
-                        prescription: e.prescription),
-                  ),
-                if (d.cardioMinutes > 0)
-                  Text(
-                    'Cardio ${d.cardioMinutes} min: ${plan.cardio.toLowerCase()}, '
-                    'en zona 2 (${plan.zone2.$1}–${plan.zone2.$2} ppm, puedes '
-                    'hablar en frases cortas).',
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontStyle: FontStyle.italic),
-                  ),
-              ],
-            ),
-          ),
         ),
-      const SizedBox(height: 8),
-      const ReasonList(title: 'Cómo progresar', reasons: [
+        PageSection(
+          title: 'Por qué',
+          icon: Icons.lightbulb_outline,
+          summary: plan.reasons.isEmpty ? null : plan.reasons.first,
+          child: ReasonList(title: 'Por qué esta rutina', reasons: plan.reasons),
+        ),
+        if (plan.cautions.isNotEmpty)
+          PageSection(
+            title: 'Cuidados',
+            icon: Icons.health_and_safety_outlined,
+            summary: '${plan.cautions.length} ${plan.cautions.length == 1 ? 'aviso' : 'avisos'}',
+            child: ReasonList(title: 'Cuidados', reasons: plan.cautions),
+          ),
+        PageSection(
+          title: 'Cómo progresar',
+          icon: Icons.trending_up,
+          summary: 'Carga, pasos y descarga',
+          child: const ReasonList(title: 'Cómo progresar', reasons: [
         'Anota cada sesión: cuando completes todas las series en el tope de '
             'repeticiones, MAGRA te sube el peso (2,5 kg piernas, 1 kg el '
             'resto); si fallas 3 veces seguidas, baja 10 %.',
         'Cada 2 semanas suma 1.000 pasos diarios hasta llegar a 10.000.',
         'Cada 6.ª semana baja el volumen a la mitad para recuperarte.',
         'Técnica antes que peso. Si algo duele (no cansancio), detente.',
+      ]),
+        ),
       ]),
     ]);
   }

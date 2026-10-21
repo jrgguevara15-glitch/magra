@@ -148,9 +148,17 @@
   anteriores siguen funcionando. analyze sin issues; suite 202/202;
   ai-menu 7 pruebas; build web OK.
 
-- U5 — Pantallas resumidas con subtítulos tocables: PENDIENTE de que el
-  usuario elija entre A (índice con tarjetas desplegables) y B (pestañas
-  internas); maqueta: https://claude.ai/artifact/4oPHq3QYMfxpxKBftZeK5f
+- U5 — Pantallas resumidas (opción A, índice con tarjetas): IMPLEMENTADO,
+  validación PENDIENTE. SectionList: subtítulos tocables (chips) que
+  abren y llevan a cada sección; cada sección muestra un resumen de una
+  línea y se abre/cierra con un toque. Hoy (Comidas abierta; Rachas,
+  Ayuno, Ejercicio, Banco), Plan (Comidas y horarios abierta; Por qué,
+  Grasas saludables, Condimentos), Progreso (Evaluación abierta;
+  Tendencia y ajuste, Fotos, Logros, Historial), Entreno (Rutina de la
+  semana abierta; Resumen, Por qué, Cuidados, Cómo progresar). Menús y
+  Coach ya estaban divididos (Menú/Compras, chat). analyze sin issues;
+  suite 203/203; build web OK. Maqueta:
+  https://claude.ai/artifact/4oPHq3QYMfxpxKBftZeK5f
 - U6 — Figura anatómica sin rostro (hombre/mujer según el sexo del
   usuario), giro frente↔espalda animado y músculos trabajados en rojo
   (secundarios en naranja): ELEGIDA por el usuario, PENDIENTE. No hay

@@ -8,6 +8,7 @@ import 'package:magra/features/progress/progress_photos_card.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -33,6 +34,7 @@ Widget app(FakePhotos photos) => testApp(
 Future<void> openProgress(WidgetTester tester) async {
   await tester.tap(find.byIcon(Icons.monitor_weight_outlined));
   await tester.pumpAndSettle();
+  await openSection(tester, 'Fotos');
 }
 
 void main() {

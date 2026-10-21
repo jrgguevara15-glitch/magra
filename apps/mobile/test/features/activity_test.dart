@@ -7,6 +7,7 @@ import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/activity_log.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -32,6 +33,9 @@ Widget app({
     );
 
 Future<void> addExercise(WidgetTester tester, String activity, String minutes) async {
+  if (find.text('Agregar ejercicio').evaluate().isEmpty) {
+    await openSection(tester, 'Ejercicio');
+  }
   await tester.tap(find.text('Agregar ejercicio'));
   await tester.pumpAndSettle();
   await tester.tap(find.byType(DropdownButtonFormField<Activity>));
@@ -82,6 +86,7 @@ void main() {
       final log = FakeExerciseLog();
       await tester.pumpWidget(app(exercise: log));
       await tester.pumpAndSettle();
+      await openSection(tester, 'Ejercicio');
       await tester.tap(find.text('Agregar ejercicio'));
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Agregar'));
@@ -130,9 +135,11 @@ void main() {
         clock: () => clock,
       ));
       await tester.pumpAndSettle();
+      expect(find.text('Sin ayuno en curso'), findsOneWidget);
+      await openSection(tester, 'Ayuno');
 
       // El plan con ayuno recomienda 16:8.
-      expect(find.text('Ayuno'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'Ayuno'), findsOneWidget);
       expect(find.textContaining('el que te recomienda MAGRA'), findsOneWidget);
       await tester.tap(find.text('12:12'));
       await tester.pumpAndSettle();
@@ -170,6 +177,7 @@ void main() {
       final fasts = FakeFasts();
       await tester.pumpWidget(app(fasts: fasts));
       await tester.pumpAndSettle();
+      await openSection(tester, 'Ayuno');
       // Sin ayuno en el plan, lo más suave: 12:12.
       await tester.tap(find.text('Empezar ayuno 12:12'));
       await tester.pumpAndSettle();
@@ -186,7 +194,7 @@ void main() {
       await tester.pumpWidget(app(
           q: Questionnaire.initial.copyWith(fasting: Fasting.no)));
       await tester.pumpAndSettle();
-      expect(find.text('Ayuno'), findsNothing);
+      expect(find.widgetWithText(ActionChip, 'Ayuno'), findsNothing);
       expect(find.textContaining('Empezar ayuno'), findsNothing);
 
       await tester.pumpWidget(app(
@@ -194,6 +202,8 @@ void main() {
               fasting: Fasting.yes,
               healthConditions: [HealthCondition.type2Diabetes])));
       await tester.pumpAndSettle();
+      expect(find.text('No recomendado para ti'), findsOneWidget);
+      await openSection(tester, 'Ayuno');
       expect(find.text('Ayuno no recomendado'), findsOneWidget);
       expect(find.textContaining('glucosa'), findsWidgets);
       expect(find.textContaining('Empezar ayuno'), findsNothing);
@@ -203,11 +213,11 @@ void main() {
       setSize(tester, const Size(700, 3000));
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
-      expect(find.text('Ayuno'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'Ayuno'), findsOneWidget);
       await tester.tap(find.byTooltip('Día anterior'));
       await tester.pumpAndSettle();
-      expect(find.text('Ayuno'), findsNothing);
-      expect(find.text('Ejercicio'), findsOneWidget);
+      expect(find.widgetWithText(ActionChip, 'Ayuno'), findsNothing);
+      expect(find.widgetWithText(ActionChip, 'Ejercicio'), findsOneWidget);
     });
   });
 
@@ -217,6 +227,7 @@ void main() {
     await tester.pumpWidget(app(
         q: Questionnaire.initial.copyWith(fasting: Fasting.yes)));
     await tester.pumpAndSettle();
+    await openSection(tester, 'Ayuno');
     await tester.tap(find.text('Empezar ayuno 16:8'));
     await tester.pumpAndSettle();
     await addExercise(tester, 'Fútbol recreativo / pichanga', '90');

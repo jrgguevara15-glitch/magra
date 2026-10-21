@@ -4,6 +4,7 @@ import 'package:magra/core/formulas/formulas.dart';
 import 'package:magra/features/progress/progress_page.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 Future<void> openProgress(WidgetTester tester) async {
@@ -60,6 +61,7 @@ void main() {
     expect(find.text('● Alto'), findsOneWidget);
     expect(find.text('● Obesidad tipo I'), findsOneWidget);
     // Historial con las 5 mediciones y el % informado distinto.
+    await openSection(tester, 'Historial');
     expect(find.textContaining('Nutri · Dieta'), findsNWidgets(5));
     expect(find.textContaining('informado 18,7 %'), findsOneWidget);
   });
