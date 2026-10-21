@@ -15,7 +15,9 @@ la base de datos nunca van en el repositorio ni en la app.
    `0002_questionnaires.sql` (M3), `0003_food_entries.sql` (M5),
    `0004_ai_usage.sql` (M6), `0005_exercise_fasting.sql` (M7),
    `0006_kcal_adjustments.sql` (M8), `0007_custom_products.sql` (M9b),
-   `0008_menus.sql` (M11), `0009_workouts.sql` (M12).
+   `0008_menus.sql` (M11), `0009_workouts.sql` (M12),
+   `0010_progress_photos.sql` (M13, crea el bucket privado
+   `progress-photos` y sus permisos).
 3. **Run**. Debe terminar con "Success. No rows returned".
 
 Cada migración se puede volver a ejecutar sin romper nada.
@@ -62,7 +64,7 @@ BACKLOG.md).
 
 ## Verificado localmente (Postgres 16 con esquema `auth` simulado)
 
-- Migraciones 0001 a 0009 idempotentes.
+- Migraciones 0001 a 0010 idempotentes.
 - Un usuario ve solo sus filas; otro usuario ve 0, no puede modificarlas,
   borrarlas ni insertar en la cuenta ajena (RLS).
 - Restricción: macros deben sumar 100 %.
@@ -86,6 +88,10 @@ BACKLOG.md).
   otros desconocidos.
 - Sesiones de fuerza (M12): 1–20 ejercicios y 1–300 minutos; B no ve,
   borra ni inserta en la cuenta de A.
+- Fotos de progreso (M13, con `storage` simulado): bucket privado de 5 MB
+  (JPG/PNG/WebP); cada usuario solo sube, ve y borra en su carpeta
+  `<user_id>/`; la ruta de la fila debe estar en su carpeta; anónimo no
+  ve nada.
 - Función ai-menu: compila contra los tipos del SDK; 6 pruebas (petición,
   prompt con metas/alergias/gustos/variedad, 7 llamadas en paralelo,
   respuestas incompletas o rechazadas, saneo, sesión).

@@ -11,6 +11,7 @@ import '../profile/user_profile.dart';
 import '../questionnaire/questionnaire_page.dart';
 import 'measurement.dart';
 import 'measurement_form.dart';
+import 'progress_photos_card.dart';
 import 'weekly_check.dart';
 
 /// Pestaña Progreso: perfil, evaluación actual e historial de mediciones.
@@ -95,6 +96,8 @@ class _Progress extends ConsumerWidget {
           EvaluationCard(profile: profile, measurements: list),
           const SizedBox(height: 16),
           WeeklyCheckCard(profile: profile, measurements: list),
+          const SizedBox(height: 16),
+          ProgressPhotosCard(profile: profile, measurements: list),
           const SizedBox(height: 16),
           _History(profile: profile, measurements: list),
         ],

@@ -92,7 +92,13 @@
   sugerida por doble progresión, descarga tras 3 fallos, historial con
   borrar y calorías a Hoy. analyze sin issues; suite 169/169; build web
   OK.
-- M10 y M13 en adelante — NO ABIERTOS.
+- M13 — Fotos de progreso y comparador: IMPLEMENTADO, validación del
+  usuario PENDIENTE (requiere migración 0010). Progreso: recordatorio cada
+  30 días, subir frente/perfil/espalda por fecha a un bucket privado,
+  última tanda, ver/borrar y comparar dos fechas con peso, cintura y %
+  grasa de la medición más cercana. analyze sin issues; suite 176/176;
+  build web OK.
+- M10 y M14 en adelante — NO ABIERTOS.
 
 ## Decisiones tomadas por el usuario
 

@@ -75,3 +75,5 @@ activo.
 - Entreno: temporizador de descanso entre series, gráfico de progreso por
   ejercicio, semana de descarga automática cada 6.ª semana y cambiar un
   ejercicio por otro del mismo patrón.
+- Fotos de progreso: guía de silueta en la cámara para encuadrar igual,
+  deslizador antes/después superpuesto y exportar el comparativo.

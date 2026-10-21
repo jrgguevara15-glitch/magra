@@ -13,6 +13,7 @@ import 'package:magra/core/recommendation/weekly_adjustment.dart';
 import 'package:magra/features/menus/weekly_menu.dart';
 import 'package:magra/features/profile/user_profile.dart';
 import 'package:magra/features/progress/measurement.dart';
+import 'package:magra/features/progress/progress_photos.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/activity_log.dart';
 import 'package:magra/features/today/barcode.dart';
@@ -277,6 +278,39 @@ class FakeWorkouts implements WorkoutRepository {
   Future<void> delete(String id) async => items.removeWhere((s) => s.id == id);
 }
 
+class FakePhotos implements ProgressPhotoRepository {
+  FakePhotos([List<ProgressPhoto>? initial]) : items = [...?initial];
+
+  final List<ProgressPhoto> items;
+  final List<String> mediaTypes = [];
+  var _next = 0;
+  bool fail = false;
+
+  @override
+  Future<List<ProgressPhoto>> list() async =>
+      [...items]..sort((a, b) => b.date.compareTo(a.date));
+
+  @override
+  Future<void> upload({
+    required DateTime date,
+    required PhotoPose pose,
+    required Uint8List bytes,
+    required String mediaType,
+  }) async {
+    if (fail) throw Exception('sin red');
+    mediaTypes.add(mediaType);
+    items.add(ProgressPhoto(
+        id: 'p$_next', date: date, pose: pose, path: 'u/${_next++}.jpg'));
+  }
+
+  @override
+  Future<Uint8List> bytes(ProgressPhoto photo) async => tinyPng;
+
+  @override
+  Future<void> delete(ProgressPhoto photo) async =>
+      items.removeWhere((p) => p.path == photo.path);
+}
+
 class FakeMenus implements MenuRepository {
   final Map<DateTime, WeeklyMenu> items = {};
   int saves = 0;
@@ -408,6 +442,7 @@ Widget testApp({
   MenuRepository? menus,
   MenuGenerator? menuGenerator,
   WorkoutRepository? workouts,
+  ProgressPhotoRepository? photos,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -423,6 +458,7 @@ Widget testApp({
       imagePickProvider.overrideWithValue(pick ?? fakePick),
       menuRepositoryProvider.overrideWithValue(menus ?? FakeMenus()),
       workoutRepositoryProvider.overrideWithValue(workouts ?? FakeWorkouts()),
+      progressPhotoRepositoryProvider.overrideWithValue(photos ?? FakePhotos()),
       menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),
       productLookupProvider.overrideWithValue(products ?? FakeProductLookup()),
       customProductRepositoryProvider

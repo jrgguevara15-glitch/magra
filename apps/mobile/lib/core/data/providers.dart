@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/menus/weekly_menu.dart';
 import '../../features/profile/user_profile.dart';
 import '../../features/progress/measurement.dart';
+import '../../features/progress/progress_photos.dart';
 import '../../features/questionnaire/questionnaire.dart';
 import '../../features/today/activity_log.dart';
 import '../../features/today/barcode.dart';
@@ -32,6 +35,8 @@ final kcalAdjustmentRepositoryProvider =
     Provider<KcalAdjustmentRepository>((ref) => throw UnimplementedError());
 final workoutRepositoryProvider =
     Provider<WorkoutRepository>((ref) => throw UnimplementedError());
+final progressPhotoRepositoryProvider =
+    Provider<ProgressPhotoRepository>((ref) => throw UnimplementedError());
 final menuRepositoryProvider =
     Provider<MenuRepository>((ref) => throw UnimplementedError());
 final menuGeneratorProvider =
@@ -116,4 +121,16 @@ final menuProvider =
 final workoutsProvider = FutureProvider<List<WorkoutSession>>((ref) async {
   if (ref.watch(signedInProvider).value != true) return const [];
   return ref.watch(workoutRepositoryProvider).recent();
+});
+
+/// Fotos de progreso (de la más reciente a la más antigua).
+final progressPhotosProvider = FutureProvider<List<ProgressPhoto>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const [];
+  return ref.watch(progressPhotoRepositoryProvider).list();
+});
+
+/// Imagen de una foto (la clave es su ruta en el bucket privado).
+final photoBytesProvider =
+    FutureProvider.family<Uint8List, ProgressPhoto>((ref, photo) async {
+  return ref.watch(progressPhotoRepositoryProvider).bytes(photo);
 });

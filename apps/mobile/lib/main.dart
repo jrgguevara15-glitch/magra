@@ -7,6 +7,7 @@ import 'core/config.dart';
 import 'core/data/providers.dart';
 import 'core/data/repositories.dart';
 import 'features/menus/weekly_menu.dart';
+import 'features/progress/progress_photos.dart';
 import 'features/today/photo_analysis.dart';
 
 Future<void> main() async {
@@ -37,6 +38,8 @@ Future<void> main() async {
             .overrideWithValue(SupabaseCustomProductRepository(client)),
         workoutRepositoryProvider
             .overrideWithValue(SupabaseWorkoutRepository(client)),
+        progressPhotoRepositoryProvider
+            .overrideWithValue(SupabaseProgressPhotoRepository(client)),
         menuRepositoryProvider.overrideWithValue(SupabaseMenuRepository(client)),
         menuGeneratorProvider.overrideWithValue(SupabaseMenuGenerator(client)),
         photoAnalyzerProvider.overrideWithValue(SupabasePhotoAnalyzer(client)),
