@@ -81,5 +81,7 @@ activo.
   botón (p. ej. "registrar esta cena", "aplicar ajuste"), y revisión
   semanal automática con notificación (requiere M14 y app nativa).
 - Ejercicios: animación 3D real (360°) por ejercicio con cuerpos sin rostro
-  hombre/mujer: hecho con maniquí 3D propio (U7). Mejora futura: modelos
-  3D con malla y músculos detallados (biblioteca licenciada o encargo).
+  hombre/mujer: hecho con avatar 3D vestido propio (U7/U8). Mejora futura:
+  modelos 3D con rigging y animaciones de captura de movimiento (artista
+  3D o biblioteca licenciada) para un acabado tipo render de la referencia;
+  guardar la elección de figura del visor en el perfil.

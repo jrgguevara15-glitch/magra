@@ -1,12 +1,17 @@
 import 'dart:math';
 
+import 'dart:ui' as ui;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/formulas/formulas.dart' show Sex;
-import '../../core/theme.dart';
 import 'body_map.dart';
+import 'mannequin_render.dart';
+
+export 'mannequin_render.dart' show MannequinPainter, MannequinPixels, avatarAccentFemale, avatarAccentMale;
 
 /// Si los maniquíes se animan (las pruebas lo apagan).
 final figureAnimationProvider = Provider<bool>((ref) => true);
@@ -114,37 +119,105 @@ enum Prop {
   footPlate,
 }
 
-/// Animación de un ejercicio: poses clave que se recorren ida y vuelta.
+/// Qué tipo de demostración es (define las fases que se muestran).
+enum DemoKind {
+  /// Repeticiones de fuerza: inicio, excéntrica, transición, concéntrica.
+  strength,
+
+  /// Isométrico (p. ej. plancha): se mantiene la posición.
+  hold,
+
+  /// Estiramiento: entrar suave, mantener y salir.
+  stretch,
+
+  /// Movilidad continua (círculos, trote, rotaciones).
+  mobility,
+}
+
+/// Animación de un ejercicio: poses clave que se recorren ida y vuelta,
+/// con pausas cortas en la posición inicial y en la transición.
 class MoveAnim {
-  const MoveAnim(this.keys, {this.props = const [], this.yaw = 35, this.seconds = 2.6, this.loop = false});
+  const MoveAnim(
+    this.keys, {
+    this.props = const [],
+    this.yaw = 35,
+    this.seconds = 3.2,
+    this.loop = false,
+    this.kind = DemoKind.strength,
+    this.eccentricFirst = true,
+    this.elevation = 13,
+  });
 
   final List<Pose> keys;
   final List<Prop> props;
 
   /// Ángulo de cámara inicial (0 = de frente, 90 = de lado).
   final double yaw;
+
+  /// Grados que la cámara mira hacia abajo.
+  final double elevation;
   final double seconds;
 
   /// Recorre las poses en círculo (en vez de ida y vuelta).
   final bool loop;
+  final DemoKind kind;
+
+  /// Si el primer tramo (de la primera a la última pose) es la fase
+  /// excéntrica (bajar o alargar el músculo bajo carga).
+  final bool eccentricFirst;
+
+  DemoKind get effectiveKind => loop ? DemoKind.mobility : kind;
+
+  /// Fracción del ciclo quieta al inicio y en la transición.
+  (double, double) get _holds => switch (effectiveKind) {
+        DemoKind.strength => (0.1, 0.1),
+        DemoKind.stretch => (0.06, 0.44),
+        _ => (0.0, 0.0),
+      };
+
+  /// Avance 0–1 entre la primera y la última pose en el instante [phase].
+  double _progress(double phase) {
+    final (hs, he) = _holds;
+    final move = (1 - hs - he) / 2;
+    if (phase < hs) return 0;
+    if (phase < hs + move) return (phase - hs) / move;
+    if (phase < hs + move + he) return 1;
+    return 1 - (phase - hs - move - he) / move;
+  }
 
   /// La pose en el instante [phase] (0–1) del ciclo.
   Pose at(double phase) {
     if (keys.length == 1) return keys.first;
     final n = keys.length;
-    double pos;
-    if (loop) {
-      pos = phase * n;
-    } else {
-      // Ida y vuelta: 0 → n−1 → 0.
-      final p = phase < 0.5 ? phase * 2 : 2 - phase * 2;
-      pos = p * (n - 1);
-    }
+    final double pos = loop ? phase * n : _progress(phase) * (n - 1);
     final i = pos.floor() % n;
     final j = loop ? (i + 1) % n : min(i + 1, n - 1);
     final t = pos - pos.floor();
     final eased = t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2;
     return Pose.lerp(keys[i], keys[j], eased.toDouble());
+  }
+
+  /// Nombre de la fase en el instante [phase], para mostrar bajo la figura.
+  String phaseLabel(double phase) {
+    switch (effectiveKind) {
+      case DemoKind.mobility:
+        return 'Movimiento continuo y controlado';
+      case DemoKind.hold:
+        return 'Mantén la posición y respira';
+      case DemoKind.stretch:
+      case DemoKind.strength:
+        final (hs, he) = _holds;
+        final move = (1 - hs - he) / 2;
+        final stretch = effectiveKind == DemoKind.stretch;
+        if (phase < hs) return stretch ? 'Posición inicial' : 'Inicio';
+        if (phase < hs + move) {
+          if (stretch) return 'Entra suave en el estiramiento';
+          return eccentricFirst ? 'Fase excéntrica · controla el movimiento' : 'Fase concéntrica · aplica fuerza';
+        }
+        if (phase < hs + move + he) return stretch ? 'Mantén y respira' : 'Transición';
+        if (stretch) return 'Vuelve suave';
+        return eccentricFirst ? 'Fase concéntrica · aplica fuerza' : 'Fase excéntrica · controla el movimiento';
+    }
   }
 }
 
@@ -309,311 +382,18 @@ class Framing {
 // Dibujo
 // ---------------------------------------------------------------------------
 
-class _Prim {
-  _Prim.capsule(this.a, this.b, this.r, this.color) : sphere = false;
-  _Prim.sphere(this.a, this.r, this.color)
-      : b = a,
-        sphere = true;
+/// Figura elegida a mano en el visor; `null` = la del perfil.
+class AvatarChoice extends Notifier<Sex?> {
+  @override
+  Sex? build() => null;
 
-  final V3 a;
-  final V3 b;
-  final double r;
-  final Color color;
-  final bool sphere;
+  void choose(Sex sex) => state = sex;
 }
 
-const _base = Color(0xFF55648A);
-const _baseFemale = Color(0xFF6A5F92);
-const _steel = Color(0xFFB8C2DA);
-const _plate = Color(0xFF2A3148);
+final avatarChoiceProvider = NotifierProvider<AvatarChoice, Sex?>(AvatarChoice.new);
 
-class MannequinPainter extends CustomPainter {
-  MannequinPainter({
-    required this.pose,
-    required this.female,
-    required this.yaw,
-    required this.primary,
-    required this.secondary,
-    this.props = const [],
-    this.framing,
-  });
-
-  final Pose pose;
-  final bool female;
-
-  /// Grados de giro de la cámara alrededor del cuerpo.
-  final double yaw;
-  final Set<Muscle> primary;
-  final Set<Muscle> secondary;
-  final List<Prop> props;
-
-  /// Encuadre fijo; si falta, se encuadra la pose sola.
-  final Framing? framing;
-
-  Color _tone(Set<Muscle> zone) {
-    if (zone.any(primary.contains)) return primaryColor;
-    if (zone.any(secondary.contains)) return secondaryColor;
-    return female ? _baseFemale : _base;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final sk = solve(pose, female);
-    final b = _Build(female);
-    final prims = <_Prim>[];
-    final upper = _tone({Muscle.chest, Muscle.lats, Muscle.midBack, Muscle.traps});
-    final lower = _tone({Muscle.abs, Muscle.obliques, Muscle.lowerBack});
-    final glutes = _tone({Muscle.glutes});
-    final thighs = _tone({Muscle.quads, Muscle.hamstrings, Muscle.adductors});
-    final shins = _tone({Muscle.calves});
-    final upperArms = _tone({Muscle.biceps, Muscle.triceps});
-    final forearms = _tone({Muscle.forearms});
-    final shoulders = _tone({Muscle.shoulders});
-    final neutral = female ? _baseFemale : _base;
-
-    prims.add(_Prim.capsule(sk['pelvis'], sk['waist'], b.rLowerTorso, lower));
-    prims.add(_Prim.capsule(sk['waist'], sk['neck'] - (sk['neck'] - sk['waist']).unit * 5, b.rUpperTorso, upper));
-    prims.add(_Prim.sphere(sk['pelvis'], b.rPelvis, glutes));
-    prims.add(_Prim.capsule(sk['neck'], sk['neck'] + (sk['head'] - sk['neck']).unit * b.neck, 4.5 * b.k, neutral));
-    prims.add(_Prim.sphere(sk['head'], b.head, neutral));
-    if (female) {
-      final fwd = _forward(sk);
-      final chest = sk['neck'] + (sk['waist'] - sk['neck']) * 0.38;
-      prims.add(_Prim.sphere(chest + fwd * 8 - sk.lateral * 6, 7, upper));
-      prims.add(_Prim.sphere(chest + fwd * 8 + sk.lateral * 6, 7, upper));
-    }
-    for (final s in ['l', 'r']) {
-      prims.add(_Prim.sphere(sk['${s}Shoulder'], b.rShoulder, shoulders));
-      prims.add(_Prim.capsule(sk['${s}Shoulder'], sk['${s}Elbow'], b.rUpperArm, upperArms));
-      prims.add(_Prim.capsule(sk['${s}Elbow'], sk['${s}Hand'], b.rForearm, forearms));
-      prims.add(_Prim.sphere(sk['${s}Hand'], 4 * b.k, neutral));
-      prims.add(_Prim.sphere(sk['${s}Hip'], b.rThigh, glutes));
-      prims.add(_Prim.capsule(sk['${s}Hip'], sk['${s}Knee'], b.rThigh, thighs));
-      prims.add(_Prim.capsule(sk['${s}Knee'], sk['${s}Ankle'], b.rShin, shins));
-      prims.add(_Prim.capsule(sk['${s}Ankle'], sk['${s}Toe'], 3.6 * b.k, neutral));
-    }
-    _addHeldProps(sk, prims);
-
-    // Cámara.
-    final fr = framing ?? Framing.of([sk]);
-    final y = _rad(yaw);
-    V3 view(V3 v) {
-      final x = v.x - fr.cx, z = v.z - fr.cz;
-      return V3(x * cos(y) + z * sin(y), v.y, -x * sin(y) + z * cos(y));
-    }
-
-    const d = 520.0;
-    final scale = min(size.height * 0.88 / max(fr.top, 120), size.width * 0.8 / (2 * fr.radius));
-    final cx = size.width / 2, cy = size.height * 0.93;
-    Offset proj(V3 v) {
-      final w = view(v);
-      final f = d / (d - w.z);
-      return Offset(cx + w.x * f * scale, cy - w.y * f * scale);
-    }
-
-    double depth(_Prim p) => (view(p.a).z + view(p.b).z) / 2;
-    double rad(_Prim p) => p.r * d / (d - (view(p.a).z + view(p.b).z) / 2) * scale;
-
-    // Suelo y sombra.
-    canvas.drawOval(
-      Rect.fromCenter(center: proj(V3(fr.cx, 0, fr.cz)), width: 150 * scale, height: 26 * scale),
-      Paint()..color = Colors.black.withValues(alpha: 0.35)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-    );
-    _drawFixedProps(canvas, sk, proj, scale);
-
-    prims.sort((a, b) => depth(a).compareTo(depth(b)));
-    for (final p in prims) {
-      final r = rad(p);
-      final a = proj(p.a);
-      if (p.sphere) {
-        canvas.drawCircle(a, r, Paint()
-          ..shader = RadialGradient(
-            center: const Alignment(-0.35, -0.4),
-            colors: [Color.lerp(p.color, Colors.white, 0.35)!, p.color, Color.lerp(p.color, Colors.black, 0.35)!],
-            stops: const [0, 0.55, 1],
-          ).createShader(Rect.fromCircle(center: a, radius: r)));
-      } else {
-        final bb = proj(p.b);
-        final base = Paint()
-          ..color = Color.lerp(p.color, Colors.black, 0.18)!
-          ..strokeWidth = r * 2
-          ..strokeCap = StrokeCap.round;
-        canvas.drawLine(a, bb, base);
-        final mid = Paint()
-          ..color = p.color
-          ..strokeWidth = r * 1.4
-          ..strokeCap = StrokeCap.round;
-        final off = Offset(-r * 0.18, -r * 0.18);
-        canvas.drawLine(a + off, bb + off, mid);
-        final hi = Paint()
-          ..color = Color.lerp(p.color, Colors.white, 0.35)!.withValues(alpha: 0.8)
-          ..strokeWidth = r * 0.45
-          ..strokeCap = StrokeCap.round;
-        final off2 = Offset(-r * 0.42, -r * 0.42);
-        canvas.drawLine(a + off2, bb + off2, hi);
-      }
-    }
-    _drawLines(canvas, sk, proj, scale);
-  }
-
-  V3 _forward(Skeleton sk) {
-    final up = (sk['neck'] - sk['pelvis']).unit;
-    final l = sk.lateral;
-    // adelante = lateral × arriba
-    return V3(l.y * up.z - l.z * up.y, l.z * up.x - l.x * up.z, l.x * up.y - l.y * up.x).unit;
-  }
-
-  void _addHeldProps(Skeleton sk, List<_Prim> prims) {
-    final lat = sk.lateral;
-    for (final p in props) {
-      switch (p) {
-        case Prop.barbellBack:
-        case Prop.barbellHands:
-          final c = p == Prop.barbellBack
-              ? sk['neck'] - _forward(sk) * 9 - (sk['neck'] - sk['pelvis']).unit * 3
-              : (sk['lHand'] + sk['rHand']) * 0.5;
-          prims.add(_Prim.capsule(c - lat * 78, c + lat * 78, 1.6, _steel));
-          for (final s in [-1.0, 1.0]) {
-            prims.add(_Prim.capsule(c + lat * (s * 60), c + lat * (s * 68), 11, _plate));
-          }
-        case Prop.dumbbells:
-        case Prop.dumbbellRight:
-        case Prop.goblet:
-          final hands = p == Prop.dumbbellRight
-              ? ['rHand']
-              : p == Prop.goblet
-                  ? <String>[]
-                  : ['lHand', 'rHand'];
-          for (final h in hands) {
-            final c = sk[h];
-            prims.add(_Prim.capsule(c - lat * 10, c + lat * 10, 2, _steel));
-            prims.add(_Prim.capsule(c - lat * 12, c - lat * 8, 6.5, _plate));
-            prims.add(_Prim.capsule(c + lat * 8, c + lat * 12, 6.5, _plate));
-          }
-          if (p == Prop.goblet) {
-            final c = (sk['lHand'] + sk['rHand']) * 0.5;
-            final up = (sk['neck'] - sk['pelvis']).unit;
-            prims.add(_Prim.capsule(c - up * 8, c + up * 8, 2.2, _steel));
-            prims.add(_Prim.capsule(c - up * 11, c - up * 7, 7, _plate));
-            prims.add(_Prim.capsule(c + up * 7, c + up * 11, 7, _plate));
-          }
-        case Prop.bar:
-          final c = (sk['lHand'] + sk['rHand']) * 0.5;
-          prims.add(_Prim.capsule(c - lat * 60, c + lat * 60, 1.8, _steel));
-        default:
-          break;
-      }
-    }
-  }
-
-  void _drawFixedProps(Canvas canvas, Skeleton sk, Offset Function(V3) proj, double scale) {
-    final fill = Paint()..color = const Color(0xFF2B3550);
-    final edge = Paint()
-      ..color = const Color(0xFF4A5778)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    void box(V3 center, double w, double l, double h, V3 along) {
-      final a = along.unit;
-      final side = V3(-a.z, 0, a.x).unit;
-      final top = [
-        center + a * (l / 2) + side * (w / 2),
-        center + a * (l / 2) - side * (w / 2),
-        center - a * (l / 2) - side * (w / 2),
-        center - a * (l / 2) + side * (w / 2),
-      ];
-      final bottom = [for (final t in top) V3(t.x, 0, t.z)];
-      for (var i = 0; i < 4; i++) {
-        final face = Path()
-          ..moveTo(proj(top[i]).dx, proj(top[i]).dy)
-          ..lineTo(proj(top[(i + 1) % 4]).dx, proj(top[(i + 1) % 4]).dy)
-          ..lineTo(proj(bottom[(i + 1) % 4]).dx, proj(bottom[(i + 1) % 4]).dy)
-          ..lineTo(proj(bottom[i]).dx, proj(bottom[i]).dy)
-          ..close();
-        canvas.drawPath(face, fill);
-        canvas.drawPath(face, edge);
-      }
-      final t = Path()..addPolygon([for (final p in top) proj(p)], true);
-      canvas.drawPath(t, Paint()..color = const Color(0xFF3A4766));
-      canvas.drawPath(t, edge);
-      final _ = h;
-    }
-
-    final bodyAxis = sk['neck'] - sk['pelvis'];
-    final flat = V3(bodyAxis.x, 0, bodyAxis.z);
-    final along = flat.length < 1 ? const V3(0, 0, 1) : flat;
-    for (final p in props) {
-      switch (p) {
-        case Prop.bench:
-          final c = (sk['pelvis'] + sk['neck']) * 0.5;
-          final topY = min(sk['pelvis'].y, sk['neck'].y) - 11;
-          box(V3(c.x, topY, c.z), 28, 110, topY, along);
-        case Prop.benchUnderHands:
-          // Bajo la mano más baja (en el remo a una mano, la de apoyo).
-          final l = sk['lHand'], r = sk['rHand'];
-          final c = (l.y - r.y).abs() < 4 ? (l + r) * 0.5 : (l.y < r.y ? l : r);
-          box(V3(c.x, c.y - 3, c.z), (l.y - r.y).abs() < 4 ? 90 : 40, 30, c.y, const V3(0, 0, 1));
-        case Prop.benchBack:
-          final c = sk['neck'] + (sk['waist'] - sk['neck']) * 0.3;
-          box(V3(c.x, c.y - 12, c.z), 34, 110, c.y, const V3(1, 0, 0));
-        case Prop.box:
-          final c = sk['pelvis'] - _forward(sk) * 8;
-          box(V3(c.x, max(20.0, sk['pelvis'].y - 10), c.z - 6), 34, 34, 40, const V3(0, 0, 1));
-        case Prop.footPlate:
-          final c = (sk['lAnkle'] + sk['rAnkle']) * 0.5;
-          final n = (sk['lKnee'] + sk['rKnee']) * 0.5 - c;
-          final u = n.unit;
-          final s = sk.lateral;
-          final v = V3(s.y * u.z - s.z * u.y, s.z * u.x - s.x * u.z, s.x * u.y - s.y * u.x).unit;
-          final quad = [c + s * 25 + v * 22, c - s * 25 + v * 22, c - s * 25 - v * 22, c + s * 25 - v * 22];
-          final path = Path()..addPolygon([for (final q in quad) proj(q - u * 3)], true);
-          canvas.drawPath(path, Paint()..color = const Color(0xFF3A4766));
-          canvas.drawPath(path, edge);
-        case Prop.wall:
-          final f = sk['lHand'].z > sk['pelvis'].z ? max(sk['lHand'].z, sk['rHand'].z) + 3 : 40.0;
-          final quad = [V3(-60, 0, f), V3(60, 0, f), V3(60, 200, f), V3(-60, 200, f)];
-          canvas.drawPath(Path()..addPolygon([for (final q in quad) proj(q)], true),
-              Paint()..color = const Color(0x552B3550));
-        case Prop.floorMat:
-          final c = sk['pelvis'];
-          final quad = [
-            V3(c.x - 35, 0.2, c.z - 95), V3(c.x + 35, 0.2, c.z - 95),
-            V3(c.x + 35, 0.2, c.z + 95), V3(c.x - 35, 0.2, c.z + 95),
-          ];
-          canvas.drawPath(Path()..addPolygon([for (final q in quad) proj(q)], true),
-              Paint()..color = const Color(0x6622D3EE));
-        default:
-          break;
-      }
-    }
-  }
-
-  void _drawLines(Canvas canvas, Skeleton sk, Offset Function(V3) proj, double scale) {
-    final cable = Paint()
-      ..color = MagraColors.cyan.withValues(alpha: 0.9)
-      ..strokeWidth = 1.6;
-    final hands = (sk['lHand'] + sk['rHand']) * 0.5;
-    for (final p in props) {
-      switch (p) {
-        case Prop.cableForward:
-          canvas.drawLine(proj(hands), proj(V3(hands.x, sk['pelvis'].y, 120)), cable);
-        case Prop.cableHigh:
-          canvas.drawLine(proj(hands), proj(V3(hands.x, 230, hands.z)), cable);
-        case Prop.cableSide:
-          canvas.drawLine(proj(hands), proj(V3(-110, hands.y, hands.z)), cable);
-        case Prop.band:
-          canvas.drawLine(proj(sk['lHand']), proj(sk['rHand']),
-              Paint()..color = MagraColors.lime..strokeWidth = 3..strokeCap = StrokeCap.round);
-        default:
-          break;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(MannequinPainter old) => true;
-}
-
-/// Maniquí 3D sin rostro que hace el ejercicio en bucle y gira con el dedo.
+/// Maniquí 3D vestido y sin rostro que hace el ejercicio en bucle: se pausa,
+/// se reinicia, se recorre paso a paso y gira 360° con el dedo.
 class MannequinView extends ConsumerStatefulWidget {
   const MannequinView({
     super.key,
@@ -627,6 +407,8 @@ class MannequinView extends ConsumerStatefulWidget {
   });
 
   final MoveAnim anim;
+
+  /// Figura por defecto (la del perfil); el visor permite cambiarla.
   final Sex sex;
   final Set<Muscle> primary;
   final Set<Muscle> secondary;
@@ -642,17 +424,30 @@ class MannequinView extends ConsumerStatefulWidget {
 
 class _MannequinViewState extends ConsumerState<MannequinView> with SingleTickerProviderStateMixin {
   late double _yaw = widget.anim.yaw;
-  late Framing _framing = Framing.ofAnim(widget.anim, widget.sex == Sex.female);
   double _phase = 0.5;
   bool _playing = true;
+  bool _muscles = true;
+  bool _failed = false;
   Ticker? _ticker;
   Duration _last = Duration.zero;
+  final Map<bool, Framing> _framings = {};
 
-  bool get _canAnimate {
-    final enabled = ref.read(figureAnimationProvider);
-    final reduce = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    return widget.animate && enabled && !reduce;
-  }
+  ui.Image? _image;
+  Object? _imageKey;
+  int _inFlight = 0;
+  int _frameId = 0;
+  int _shownId = 0;
+  Object? _pendingKey;
+  bool _renderQueued = false;
+  Size _size = Size.zero;
+
+  bool get _reduceMotion => MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+  bool get _canAnimate => widget.animate && ref.read(figureAnimationProvider) && !_reduceMotion;
+
+  bool get _female => (ref.read(avatarChoiceProvider) ?? widget.sex) == Sex.female;
+
+  Framing _framing(bool female) => _framings.putIfAbsent(female, () => Framing.ofAnim(widget.anim, female));
 
   @override
   void didChangeDependencies() {
@@ -663,74 +458,204 @@ class _MannequinViewState extends ConsumerState<MannequinView> with SingleTicker
   @override
   void didUpdateWidget(MannequinView old) {
     super.didUpdateWidget(old);
-    if (old.anim != widget.anim || old.sex != widget.sex) {
-      _framing = Framing.ofAnim(widget.anim, widget.sex == Sex.female);
-    }
     if (old.anim != widget.anim) {
+      _framings.clear();
       _yaw = widget.anim.yaw;
       _phase = _canAnimate ? 0 : 0.5;
+      _failed = false;
     }
   }
 
   void _syncTicker() {
     final run = _canAnimate && _playing;
-    if (run && _ticker == null) {
-      _phase = 0;
+    final ticker = _ticker ??= createTicker((elapsed) {
+      final dt = (elapsed - _last).inMicroseconds / 1e6;
+      _last = elapsed;
+      setState(() => _phase = (_phase + dt / widget.anim.seconds) % 1);
+    });
+    if (run && !ticker.isActive) {
       _last = Duration.zero;
-      _ticker = createTicker((elapsed) {
-        final dt = (elapsed - _last).inMicroseconds / 1e6;
-        _last = elapsed;
-        setState(() => _phase = (_phase + dt / widget.anim.seconds) % 1);
-      })..start();
-    } else if (!run && _ticker != null) {
-      _ticker!.dispose();
-      _ticker = null;
+      ticker.start();
+    } else if (!run && ticker.isActive) {
+      ticker.stop();
     }
   }
 
   @override
   void dispose() {
     _ticker?.dispose();
+    _image?.dispose();
     super.dispose();
   }
 
   void _setYaw(double y) => setState(() => _yaw = y);
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final painter = MannequinPainter(
+  void _togglePlay() {
+    setState(() => _playing = !_playing);
+    _syncTicker();
+  }
+
+  void _restart() {
+    setState(() {
+      _phase = 0;
+      _playing = true;
+    });
+    _syncTicker();
+  }
+
+  void _scrub(double v) {
+    setState(() {
+      _phase = v;
+      _playing = false;
+    });
+    _syncTicker();
+  }
+
+  MannequinPainter _painter({ui.Image? image}) {
+    final female = _female;
+    return MannequinPainter(
       pose: widget.anim.at(_phase),
-      female: widget.sex == Sex.female,
+      female: female,
       yaw: _yaw,
       primary: widget.primary,
       secondary: widget.secondary,
       props: widget.anim.props,
-      framing: _framing,
+      framing: _framing(female),
+      showMuscles: _muscles,
+      image: image,
+      elevation: widget.anim.elevation,
     );
-    final figure = GestureDetector(
-      onHorizontalDragUpdate: (d) => _setYaw(_yaw - d.delta.dx * 0.9),
-      child: Semantics(
-        label: 'Maniquí ${widget.sex == Sex.female ? 'de mujer' : 'de hombre'} haciendo el ejercicio. '
-            'Desliza para girarlo.',
-        child: SizedBox(
-          height: widget.height,
-          width: double.infinity,
-          child: CustomPaint(painter: painter),
+  }
+
+  Object get _key => (_phase, _yaw, _female, _muscles, _size, _supersample, widget.anim);
+
+  /// Dibuja el cuadro actual fuera del build. Hasta dos cuadros en
+  /// camino: mientras uno se convierte en imagen, ya se dibuja el siguiente.
+  void _scheduleRender() {
+    final key = _key;
+    if (_renderQueued || _inFlight >= 2 || _failed || _size.isEmpty || _imageKey == key || _pendingKey == key) {
+      return;
+    }
+    _renderQueued = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _renderQueued = false;
+      if (!mounted) return;
+      _render();
+    });
+  }
+
+  /// Resolución del dibujo: la del dispositivo (hasta 2,5×) si está quieto;
+  /// en la web, algo menor mientras se anima para mantener la fluidez.
+  double get _supersample {
+    final dpr = MediaQuery.maybeOf(context)?.devicePixelRatio ?? 2;
+    final moving = _ticker?.isActive ?? false;
+    if (_size.width < 120) return 2;
+    if (kIsWeb && moving) return (dpr * 0.75).clamp(1.0, 1.6);
+    return dpr.clamp(1.5, moving ? 2.0 : 2.5);
+  }
+
+  void _render() {
+    final key = _key;
+    MannequinPixels pixels;
+    try {
+      pixels = _painter().rasterize(_size, ss: _supersample);
+    } catch (_) {
+      setState(() => _failed = true);
+      return;
+    }
+    final id = ++_frameId;
+    _inFlight++;
+    _pendingKey = key;
+    pixels.toImage().then((img) {
+      _inFlight--;
+      if (!mounted || id < _shownId) {
+        img.dispose();
+        return;
+      }
+      setState(() {
+        _image?.dispose();
+        _image = img;
+        _imageKey = key;
+        _shownId = id;
+      });
+    }, onError: (_) {
+      _inFlight--;
+      if (mounted) setState(() => _failed = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    ref.watch(avatarChoiceProvider);
+    final female = _female;
+    if (_failed) {
+      // Alternativa estática si el dibujo 3D no se puede generar.
+      return BodyMap(
+        sex: female ? Sex.female : Sex.male,
+        primary: widget.primary,
+        secondary: widget.secondary,
+        height: widget.height,
+      );
+    }
+    final figure = LayoutBuilder(builder: (context, c) {
+      _size = Size(c.maxWidth.isFinite ? c.maxWidth : widget.height, widget.height);
+      _scheduleRender();
+      return GestureDetector(
+        onHorizontalDragUpdate: (d) => _setYaw(_yaw - d.delta.dx * 0.9),
+        child: Semantics(
+          label: 'Maniquí ${female ? 'de mujer' : 'de hombre'} haciendo el ejercicio. '
+              'Desliza para girarlo.',
+          child: SizedBox(
+            height: widget.height,
+            width: double.infinity,
+            child: CustomPaint(painter: _painter(image: _image)),
+          ),
         ),
-      ),
-    );
+      );
+    });
     if (!widget.controls) return figure;
+    final animated = _canAnimate;
+    final accent = female ? avatarAccentFemale : avatarAccentMale;
     return Column(
       children: [
         figure,
-        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Container(width: 8, height: 8, decoration: BoxDecoration(color: accent, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(widget.anim.phaseLabel(_phase),
+                    key: const ValueKey('fase'), style: theme.textTheme.labelLarge),
+              ),
+            ],
+          ),
+        ),
+        Slider(
+          value: _phase.clamp(0.0, 1.0),
+          onChanged: _scrub,
+          activeColor: accent,
+          semanticFormatterCallback: (v) => 'Paso del movimiento ${(v * 100).round()} %',
+        ),
         Wrap(
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 6,
           runSpacing: 6,
           children: [
+            if (animated || !_playing)
+              IconButton(
+                tooltip: _playing && animated ? 'Pausar' : 'Reproducir',
+                onPressed: _reduceMotion || !widget.animate || !ref.read(figureAnimationProvider) ? null : _togglePlay,
+                icon: Icon(_playing && animated ? Icons.pause_circle_outline : Icons.play_circle_outline),
+              ),
+            IconButton(
+              tooltip: 'Reiniciar',
+              onPressed: _restart,
+              icon: const Icon(Icons.replay),
+            ),
             for (final (label, y) in [('Frente', 0.0), ('Lado', 90.0), ('Espalda', 180.0)])
               ChoiceChip(
                 showCheckmark: false,
@@ -738,27 +663,47 @@ class _MannequinViewState extends ConsumerState<MannequinView> with SingleTicker
                 selected: ((_yaw % 360 + 360) % 360 - y).abs() < 1,
                 onSelected: (_) => _setYaw(y),
               ),
-            if (_canAnimate || !_playing)
-              IconButton(
-                tooltip: _playing ? 'Pausar' : 'Reproducir',
-                onPressed: () {
-                  setState(() => _playing = !_playing);
-                  _syncTicker();
-                },
-                icon: Icon(_playing ? Icons.pause_circle_outline : Icons.play_circle_outline),
-              ),
           ],
         ),
+        const SizedBox(height: 6),
         Wrap(
-          spacing: 12,
           alignment: WrapAlignment.center,
+          spacing: 6,
+          runSpacing: 6,
           children: [
-            _Dot(color: primaryColor, label: 'Trabaja más'),
-            _Dot(color: secondaryColor, label: 'Ayuda'),
+            for (final (label, sex) in [('Figura mujer', Sex.female), ('Figura hombre', Sex.male)])
+              ChoiceChip(
+                showCheckmark: false,
+                label: Text(label),
+                selected: (sex == Sex.female) == female,
+                onSelected: (_) => ref.read(avatarChoiceProvider.notifier).choose(sex),
+              ),
+            FilterChip(
+              label: const Text('Músculos'),
+              selected: _muscles,
+              onSelected: (v) => setState(() => _muscles = v),
+            ),
           ],
         ),
-        Text('Desliza el maniquí para girarlo en 360°.',
-            textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+        if (_muscles) ...[
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 12,
+            alignment: WrapAlignment.center,
+            children: [
+              _Dot(color: primaryColor, label: 'Trabaja más'),
+              _Dot(color: secondaryColor, label: 'Ayuda'),
+            ],
+          ),
+        ],
+        const SizedBox(height: 4),
+        Text(
+          _reduceMotion
+              ? 'Reducir movimiento está activado: usa la barra para ver el ejercicio paso a paso.'
+              : 'Desliza el maniquí para girarlo en 360°.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall,
+        ),
       ],
     );
   }

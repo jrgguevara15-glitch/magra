@@ -205,19 +205,19 @@ class ExerciseThumb extends ConsumerWidget {
     final moves = guideFor(exercise);
     final sex = ref.watch(profileProvider).value?.sex ?? Sex.male;
     final split = splitMuscles(moves.isEmpty ? const [] : moves.first.muscles);
-    final anim = moves.isEmpty ? null : animFor(moves.first.name);
+    final demo = demoFor(moves.isEmpty ? null : moves.first.name);
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: size,
         height: size,
-        color: MagraColors.surfaceHigh,
-        padding: const EdgeInsets.all(3),
+        color: const Color(0xFF1A1E26),
+        padding: const EdgeInsets.all(2),
         child: moves.isEmpty
             ? const Icon(Icons.fitness_center, color: MagraColors.lime, size: 22)
-            : anim != null
+            : demo is AnimatedDemo
                 ? MannequinView(
-                    anim: anim,
+                    anim: demo.anim,
                     sex: sex,
                     primary: split.primary,
                     secondary: split.secondary,
@@ -231,7 +231,7 @@ class ExerciseThumb extends ConsumerWidget {
   }
 }
 
-/// El maniquí 3D haciendo el ejercicio [name] con los músculos de la lista
+/// El maniquí 3D (vestido, sin rostro) haciendo el ejercicio [name] con los músculos de la lista
 /// destacados; si el movimiento no tiene animación, la figura anatómica.
 class MuscleFigure extends StatelessWidget {
   const MuscleFigure({super.key, required this.sex, required this.muscles, this.name, this.height = 280});
@@ -244,17 +244,22 @@ class MuscleFigure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final split = splitMuscles(muscles);
-    final anim = name == null ? null : animFor(name!);
+    final demo = demoFor(name);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: MagraColors.surface,
+        // Estudio oscuro y limpio.
+        gradient: const RadialGradient(
+          center: Alignment(0, -0.3),
+          radius: 1.1,
+          colors: [Color(0xFF242934), Color(0xFF111419)],
+        ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: MagraColors.outlineSoft),
       ),
-      child: anim != null
+      child: demo is AnimatedDemo
           ? MannequinView(
-              anim: anim,
+              anim: demo.anim,
               sex: sex,
               primary: split.primary,
               secondary: split.secondary,

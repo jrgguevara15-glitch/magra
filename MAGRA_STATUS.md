@@ -184,6 +184,23 @@
   (54 animaciones; una prueba exige que no falte ninguna).
   Miniaturas de la rutina con el maniquí quieto. Respeta "reducir
   movimiento" del teléfono. analyze sin issues; suite 212/212; build web OK.
+- U8 — Avatar 3D vestido (estilo de la referencia del usuario):
+  IMPLEMENTADO, validación PENDIENTE. mannequin_render.dart: malla 3D con
+  sombreado suave y prueba de profundidad por píxel (rasterizador propio,
+  sin dependencias), figura adulta sin rostro con camiseta de manga corta,
+  pantalón largo, zapatillas, pelo (moño en la figura femenina), estudio
+  oscuro con aro en el piso y acentos cyan (mujer) / coral (hombre). Los
+  músculos se tiñen sobre la ropa (se pueden ocultar). Visor: fases
+  (inicio, excéntrica, transición, concéntrica; estiramientos: entrar,
+  mantener, salir), pausa/reproducir, reiniciar, barra para recorrer paso
+  a paso, Frente/Lado/Espalda, giro 360°, elección explícita de figura
+  (mujer/hombre; por defecto la del perfil). Reducir movimiento: sin
+  animación y con la barra. Si el dibujo falla o el ejercicio no tiene
+  animación: figura anatómica estática (resolvedor único demoFor). Cámara
+  más alta en ejercicios acostados. analyze sin issues; suite 217/217;
+  build web OK. Rendimiento medido en Chromium sin GPU del entorno: dibujo
+  ~13 ms por cuadro; la subida de la imagen al GPU emulado limita a ~12–16
+  cuadros/s ahí: validar fluidez en el iPhone.
 
 ## PAUSA (21-oct-2026)
 
