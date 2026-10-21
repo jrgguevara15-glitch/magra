@@ -6,7 +6,11 @@ inicio del iPhone como una app.
 
 ## Publicar o actualizar (manual)
 
-1. Desde `apps/mobile`: `flutter build web --release`.
+Sitio: https://magrafit.netlify.app
+
+1. Desde `apps/mobile`: `flutter build web --release` y `explorer build`.
+   Ojo: se sube `apps/mobile/build/web` (tiene `main.dart.js`), no
+   `apps/mobile/web`. Comprobar con `https://magrafit.netlify.app/main.dart.js`.
 2. Primera vez: app.netlify.com → **Add new site** → **Deploy manually** →
    arrastrar la carpeta `apps/mobile/build/web`.
    Actualizar: el sitio → **Deploys** → arrastrar de nuevo `build/web`.
