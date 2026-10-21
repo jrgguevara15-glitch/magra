@@ -113,6 +113,20 @@
   web OK.
 - M10, M14 y M17 en adelante — NO ABIERTOS.
 
+## Mejoras pedidas por el usuario (antes de M18)
+
+- U1 — Nueva interfaz "energía neón" (elegida por el usuario): IMPLEMENTADO,
+  validación PENDIENTE. Tema oscuro #0B0F1A con lima #B6FF3B, violeta
+  #7C5CFF y cian; botones píldora, tarjetas redondeadas, campos rellenos,
+  wordmark en degradado, cambio de pestaña animado, anillo de calorías y
+  barras animadas en Hoy, tarjetas destacadas con degradado y efecto al
+  tocar/pasar el mouse (Entreno, Coach), navegación lateral con nombres
+  en PC (≥ 1.200 px). analyze sin issues; suite 191/191; build web OK.
+- U2 — Ejercicios tocables con imágenes (Free Exercise DB, dominio
+  público), pasos, equipo, músculos y errores comunes: PENDIENTE.
+- U3 — Calentamiento y estiramiento guiados con temporizador: PENDIENTE.
+- U4 — Recetas con condimentos, aceites y grasas saludables: PENDIENTE.
+
 ## PAUSA (21-oct-2026)
 
 El usuario pidió pausar antes de M18 para proponer mejoras. Al retomar:

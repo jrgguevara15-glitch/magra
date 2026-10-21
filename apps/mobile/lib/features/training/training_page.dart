@@ -5,6 +5,7 @@ import '../../core/data/providers.dart';
 import '../../core/format.dart';
 import '../../core/recommendation/progression.dart';
 import '../../core/recommendation/training_plan.dart';
+import '../../core/widgets/hero_card.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
 import 'workout_session_page.dart';
@@ -183,9 +184,9 @@ class WorkoutCard extends ConsumerWidget {
     final today = DateUtils.dateOnly(inputs.today);
     final doneToday = history.any((s) => s.date == today);
     final recent = history.reversed.take(5).toList();
-    return Card(
+    return HeroCard(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

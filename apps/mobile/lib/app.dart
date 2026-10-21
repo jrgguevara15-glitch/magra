@@ -15,8 +15,9 @@ class MagraApp extends StatelessWidget {
     return MaterialApp(
       title: 'MAGRA',
       debugShowCheckedModeBanner: false,
-      theme: MagraTheme.light(),
-      darkTheme: MagraTheme.dark(),
+      theme: MagraTheme.neon(),
+      darkTheme: MagraTheme.neon(),
+      themeMode: ThemeMode.dark,
       locale: const Locale('es'),
       supportedLocales: const [Locale('es'), Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/providers.dart';
+import '../../core/theme.dart';
 import '../coach/coach_page.dart';
 import '../menus/menus_page.dart';
 import '../plan/plan_inputs.dart';
@@ -67,6 +68,9 @@ const magraDestinations = <MagraDestination>[
 /// Ancho desde el que se usa navegación lateral (tablet y escritorio).
 const double kWideLayoutBreakpoint = 720;
 
+/// Ancho desde el que la navegación lateral muestra los nombres (PC).
+const double kDesktopBreakpoint = 1200;
+
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
@@ -116,7 +120,23 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       icon: const Icon(Icons.logout),
       onPressed: _signOut,
     );
-    final wide = MediaQuery.sizeOf(context).width >= kWideLayoutBreakpoint;
+    final width = MediaQuery.sizeOf(context).width;
+    final wide = width >= kWideLayoutBreakpoint;
+    final desktop = width >= kDesktopBreakpoint;
+    // Cambio de pestaña con un fundido y un leve desplazamiento.
+    final animated = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 260),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, a) => FadeTransition(
+        opacity: a,
+        child: SlideTransition(
+          position: Tween(begin: const Offset(0, 0.02), end: Offset.zero).animate(a),
+          child: child,
+        ),
+      ),
+      child: KeyedSubtree(key: ValueKey(_index), child: body),
+    );
 
     if (wide) {
       return Scaffold(
@@ -125,7 +145,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             NavigationRail(
               selectedIndex: _index,
               onDestinationSelected: _select,
-              labelType: NavigationRailLabelType.all,
+              extended: desktop,
+              minExtendedWidth: 200,
+              labelType: desktop ? NavigationRailLabelType.none : NavigationRailLabelType.all,
               leading: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
                 child: _Wordmark(),
@@ -149,7 +171,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               ],
             ),
             const VerticalDivider(width: 1),
-            Expanded(child: body),
+            Expanded(child: animated),
           ],
         ),
       );
@@ -157,7 +179,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
     return Scaffold(
       appBar: AppBar(title: const _Wordmark(), actions: [signOutButton]),
-      body: body,
+      body: animated,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _select,
@@ -180,14 +202,12 @@ class _Wordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.primary;
-    return Text(
-      'MAGRA',
-      style: TextStyle(
-        color: color,
-        fontSize: 20,
-        fontWeight: FontWeight.w800,
-        letterSpacing: 3,
+    return ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (r) => MagraColors.brandGradient.createShader(r),
+      child: const Text(
+        'MAGRA',
+        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 4),
       ),
     );
   }

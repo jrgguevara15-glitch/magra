@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data/providers.dart';
 import '../../core/recommendation/progression.dart';
 import '../../core/recommendation/training_plan.dart';
+import '../../core/widgets/hero_card.dart';
 import '../plan/plan_inputs.dart';
 import '../progress/measurement.dart';
 import '../today/activity_log.dart';
@@ -264,8 +265,9 @@ class _CoachViewState extends ConsumerState<CoachView> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Card(
+              child: HeroCard(
                 child: ListTile(
+                  contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.event_note_outlined,
                       color: due ? theme.colorScheme.primary : null),
                   title: Text(due ? 'Tu revisión semanal está lista' : 'Revisión semanal'),

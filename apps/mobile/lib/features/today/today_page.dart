@@ -9,6 +9,7 @@ import '../../core/recommendation/motivation.dart';
 import '../../core/recommendation/nutrition_plan.dart';
 import '../../core/recommendation/training_plan.dart';
 import '../../core/theme.dart';
+import '../../core/widgets/progress_ring.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
 import 'activity_cards.dart';
@@ -261,35 +262,53 @@ class DaySummary extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 24,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.end,
+            Row(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('${fmt(kcal)} / ${fmt(target)} kcal',
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                    Text(
-                        [
-                          'consumidas',
-                          if (exerciseBonus > 0 || bankKcal > 0)
-                            'meta ${fmt(plan.kcal)}'
-                                '${exerciseBonus > 0 ? ' + ${fmt(exerciseBonus)} por ejercicio' : ''}'
-                                '${bankKcal > 0 ? ' + ${fmt(bankKcal)} del banco' : ''}',
-                        ].join(' · '),
-                        style: theme.textTheme.bodySmall),
-                  ],
+                ProgressRing(
+                  value: target <= 0 ? 0 : kcal / target,
+                  over: over,
+                  size: 88,
+                  center: Text(
+                    '${fmt(target <= 0 ? 0 : kcal / target * 100)} %',
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
                 ),
-                Text(
-                  left >= 0
-                      ? 'Te quedan ${fmt(left)} kcal'
-                      : 'Te pasaste ${fmt(-left)} kcal',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                      color: over ? MagraColors.bad : MagraColors.good),
+                const SizedBox(width: 16),
+                Expanded(
+                  child:
+                    Wrap(
+                      spacing: 24,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('${fmt(kcal)} / ${fmt(target)} kcal',
+                                style: theme.textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w700)),
+                            Text(
+                                [
+                                  'consumidas',
+                                  if (exerciseBonus > 0 || bankKcal > 0)
+                                    'meta ${fmt(plan.kcal)}'
+                                        '${exerciseBonus > 0 ? ' + ${fmt(exerciseBonus)} por ejercicio' : ''}'
+                                        '${bankKcal > 0 ? ' + ${fmt(bankKcal)} del banco' : ''}',
+                                ].join(' · '),
+                                style: theme.textTheme.bodySmall),
+                          ],
+                        ),
+                        Text(
+                          left >= 0
+                              ? 'Te quedan ${fmt(left)} kcal'
+                              : 'Te pasaste ${fmt(-left)} kcal',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                              color: over ? MagraColors.bad : MagraColors.good),
+                        ),
+                      ],
+                    ),
                 ),
               ],
             ),
@@ -314,14 +333,7 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: LinearProgressIndicator(
-        value: value.clamp(0, 1).toDouble(),
-        minHeight: 8,
-        color: color,
-      ),
-    );
+    return AnimatedBar(value: value, color: color);
   }
 }
 
