@@ -40,6 +40,15 @@ comió escrito o dictado), con su propio límite de 50 por día
 (`ai_consume('text', 50)`); no requiere migración nueva. Al actualizar el
 archivo hay que volver a desplegarla (Code → pegar → Deploy).
 
+## 2d. Función de evaluación corporal "ai-body" (U15)
+
+Migración `0015_body_assessments.sql` primero. Luego Deploy a new function
+→ Via Editor → nombre `ai-body` → pegar
+`backend/supabase/functions/ai-body/index.ts` → Deploy (Verify JWT
+activado). Solo responde si la persona aceptó enviar sus fotos
+(`ai_consents`, feature `body`). Límite: 3 evaluaciones por día. Las
+fotos no se guardan; la tabla `body_assessments` guarda solo el resultado.
+
 ## 2c. Función del coach "ai-coach" (M15)
 
 Igual que ai-menu: Deploy a new function → Via Editor → nombre `ai-coach`

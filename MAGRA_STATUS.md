@@ -261,7 +261,15 @@
   (profesional > medidas); no cambia con cada pesaje. Progreso ahora
   incluye el ajuste semanal (antes mostraba otra cifra). El ejercicio se
   muestra aparte ("+X por tu ejercicio") y no mueve la meta.
-- U15 — Evaluación corporal con foto: EN CURSO.
+- U15 — Evaluación corporal con foto: IMPLEMENTADO, validación PENDIENTE.
+  Progreso → "Evaluación con foto": 1–3 fotos (frente obligatoria, perfil,
+  espalda) + sexo, edad, estatura, peso y perímetros → función ai-body
+  (Claude con visión; MIGRACIÓN 0015 y función nueva) → % de grasa por foto
+  con rango, distribución, tono, postura, fortalezas, prioridades,
+  nutrición y entrenamiento. % final = foto y medidas ponderadas por su
+  precisión (combinedFat). Se guarda solo el resultado (body_assessments);
+  consentimiento explícito (ai_consents 'body'); 3 por día. El % entra al
+  plan desde el lunes (profesional > foto > medidas).
 - U17 — Coach motivador y seguimiento (avisos): PENDIENTE.
 
 ## Mejoras U7–U14 cerradas (22-oct-2026)

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/coach/coach.dart';
 import '../../features/menus/weekly_menu.dart';
 import '../../features/profile/user_profile.dart';
+import '../../features/progress/body_assessment.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/progress/progress_photos.dart';
 import '../../features/questionnaire/questionnaire.dart';
@@ -53,6 +54,20 @@ final stepsProvider = FutureProvider.family<int?, DateTime>((ref, day) async {
     return await ref.watch(stepsRepositoryProvider).forDay(day);
   } catch (_) {
     return null;
+  }
+});
+
+final bodyAssessmentServiceProvider =
+    Provider<BodyAssessmentService>((ref) => throw UnimplementedError());
+
+/// Evaluaciones con foto, de la más antigua a la más reciente. Si la tabla
+/// aún no existe (falta la migración 0015), ninguna.
+final bodyAssessmentsProvider = FutureProvider<List<BodyAssessment>>((ref) async {
+  if (ref.watch(signedInProvider).value != true) return const [];
+  try {
+    return await ref.watch(bodyAssessmentServiceProvider).list();
+  } catch (_) {
+    return const [];
   }
 });
 

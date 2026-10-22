@@ -8,6 +8,7 @@ import '../../core/recommendation/nutrition_plan.dart';
 import '../../core/recommendation/weekly_basis.dart';
 import '../../core/recommendation/weekly_adjustment.dart';
 import '../profile/user_profile.dart';
+import '../progress/body_assessment.dart';
 import '../progress/measurement.dart';
 import '../questionnaire/questionnaire.dart';
 
@@ -34,8 +35,12 @@ class PlanInputs {
     required this.age,
     required this.today,
     required this.measurements,
+    this.assessments = const [],
     this.kcalAdjustment = 0,
   });
+
+  /// Evaluaciones con foto (su % de grasa entra al plan).
+  final List<BodyAssessment> assessments;
 
   /// Todas las mediciones, de la más antigua a la más reciente.
   final List<Measurement> measurements;
@@ -61,6 +66,7 @@ class PlanInputs {
         questionnaire: questionnaire,
         today: today,
         kcalAdjustment: kcalAdjustment,
+        assessments: assessments,
       );
 
   List<HealthAlert> get alerts => healthAlerts(
@@ -158,6 +164,7 @@ class PlanGate extends ConsumerWidget {
         age: p.ageOn(today),
         today: today,
         measurements: list,
+        assessments: ref.watch(bodyAssessmentsProvider).value ?? const [],
         kcalAdjustment: totalAdjustment(adjustments.value ?? const []),
       ),
     );

@@ -4,6 +4,7 @@
 library;
 
 import '../../features/profile/user_profile.dart';
+import '../../features/progress/body_assessment.dart';
 import '../../features/progress/measurement.dart';
 import '../../features/questionnaire/questionnaire.dart';
 import '../format.dart';
@@ -14,6 +15,7 @@ import 'weekly_adjustment.dart';
 /// De dónde sale el % de grasa usado en el plan.
 enum FatSource {
   professional('informado por un profesional'),
+  photo('según tu evaluación con foto y medidas'),
   tape('según tus medidas');
 
   const FatSource(this.label);
@@ -56,7 +58,8 @@ class PlanBasis {
 
 /// La base de la semana de [today]. [measurements] van de la más antigua a
 /// la más reciente y no puede estar vacía.
-PlanBasis planBasis(List<Measurement> measurements, UserProfile profile, DateTime today) {
+PlanBasis planBasis(List<Measurement> measurements, UserProfile profile, DateTime today,
+    {List<BodyAssessment> assessments = const []}) {
   final week = weekStartOf(today);
   final before = [for (final m in measurements) if (m.date.isBefore(week)) m];
   final List<Measurement> pool;
@@ -70,23 +73,29 @@ PlanBasis planBasis(List<Measurement> measurements, UserProfile profile, DateTim
   }
   final weight = pool.fold<double>(0, (a, m) => a + m.weightKg) / pool.length;
 
-  // % de grasa: el más reciente antes del lunes (o el primero de esta
-  // semana si aún no hay); el de un profesional gana en la misma fecha.
-  final candidates = before.isNotEmpty ? before.reversed : measurements;
-  double? fat;
-  FatSource? source;
-  for (final m in candidates) {
-    final pro = usableBodyFat(m.reportedFatPct) ? m.reportedFatPct : null;
-    final tape = m.compositionFor(profile).fatPct;
-    if (pro != null) {
-      fat = pro;
-      source = FatSource.professional;
-    } else if (usableBodyFat(tape)) {
-      fat = tape;
-      source = FatSource.tape;
-    }
-    if (fat != null) break;
-  }
+  // % de grasa: el más reciente antes del lunes (o el primero si aún no
+  // hay); en la misma fecha gana el de un profesional, luego la evaluación
+  // con foto y luego las medidas.
+  final fats = <(DateTime, int, double, FatSource)>[
+    for (final m in measurements) ...[
+      if (usableBodyFat(m.reportedFatPct)) (m.date, 3, m.reportedFatPct!, FatSource.professional),
+      if (usableBodyFat(m.compositionFor(profile).fatPct))
+        (m.date, 1, m.compositionFor(profile).fatPct!, FatSource.tape),
+    ],
+    for (final a in assessments)
+      if (usableBodyFat(a.finalFatPct)) (a.date, 2, a.finalFatPct, FatSource.photo),
+  ]..sort((a, b) {
+      final c = a.$1.compareTo(b.$1);
+      return c != 0 ? c : a.$2.compareTo(b.$2);
+    });
+  final prior = [for (final f in fats) if (f.$1.isBefore(week)) f];
+  final (DateTime, int, double, FatSource)? pick = prior.isNotEmpty
+      ? prior.last
+      : fats.isEmpty
+          ? null
+          : fats.where((f) => _sameDay(f.$1, fats.first.$1)).reduce((a, b) => a.$2 >= b.$2 ? a : b);
+  final fat = pick?.$3;
+  final source = pick?.$4;
   return PlanBasis(
     weekStart: week,
     weightKg: weight,
@@ -107,8 +116,9 @@ NutritionPlan weeklyNutrition({
   required Questionnaire questionnaire,
   required DateTime today,
   int kcalAdjustment = 0,
+  List<BodyAssessment> assessments = const [],
 }) {
-  final basis = planBasis(measurements, profile, today);
+  final basis = planBasis(measurements, profile, today, assessments: assessments);
   return recommendNutrition(
     profile: profile,
     weightKg: basis.weightKg,

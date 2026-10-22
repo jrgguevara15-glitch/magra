@@ -43,6 +43,7 @@ class AchievementsCard extends ConsumerWidget {
             questionnaire: q,
             today: today,
             kcalAdjustment: totalAdjustment(adjustments),
+            assessments: ref.watch(bodyAssessmentsProvider).value ?? const [],
           ).protein;
 
     final list = achievements(

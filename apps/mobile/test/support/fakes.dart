@@ -14,6 +14,7 @@ import 'package:magra/core/recommendation/weekly_adjustment.dart';
 import 'package:magra/features/coach/coach.dart';
 import 'package:magra/features/menus/weekly_menu.dart';
 import 'package:magra/features/profile/user_profile.dart';
+import 'package:magra/features/progress/body_assessment.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/progress/progress_photos.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
@@ -209,6 +210,65 @@ class FakeBank implements CalorieBankRepository {
   @override
   Future<void> use(DateTime day, int kcal) async =>
       kcal <= 0 ? items.remove(day) : items[day] = kcal;
+}
+
+class FakeBody implements BodyAssessmentService {
+  FakeBody({this.consent = false, BodyAiResult? reply, List<BodyAssessment>? initial})
+      : reply = reply ??
+            const BodyAiResult(
+              valid: true,
+              fatPct: 24,
+              fatLow: 21,
+              fatHigh: 27,
+              confidence: 'media',
+              distribution: 'Grasa concentrada en el abdomen.',
+              strengths: ['Buena base muscular en piernas.'],
+              priorities: ['Bajar la cintura 4 cm.'],
+              nutrition: ['Proteína en cada comida.'],
+              training: ['Fuerza 3 veces por semana.'],
+            ),
+        items = [...?initial];
+
+  bool consent;
+  BodyAiResult reply;
+  final List<BodyAssessment> items;
+  List<BodyPhoto>? sentPhotos;
+  Map<String, dynamic>? sentContext;
+  var _next = 0;
+
+  @override
+  Future<bool> hasConsent() async => consent;
+
+  @override
+  Future<void> setConsent(bool accepted) async => consent = accepted;
+
+  @override
+  Future<BodyAiResult> assess(List<BodyPhoto> photos, Map<String, dynamic> context) async {
+    if (!consent) throw const BodyException('Primero acepta enviar tus fotos a la IA.');
+    sentPhotos = photos;
+    sentContext = context;
+    return reply;
+  }
+
+  @override
+  Future<List<BodyAssessment>> list() async => [...items];
+
+  @override
+  Future<void> save(BodyAssessment a) async => items.add(BodyAssessment(
+        id: 'b${_next++}',
+        date: a.date,
+        weightKg: a.weightKg,
+        finalFatPct: a.finalFatPct,
+        photoFatPct: a.photoFatPct,
+        photoFatLow: a.photoFatLow,
+        photoFatHigh: a.photoFatHigh,
+        tapeFatPct: a.tapeFatPct,
+        confidence: a.confidence,
+        details: a.details,
+      ));
+
+  @override
+  Future<void> delete(String id) async => items.removeWhere((a) => a.id == id);
 }
 
 class FakeKcalAdjustments implements KcalAdjustmentRepository {
@@ -563,6 +623,7 @@ Widget testApp({
   FakeSwaps? swaps,
   FakeSteps? steps,
   LocationStream? locations,
+  FakeBody? body,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -583,6 +644,7 @@ Widget testApp({
       calorieBankRepositoryProvider.overrideWithValue(bank ?? FakeBank()),
       exerciseSwapRepositoryProvider.overrideWithValue(swaps ?? FakeSwaps()),
       stepsRepositoryProvider.overrideWithValue(steps ?? FakeSteps()),
+      bodyAssessmentServiceProvider.overrideWithValue(body ?? FakeBody()),
       locationStreamProvider.overrideWithValue(locations ?? () => const Stream<GeoPoint>.empty()),
       coachClientProvider.overrideWithValue(coach ?? FakeCoach()),
       menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),

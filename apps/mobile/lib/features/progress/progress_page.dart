@@ -14,6 +14,7 @@ import '../profile/profile_form.dart';
 import '../profile/user_profile.dart';
 import '../questionnaire/questionnaire_page.dart';
 import 'achievements_card.dart';
+import 'body_assessment_page.dart';
 import 'measurement.dart';
 import 'measurement_form.dart';
 import 'progress_photos_card.dart';
@@ -111,6 +112,12 @@ class _Progress extends ConsumerWidget {
               ),
             ),
             PageSection(
+              title: 'Evaluación con foto',
+              icon: Icons.add_a_photo_outlined,
+              summary: _photoSummary(ref),
+              child: BodyAssessmentCard(profile: profile, last: list.last),
+            ),
+            PageSection(
               title: 'Tendencia y ajuste',
               icon: Icons.show_chart,
               summary: 'Peso de tendencia, gasto real y ajuste de la semana',
@@ -159,6 +166,13 @@ class _Progress extends ConsumerWidget {
 }
 
 /// Evaluación con la última medición completa y el último peso.
+String _photoSummary(WidgetRef ref) {
+  final list = ref.watch(bodyAssessmentsProvider).value ?? const [];
+  return list.isEmpty
+      ? 'La IA estima tu % de grasa con fotos y tus medidas'
+      : '${fmt(list.last.finalFatPct, 1)} % de grasa · ${fmtDate(list.last.date)}';
+}
+
 /// El plan de la semana (el mismo de Hoy y Plan), si ya hay cuestionario.
 NutritionPlan? _weekPlan(WidgetRef ref, List<Measurement> list) {
   final p = ref.watch(profileProvider).value;
@@ -170,6 +184,7 @@ NutritionPlan? _weekPlan(WidgetRef ref, List<Measurement> list) {
     questionnaire: q,
     today: DateTime.now(),
     kcalAdjustment: totalAdjustment(ref.watch(kcalAdjustmentsProvider).value ?? const []),
+            assessments: ref.watch(bodyAssessmentsProvider).value ?? const [],
   );
 }
 
