@@ -95,6 +95,12 @@ Map<String, dynamic> coachContext({
       if (c.waistCm != null) 'cintura_cm': _r(c.waistCm!),
       'pesajes_registrados': measurements.length,
     },
+    if (inputs.assessments.isNotEmpty)
+      'evaluacion_con_foto': {
+        'fecha': isoDate(inputs.assessments.last.date),
+        'grasa_final_pct': inputs.assessments.last.finalFatPct,
+        'prioridades': inputs.assessments.last.result.priorities,
+      },
     'plan': {
       'kcal': _r(plan.kcal, 0),
       'proteina_g': _r(plan.protein, 0),

@@ -270,7 +270,16 @@
   precisión (combinedFat). Se guarda solo el resultado (body_assessments);
   consentimiento explícito (ai_consents 'body'); 3 por día. El % entra al
   plan desde el lunes (profesional > foto > medidas).
-- U17 — Coach motivador y seguimiento (avisos): PENDIENTE.
+- U17 — Coach motivador y seguimiento: IMPLEMENTADO, validación PENDIENTE.
+  ai-coach con tono motivador (celebra logros, sin culpas, cierra con una
+  acción concreta) y con la última evaluación con foto en su contexto.
+  Seguimiento (follow_up.dart): avisos en Hoy si pasó la hora de entrenar
+  sin empezar, una comida sin anotar (90 min después), proteína o pasos
+  bajos al final del día, pesaje del lunes y días sin registrar; nunca
+  cerca de la hora de dormir; se descartan y se eligen en "Avisos del
+  coach" (guardado en el dispositivo). Notificaciones del navegador con
+  MAGRA abierta (en iPhone, desde la pantalla de inicio); con la app
+  cerrada llegan con la app instalada (M14). Sin migración.
 
 ## Mejoras U7–U14 cerradas (22-oct-2026)
 

@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../progress/measurement_form.dart';
+import '../coach/follow_up_cards.dart';
+import '../../core/recommendation/follow_up.dart';
 
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
@@ -106,6 +109,48 @@ class _TodayViewState extends ConsumerState<TodayView> {
     }
   }
 
+  /// Avisos del coach para hoy.
+  List<Nudge> _nudges({
+    required DateTime now,
+    required NutritionPlan plan,
+    required List<FoodEntry> entries,
+    required TrainingPlan training,
+    required bool trained,
+    required int? steps,
+    required Map<DateTime, DayTotals> history,
+    required double floor,
+  }) {
+    final q = widget.inputs.questionnaire;
+    final day = training.days.where((d) => d.weekday == now.weekday).firstOrNull;
+    int? since;
+    if (history.isNotEmpty) {
+      since = 0;
+      var d = DateTime(_today.year, _today.month, _today.day - 1);
+      while (since! < 30 && !loggedDay(history[d], floor)) {
+        since++;
+        d = DateTime(d.year, d.month, d.day - 1);
+      }
+    }
+    return followUps(FollowUpState(
+      now: now,
+      name: widget.inputs.profile.name,
+      mealTimes: [for (final m in plan.meals) m.time.hour * 60 + m.time.minute],
+      loggedMeals: {for (final e in entries) e.mealIndex},
+      proteinEaten: entries.fold<double>(0, (a, e) => a + e.protein),
+      proteinTarget: plan.protein,
+      sleepMinutes: q.sleepTime.hour * 60 + q.sleepTime.minute,
+      trainingToday: day != null,
+      trainingTitle: day?.title,
+      trainingMinutes: trainingStartMinutes(q.trainingTime),
+      trainedToday: trained,
+      steps: steps,
+      stepsGoal: training.stepsStart,
+      lastWeighIn: widget.inputs.measurements.isEmpty ? null : widget.inputs.measurements.last.date,
+      daysSinceLog: since,
+      enabled: ref.watch(followUpSettingsProvider).enabled,
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final inputs = widget.inputs;
@@ -199,9 +244,39 @@ class _TodayViewState extends ConsumerState<TodayView> {
               .where((i) => i < plan.meals.length)
               .length;
           final eaten = entries.fold<double>(0, (a, e) => a + e.kcal);
+          final nudges = isToday
+              ? _nudges(
+                  now: ref.watch(followUpTickProvider).value ?? ref.read(clockProvider)(),
+                  plan: plan,
+                  entries: entries,
+                  training: training,
+                  trained: exercise.isNotEmpty || workouts.any((w) => w.date == _today),
+                  steps: steps,
+                  history: history,
+                  floor: floor,
+                )
+              : const <Nudge>[];
+          void onNudge(Nudge n) {
+            switch (n.kind) {
+              case NudgeKind.training:
+                ref.read(homeTabProvider.notifier).go(kTrainingTab);
+              case NudgeKind.steps:
+                promptSteps(context, ref, _day, steps);
+              case NudgeKind.weighIn:
+                showMeasurementForm(context, sex: inputs.profile.sex);
+              case NudgeKind.meal || NudgeKind.protein || NudgeKind.comeback:
+                final logged = {for (final e in entries) e.mealIndex};
+                var i = n.mealIndex ??
+                    List.generate(plan.meals.length, (k) => k).firstWhere((k) => !logged.contains(k),
+                        orElse: () => plan.meals.length - 1);
+                if (i < 0) i = 0;
+                _add(i, 'Comida ${i + 1}', plan.meals[i]);
+            }
+          }
           return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (isToday) FollowUpCards(nudges: nudges, onAction: onNudge),
             DaySummary(
               plan: plan,
               entries: entries,

@@ -79,8 +79,8 @@ void main() {
     expect(find.textContaining('Tu plan usa este %'), findsOneWidget);
   });
 
-  testWidgets('fotos que no sirven: explica el motivo y no guarda', (tester) async {
-    setSize(tester, const Size(700, 3200));
+  testWidgets('fotos que no sirven (teléfono de 360 px): explica el motivo y no guarda', (tester) async {
+    setSize(tester, const Size(360, 3200));
     final body = FakeBody(consent: true, reply: const BodyAiResult(valid: false, invalidReason: 'La foto no muestra el cuerpo completo.'));
     await tester.pumpWidget(testApp(
       auth: FakeAuth(signedIn: true),

@@ -25,6 +25,9 @@ final homeTabProvider = NotifierProvider<HomeTab, int>(HomeTab.new);
 /// Índice de la pestaña Progreso.
 const int kProgressTab = 3;
 
+/// Índice de la pestaña Entreno.
+const int kTrainingTab = 4;
+
 /// Lo que el motor de recomendación necesita de un usuario.
 class PlanInputs {
   const PlanInputs({

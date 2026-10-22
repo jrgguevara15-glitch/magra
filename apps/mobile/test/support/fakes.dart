@@ -14,6 +14,8 @@ import 'package:magra/core/recommendation/weekly_adjustment.dart';
 import 'package:magra/features/coach/coach.dart';
 import 'package:magra/features/menus/weekly_menu.dart';
 import 'package:magra/features/profile/user_profile.dart';
+import 'package:magra/core/platform/device.dart';
+import 'package:magra/features/coach/follow_up_cards.dart';
 import 'package:magra/features/progress/body_assessment.dart';
 import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/progress/progress_photos.dart';
@@ -624,6 +626,8 @@ Widget testApp({
   FakeSteps? steps,
   LocationStream? locations,
   FakeBody? body,
+  LocalPrefs? prefs,
+  SystemAlerts? alerts,
   DateTime Function()? clock,
 }) {
   return ProviderScope(
@@ -645,6 +649,11 @@ Widget testApp({
       exerciseSwapRepositoryProvider.overrideWithValue(swaps ?? FakeSwaps()),
       stepsRepositoryProvider.overrideWithValue(steps ?? FakeSteps()),
       bodyAssessmentServiceProvider.overrideWithValue(body ?? FakeBody()),
+      // Avisos del coach apagados salvo en sus pruebas (dependen de la hora).
+      localPrefsProvider.overrideWithValue(prefs ?? (MemoryPrefs()..write('magra.followup.enabled', ''))),
+      systemAlertsProvider.overrideWithValue(alerts ?? NoSystemAlerts()),
+      // Sin temporizador de cada minuto en las pruebas.
+      followUpTickProvider.overrideWith((ref) => Stream.value(ref.watch(clockProvider)())),
       locationStreamProvider.overrideWithValue(locations ?? () => const Stream<GeoPoint>.empty()),
       coachClientProvider.overrideWithValue(coach ?? FakeCoach()),
       menuGeneratorProvider.overrideWithValue(menuGenerator ?? FakeMenuGenerator()),

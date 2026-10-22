@@ -54,7 +54,8 @@ fotos no se guardan; la tabla `body_assessments` guarda solo el resultado.
 Igual que ai-menu: Deploy a new function → Via Editor → nombre `ai-coach`
 → pegar `backend/supabase/functions/ai-coach/index.ts` → Deploy. Solo
 responde si la persona aceptó compartir sus datos (tabla `ai_consents`).
-Límites: 30 mensajes y 3 revisiones semanales por día.
+Límites: 30 mensajes y 3 revisiones semanales por día. U17 cambió su
+estilo (coach motivador): volver a desplegarla al actualizar.
 
 ## 2b. Función de menús "ai-menu" (M11)
 

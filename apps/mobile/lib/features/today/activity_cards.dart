@@ -452,28 +452,32 @@ class _FastingCardState extends ConsumerState<FastingCard> {
 /// Pasos del día contra la meta del plan. En el navegador se anotan a mano
 /// (el número sale de la app Salud o Google Fit del teléfono); la app
 /// instalada los leerá sola.
+/// Pide los pasos del día y los guarda.
+Future<void> promptSteps(BuildContext context, WidgetRef ref, DateTime day, int? current) async {
+  final value = await showDialog<int>(
+    context: context,
+    builder: (_) => _StepsDialog(current: current),
+  );
+  if (value == null) return;
+  try {
+    await ref.read(stepsRepositoryProvider).set(day, value);
+    ref.invalidate(stepsProvider(day));
+  } catch (err) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(saveErrorMessage(err, migration: '0014_gps_steps.sql'))));
+    }
+  }
+}
+
 class StepsCard extends ConsumerWidget {
   const StepsCard({super.key, required this.day, required this.goal});
 
   final DateTime day;
   final int goal;
 
-  Future<void> _edit(BuildContext context, WidgetRef ref, int? current) async {
-    final value = await showDialog<int>(
-      context: context,
-      builder: (_) => _StepsDialog(current: current),
-    );
-    if (value == null) return;
-    try {
-      await ref.read(stepsRepositoryProvider).set(day, value);
-      ref.invalidate(stepsProvider(day));
-    } catch (err) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(saveErrorMessage(err, migration: '0014_gps_steps.sql'))));
-      }
-    }
-  }
+  Future<void> _edit(BuildContext context, WidgetRef ref, int? current) =>
+      promptSteps(context, ref, day, current);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
