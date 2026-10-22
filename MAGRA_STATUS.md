@@ -255,13 +255,13 @@
   de 370 + 21,6 × masa magra; si no, Mifflin-St Jeor. Se aplica al plan, la
   revisión semanal, los logros y Progreso, y se explica cuál se usó.
 
-- U16 — Calorías estables: IMPLEMENTADO, validación PENDIENTE. Una sola
+- U16 — Calorías estables: VALIDADO por el usuario (22-oct-2026). Una sola
   meta en toda la app (weekly_basis.dart → weeklyNutrition): se calcula el
   lunes con el peso promedio de la semana pasada y el mejor % de grasa
   (profesional > medidas); no cambia con cada pesaje. Progreso ahora
   incluye el ajuste semanal (antes mostraba otra cifra). El ejercicio se
   muestra aparte ("+X por tu ejercicio") y no mueve la meta.
-- U15 — Evaluación corporal con foto: IMPLEMENTADO, validación PENDIENTE.
+- U15 — Evaluación corporal con foto: VALIDADO por el usuario (22-oct-2026).
   Progreso → "Evaluación con foto": 1–3 fotos (frente obligatoria, perfil,
   espalda) + sexo, edad, estatura, peso y perímetros → función ai-body
   (Claude con visión; MIGRACIÓN 0015 y función nueva) → % de grasa por foto
@@ -270,7 +270,7 @@
   precisión (combinedFat). Se guarda solo el resultado (body_assessments);
   consentimiento explícito (ai_consents 'body'); 3 por día. El % entra al
   plan desde el lunes (profesional > foto > medidas).
-- U17 — Coach motivador y seguimiento: IMPLEMENTADO, validación PENDIENTE.
+- U17 — Coach motivador y seguimiento: VALIDADO por el usuario (22-oct-2026).
   ai-coach con tono motivador (celebra logros, sin culpas, cierra con una
   acción concreta) y con la última evaluación con foto en su contexto.
   Seguimiento (follow_up.dart): avisos en Hoy si pasó la hora de entrenar
@@ -280,6 +280,15 @@
   coach" (guardado en el dispositivo). Notificaciones del navegador con
   MAGRA abierta (en iPhone, desde la pantalla de inicio); con la app
   cerrada llegan con la app instalada (M14). Sin migración.
+
+- U18 — Proyección del coach y macros claros: IMPLEMENTADO, validación
+  PENDIENTE. Hoy: tarjeta "Proyección del coach" (balance.dart) con el
+  cierre del día si come lo que queda del plan, el promedio de los últimos
+  7 días (con hoy proyectado) contra la meta y qué pasaría a ese ritmo
+  (subir, mantenerse o bajar, con el gasto real si se conoce). Macros como
+  "76 de 139 g · faltan 63 g" o "+31 g de más" en rojo. El coach IA hace
+  la misma proyección (reescribir ai-coach).
+- U19 — Diseño más minimalista: PROPUESTA (pendiente de aprobación).
 
 ## Mejoras U7–U14 cerradas (22-oct-2026)
 

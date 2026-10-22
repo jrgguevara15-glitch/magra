@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/recommendation/balance.dart';
 import '../progress/measurement_form.dart';
 import '../coach/follow_up_cards.dart';
 import '../../core/recommendation/follow_up.dart';
@@ -107,6 +108,42 @@ class _TodayViewState extends ConsumerState<TodayView> {
             const SnackBar(content: Text('No se pudo quitar. Revisa tu conexión.')));
       }
     }
+  }
+
+  /// Proyección del día y de la semana.
+  BalanceForecast _forecast({
+    required NutritionPlan plan,
+    required List<FoodEntry> entries,
+    required Map<DateTime, DayTotals> history,
+    required double available,
+    required double floor,
+  }) {
+    final now = ref.read(clockProvider)();
+    final minute = now.hour * 60 + now.minute;
+    final logged = {for (final e in entries) e.mealIndex};
+    final inputs = widget.inputs;
+    final real = adaptiveTdee(
+      dailyKcal: {for (final e in history.entries) e.key: e.value.kcal},
+      weighIns: [for (final m in inputs.measurements) WeighIn(m.date, m.weightKg)],
+      today: _today,
+      minDayKcal: floor * 0.6,
+    );
+    return balanceForecast(
+      today: _today,
+      history: history,
+      eatenToday: entries.fold<double>(0, (a, e) => a + e.kcal),
+      pendingMealKcal: [
+        for (var i = 0; i < plan.meals.length; i++)
+          if (!logged.contains(i) && plan.meals[i].time.hour * 60 + plan.meals[i].time.minute >= minute - 90)
+            plan.meals[i].kcal,
+      ],
+      metaKcal: plan.kcal,
+      available: available,
+      tdee: real?.tdee ?? plan.tdee,
+      tdeeIsReal: real != null,
+      plannedKgPerWeek: plan.maintenanceOnly ? 0 : inputs.profile.paceKgPerWeek,
+      floorKcal: floor,
+    );
   }
 
   /// Avisos del coach para hoy.
@@ -283,6 +320,18 @@ class _TodayViewState extends ConsumerState<TodayView> {
               exerciseBonus: bonus,
               bankKcal: bankToday.toDouble(),
             ),
+            if (isToday && entries.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              ForecastCard(
+                forecast: _forecast(
+                  plan: plan,
+                  entries: entries,
+                  history: history,
+                  available: plan.kcal + bonus + bankToday,
+                  floor: floor,
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             SectionList(sections: [
               PageSection(
@@ -495,20 +544,85 @@ class _MacroRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final diff = target - value;
+    final over = diff < -target * 0.05;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
               Expanded(child: Text(label)),
-              Text('${fmt(value)} / ${fmt(target)} g'),
+              Text('${fmt(value)} de ${fmt(target)} g', style: theme.textTheme.bodyMedium),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: 92,
+                child: Text(
+                  over ? '+${fmt(-diff)} g de más' : diff > 0.5 ? 'faltan ${fmt(diff)} g' : 'listo',
+                  textAlign: TextAlign.right,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: over ? MagraColors.bad : diff <= 0.5 ? MagraColors.good : null,
+                    fontWeight: over ? FontWeight.w700 : null,
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 2),
-          _Bar(value: target <= 0 ? 0 : value / target, color: color),
+          const SizedBox(height: 3),
+          _Bar(value: target <= 0 ? 0 : value / target, color: over ? MagraColors.bad : color),
         ],
+      ),
+    );
+  }
+}
+
+/// Proyección del coach: cómo cerrarías hoy y adónde te lleva tu promedio.
+class ForecastCard extends StatelessWidget {
+  const ForecastCard({super.key, required this.forecast});
+
+  final BalanceForecast forecast;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final f = forecast;
+    if (f.lines.isEmpty) return const SizedBox.shrink();
+    final color = switch (f.tone) {
+      BalanceTone.good => MagraColors.good,
+      BalanceTone.warn => MagraColors.lipid,
+      BalanceTone.bad => MagraColors.bad,
+    };
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              f.tone == BalanceTone.good ? Icons.trending_down : Icons.insights,
+              color: color,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Proyección del coach · ${f.title}',
+                      style: theme.textTheme.titleSmall?.copyWith(color: color)),
+                  for (final l in f.lines)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(l, style: theme.textTheme.bodyMedium),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
