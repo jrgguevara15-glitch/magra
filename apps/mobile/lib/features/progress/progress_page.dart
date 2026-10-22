@@ -5,6 +5,9 @@ import '../../core/data/providers.dart';
 import '../../core/format.dart';
 import '../../core/formulas/formulas.dart';
 import '../../core/recommendation/assessment.dart';
+import '../../core/recommendation/nutrition_plan.dart';
+import '../../core/recommendation/weekly_adjustment.dart';
+import '../../core/recommendation/weekly_basis.dart';
 import '../../core/theme.dart';
 import '../../core/widgets/sections.dart';
 import '../profile/profile_form.dart';
@@ -101,7 +104,11 @@ class _Progress extends ConsumerWidget {
               icon: Icons.monitor_heart_outlined,
               initiallyOpen: true,
               summary: _evaluationSummary(profile, list),
-              child: EvaluationCard(profile: profile, measurements: list),
+              child: EvaluationCard(
+                profile: profile,
+                measurements: list,
+                plan: _weekPlan(ref, list),
+              ),
             ),
             PageSection(
               title: 'Tendencia y ajuste',
@@ -152,13 +159,31 @@ class _Progress extends ConsumerWidget {
 }
 
 /// Evaluación con la última medición completa y el último peso.
+/// El plan de la semana (el mismo de Hoy y Plan), si ya hay cuestionario.
+NutritionPlan? _weekPlan(WidgetRef ref, List<Measurement> list) {
+  final p = ref.watch(profileProvider).value;
+  final q = ref.watch(questionnaireProvider).value;
+  if (p == null || q == null || list.isEmpty) return null;
+  return weeklyNutrition(
+    profile: p,
+    measurements: list,
+    questionnaire: q,
+    today: DateTime.now(),
+    kcalAdjustment: totalAdjustment(ref.watch(kcalAdjustmentsProvider).value ?? const []),
+  );
+}
+
 class EvaluationCard extends StatelessWidget {
   const EvaluationCard({
     super.key,
     required this.profile,
     required this.measurements,
     this.today,
+    this.plan,
   });
+
+  /// Meta de la semana; sin cuestionario se muestra la estimación base.
+  final NutritionPlan? plan;
 
   final UserProfile profile;
 
@@ -208,12 +233,16 @@ class EvaluationCard extends StatelessWidget {
             waistToHeightRating(whtr)),
       ]);
     }
+    final pl = plan;
     tiles.addAll([
-      _Stat('Metabolismo basal', '${fmt(energy.bmr)} kcal', energy.formula.label),
-      _Stat('Meta diaria', '${fmt(energy.kcal)} kcal',
-          'déficit ${fmt(energy.deficit)} kcal'),
-      _Stat('Proteína', '${fmt(energy.grams.protein)} g',
-          'C ${fmt(energy.grams.carbs)} g · L ${fmt(energy.grams.lipids)} g'),
+      _Stat('Metabolismo basal', '${fmt(pl?.bmr ?? energy.bmr)} kcal',
+          (pl?.formula ?? energy.formula).label),
+      _Stat('Meta diaria', '${fmt(pl?.kcal ?? energy.kcal)} kcal',
+          pl == null
+              ? 'déficit ${fmt(energy.deficit)} kcal'
+              : 'déficit ${fmt(pl.deficit)} kcal · fija hasta el lunes'),
+      _Stat('Proteína', '${fmt(pl?.protein ?? energy.grams.protein)} g',
+          'C ${fmt(pl?.carbs ?? energy.grams.carbs)} g · L ${fmt(pl?.fat ?? energy.grams.lipids)} g'),
     ]);
 
     StagedGoal? goal;
@@ -222,7 +251,7 @@ class EvaluationCard extends StatelessWidget {
         weightKg: last.weightKg,
         leanKg: comp.leanKg!,
         goalFatPct: profile.goalFatPct,
-        dailyDeficitKcal: energy.deficit,
+        dailyDeficitKcal: plan?.deficit ?? energy.deficit,
       );
     }
     String inTime(double? weeks) => weeks == null

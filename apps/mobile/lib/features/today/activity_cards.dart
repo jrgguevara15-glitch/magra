@@ -72,9 +72,9 @@ class ExerciseCard extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4, right: 8),
                 child: Text(
-                  'Suma +${fmt(exerciseBonusFor(entries))} kcal a tu meta de '
-                  'hoy: la mitad de lo quemado, porque los cálculos de gasto '
-                  'suelen quedar altos.',
+                  'Suma +${fmt(exerciseBonusFor(entries))} kcal a lo que puedes '
+                  'comer hoy (tu meta no cambia): la mitad de lo quemado, porque '
+                  'los cálculos de gasto suelen quedar altos.',
                   style: theme.textTheme.bodySmall,
                 ),
               ),

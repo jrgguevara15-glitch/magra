@@ -45,7 +45,16 @@ class NutritionPlan {
     this.fastingHours,
     this.tdee = 0,
     this.adjustmentKcal = 0,
+    this.bmr = 0,
+    this.formula = BmrFormula.mifflin,
   });
+
+  /// Metabolismo basal y con qué fórmula se calculó.
+  final double bmr;
+  final BmrFormula formula;
+
+  /// Déficit diario respecto del gasto estimado.
+  double get deficit => tdee - kcal;
 
   final double kcal;
   final double protein;
@@ -119,6 +128,8 @@ NutritionPlan recommendNutrition({
   required DateTime today,
   int kcalAdjustment = 0,
   double? bodyFatPct,
+  String fatSource = 'según tus medidas',
+  String? basisNote,
 }) {
   final q = questionnaire;
   final age = profile.ageOn(today);
@@ -146,10 +157,11 @@ NutritionPlan recommendNutrition({
         'bajar ~${fmt(profile.paceKgPerWeek, 2)} kg por semana.'
         '${energy.floorApplied ? ' Quedó en el mínimo seguro; no se baja más.' : ''}');
   }
+  if (basisNote != null) reasons.add(basisNote);
   reasons.add(energy.formula == BmrFormula.katch
       ? 'Tu metabolismo en reposo (${fmt(energy.bmr)} kcal) se calcula con '
           'Katch-McArdle a partir de tu masa magra (${fmt(weightKg * (1 - bodyFatPct! / 100), 1)} kg, '
-          'con ${fmt(bodyFatPct, 1)} % de grasa según tus medidas).'
+          'con ${fmt(bodyFatPct, 1)} % de grasa $fatSource).'
       : 'Tu metabolismo en reposo (${fmt(energy.bmr)} kcal) se calcula con '
           'Mifflin-St Jeor. Si registras cuello y cintura (y cadera, en mujeres), '
           'MAGRA usará Katch-McArdle con tu masa magra, que es más precisa.');
@@ -348,5 +360,7 @@ NutritionPlan recommendNutrition({
     fastingHours: fastingHours,
     tdee: energy.tdee,
     adjustmentKcal: kcal - energy.kcal,
+    bmr: energy.bmr,
+    formula: energy.formula,
   );
 }

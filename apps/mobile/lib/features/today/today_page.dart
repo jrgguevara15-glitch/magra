@@ -272,7 +272,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
                 title: 'Ejercicio',
                 icon: Icons.directions_run,
                 summary: bonus > 0
-                    ? '+${fmt(bonus)} kcal a tu meta'
+                    ? '+${fmt(bonus)} kcal para comer hoy'
                     : 'Sin ejercicio anotado',
                 child: ExerciseCard(day: _day, weightKg: inputs.weightKg),
               ),
@@ -361,16 +361,14 @@ class DaySummary extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('${fmt(kcal)} / ${fmt(target)} kcal',
+                            Text('${fmt(kcal)} / ${fmt(plan.kcal)} kcal',
                                 style: theme.textTheme.titleLarge
                                     ?.copyWith(fontWeight: FontWeight.w700)),
                             Text(
                                 [
-                                  'consumidas',
-                                  if (exerciseBonus > 0 || bankKcal > 0)
-                                    'meta ${fmt(plan.kcal)}'
-                                        '${exerciseBonus > 0 ? ' + ${fmt(exerciseBonus)} por ejercicio' : ''}'
-                                        '${bankKcal > 0 ? ' + ${fmt(bankKcal)} del banco' : ''}',
+                                  'consumidas · meta fija de la semana',
+                                  if (exerciseBonus > 0) '+${fmt(exerciseBonus)} por tu ejercicio',
+                                  if (bankKcal > 0) '+${fmt(bankKcal)} del banco',
                                 ].join(' · '),
                                 style: theme.textTheme.bodySmall),
                           ],

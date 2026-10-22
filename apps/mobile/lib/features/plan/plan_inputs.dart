@@ -5,8 +5,10 @@ import '../../core/data/providers.dart';
 import '../../core/formulas/formulas.dart';
 import '../../core/recommendation/assessment.dart';
 import '../../core/recommendation/nutrition_plan.dart';
+import '../../core/recommendation/weekly_basis.dart';
 import '../../core/recommendation/weekly_adjustment.dart';
 import '../profile/user_profile.dart';
+import '../progress/measurement.dart';
 import '../questionnaire/questionnaire.dart';
 
 /// Pestaña activa del menú principal (la cambian otras pantallas).
@@ -31,8 +33,12 @@ class PlanInputs {
     required this.questionnaire,
     required this.age,
     required this.today,
+    required this.measurements,
     this.kcalAdjustment = 0,
   });
+
+  /// Todas las mediciones, de la más antigua a la más reciente.
+  final List<Measurement> measurements;
 
   final UserProfile profile;
 
@@ -48,13 +54,13 @@ class PlanInputs {
   /// Suma de los ajustes semanales aplicados.
   final int kcalAdjustment;
 
-  NutritionPlan get nutrition => recommendNutrition(
+  /// Meta de la semana (la misma en toda la app).
+  NutritionPlan get nutrition => weeklyNutrition(
         profile: profile,
-        weightKg: weightKg,
+        measurements: measurements,
         questionnaire: questionnaire,
         today: today,
         kcalAdjustment: kcalAdjustment,
-        bodyFatPct: composition.fatPct,
       );
 
   List<HealthAlert> get alerts => healthAlerts(
@@ -151,6 +157,7 @@ class PlanGate extends ConsumerWidget {
         questionnaire: q!,
         age: p.ageOn(today),
         today: today,
+        measurements: list,
         kcalAdjustment: totalAdjustment(adjustments.value ?? const []),
       ),
     );

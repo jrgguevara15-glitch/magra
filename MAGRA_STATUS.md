@@ -255,6 +255,15 @@
   de 370 + 21,6 × masa magra; si no, Mifflin-St Jeor. Se aplica al plan, la
   revisión semanal, los logros y Progreso, y se explica cuál se usó.
 
+- U16 — Calorías estables: IMPLEMENTADO, validación PENDIENTE. Una sola
+  meta en toda la app (weekly_basis.dart → weeklyNutrition): se calcula el
+  lunes con el peso promedio de la semana pasada y el mejor % de grasa
+  (profesional > medidas); no cambia con cada pesaje. Progreso ahora
+  incluye el ajuste semanal (antes mostraba otra cifra). El ejercicio se
+  muestra aparte ("+X por tu ejercicio") y no mueve la meta.
+- U15 — Evaluación corporal con foto: EN CURSO.
+- U17 — Coach motivador y seguimiento (avisos): PENDIENTE.
+
 ## Mejoras U7–U14 cerradas (22-oct-2026)
 
 Todas validadas por el usuario. Se retoma la hoja de ruta en M18.

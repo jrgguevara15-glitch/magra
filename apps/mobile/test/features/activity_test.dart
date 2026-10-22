@@ -62,7 +62,7 @@ void main() {
       expect(exerciseBonusFor(const []), 0);
     });
 
-    testWidgets('anotar ejercicio sube la meta del día y se puede quitar',
+    testWidgets('anotar ejercicio suma a lo disponible del día (la meta queda fija) y se puede quitar',
         (tester) async {
       setSize(tester, const Size(700, 3000));
       final log = FakeExerciseLog();
@@ -72,13 +72,13 @@ void main() {
 
       expect(log.items.single.minutes, 60);
       expect(find.text('60 min · 238 kcal'), findsOneWidget);
-      expect(find.textContaining('+ 119 por ejercicio'), findsOneWidget);
+      expect(find.textContaining('+119 por tu ejercicio'), findsOneWidget);
       expect(find.textContaining('Suma +119 kcal'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Quitar Pesas / fuerza moderada'));
       await tester.pumpAndSettle();
       expect(log.items, isEmpty);
-      expect(find.textContaining('por ejercicio'), findsNothing);
+      expect(find.textContaining('por tu ejercicio'), findsNothing);
     });
 
     testWidgets('pide actividad y minutos válidos', (tester) async {

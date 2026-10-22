@@ -219,3 +219,19 @@ Código: `lib/core/recommendation/`. Reglas puras con pruebas.
 - Bajo impacto si IMC ≥ 30, rodillas/tobillos/caderas o ≥ 60 años.
 - Reemplazos por lesión (rodilla, espalda baja, hombro, cadera, tobillo,
   muñeca, cuello). Pasos: 6.000 (IMC ≥ 35) o 7.000, +1.000 cada 2 semanas.
+
+## Meta de la semana (U16)
+
+La meta diaria se calcula una vez por semana (lunes) y es la misma en Hoy,
+Plan, Progreso y la revisión semanal (`weeklyNutrition`):
+
+- Peso: promedio de los pesajes de los últimos 7 días antes del lunes
+  (en la primera semana, el primer registro, fijo hasta el lunes).
+- % de grasa: el más reciente antes del lunes; el informado por un
+  profesional (bioimpedancia, DEXA) gana sobre el de las medidas en la
+  misma fecha. Con % de grasa válido se usa Katch-McArdle; si no,
+  Mifflin-St Jeor.
+- Meta = TMB × actividad − ritmo × 1.000 kcal, con piso seguro, más el
+  ajuste semanal acumulado.
+- El ejercicio no cambia la meta: suma aparte a lo disponible del día
+  (50 % de lo quemado).

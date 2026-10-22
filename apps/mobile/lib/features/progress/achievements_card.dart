@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data/providers.dart';
 import '../../core/formulas/formulas.dart';
 import '../../core/recommendation/motivation.dart';
-import '../../core/recommendation/nutrition_plan.dart';
+import '../../core/recommendation/weekly_basis.dart';
 import '../../core/recommendation/weekly_adjustment.dart';
 import '../profile/user_profile.dart';
 import 'measurement.dart';
@@ -37,13 +37,12 @@ class AchievementsCard extends ConsumerWidget {
     final floor = safeFloorKcal(profile.sex);
     final proteinTarget = q == null || measurements.isEmpty
         ? 0.0
-        : recommendNutrition(
+        : weeklyNutrition(
             profile: profile,
-            weightKg: measurements.last.weightKg,
+            measurements: measurements,
             questionnaire: q,
             today: today,
             kcalAdjustment: totalAdjustment(adjustments),
-            bodyFatPct: latestBodyFat(measurements, profile),
           ).protein;
 
     final list = achievements(

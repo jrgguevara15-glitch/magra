@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
 import '../../core/formulas/formulas.dart';
-import '../../core/recommendation/nutrition_plan.dart';
+import '../../core/recommendation/weekly_basis.dart';
 import '../../core/recommendation/weekly_adjustment.dart';
 import '../profile/user_profile.dart';
 import 'measurement.dart';
@@ -78,13 +78,12 @@ class _WeeklyCheckCardState extends ConsumerState<WeeklyCheckCard> {
     final decided = adjustments.where((a) => a.weekStart == week).firstOrNull;
     final plan = q == null
         ? null
-        : recommendNutrition(
+        : weeklyNutrition(
             profile: profile,
-            weightKg: widget.measurements.last.weightKg,
+            measurements: widget.measurements,
             questionnaire: q,
             today: today,
             kcalAdjustment: total,
-            bodyFatPct: latestBodyFat(widget.measurements, profile),
           );
     final suggestion = plan == null
         ? null
