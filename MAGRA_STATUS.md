@@ -160,7 +160,7 @@
   Coach ya estaban divididos (Menú/Compras, chat). analyze sin issues;
   suite 203/203; build web OK. Maqueta:
   https://claude.ai/artifact/4oPHq3QYMfxpxKBftZeK5f
-- U6 — Figura anatómica: IMPLEMENTADO, validación PENDIENTE. body_map.dart:
+- U6 — Figura anatómica: VALIDADO (22-oct-2026; queda como figura de respaldo). body_map.dart:
   figura vectorial sin rostro de hombre o mujer según el perfil, 16 zonas
   musculares (8 de frente, 8 de espalda), principales en rojo con brillo y
   secundarias en naranja; empieza mirando lo más trabajado y gira con el
@@ -172,7 +172,7 @@
   biblioteca 3D licenciada (BACKLOG). analyze sin issues; suite 206/206;
   build web OK. Reemplazada en la ficha y la rutina guiada por U7 (queda
   como respaldo si un movimiento no tiene animación).
-- U7 — Maniquí 3D animado: IMPLEMENTADO, validación PENDIENTE.
+- U7 — Maniquí 3D animado: REEMPLAZADO por U9.
   mannequin.dart: motor 3D propio (cinemática directa + cámara con
   perspectiva, sin dependencias ni licencias) que dibuja un maniquí sin
   rostro de mujer u hombre según el perfil; hace el ejercicio en bucle,
@@ -185,7 +185,7 @@
   Miniaturas de la rutina con el maniquí quieto. Respeta "reducir
   movimiento" del teléfono. analyze sin issues; suite 212/212; build web OK.
 - U8 — Avatar 3D vestido (estilo de la referencia del usuario):
-  IMPLEMENTADO, validación PENDIENTE. mannequin_render.dart: malla 3D con
+  REEMPLAZADO por U9 (queda como respaldo si falta una imagen). mannequin_render.dart: malla 3D con
   sombreado suave y prueba de profundidad por píxel (rasterizador propio,
   sin dependencias), figura adulta sin rostro con camiseta de manga corta,
   pantalón largo, zapatillas, pelo (moño en la figura femenina), estudio
@@ -201,8 +201,13 @@
   build web OK. Rendimiento medido en Chromium sin GPU del entorno: dibujo
   ~13 ms por cuadro; la subida de la imagen al GPU emulado limita a ~12–16
   cuadros/s ahí: validar fluidez en el iPhone.
-- U9 — Maniquí realista renderizado (aprobado por el usuario): IMPLEMENTADO,
-  validación PENDIENTE. tools/avatar: avatar.py arma en Blender un maniquí
+- U9 — Maniquí realista renderizado: VALIDADO por el usuario (22-oct-2026).
+  Versión final hiperrealista (aprobada sobre muestra): más tono muscular,
+  piel gris tipo escultura, camiseta sin mangas, manos que se cierran sobre
+  mangos y barras, zapatillas con suela/cordones, implementos con
+  materiales reales (mancuernas hexagonales, barra olímpica con discos,
+  bancos tapizados, cajón de madera, poleas, bandas); cuadros de 576 px.
+  Reducir movimiento: parte en pausa pero se puede reproducir. tools/avatar: avatar.py arma en Blender un maniquí
   adulto sin rostro y gris a partir de MakeHuman (CC0): camiseta con vivos,
   calzas (mujer) o jogger (hombre), zapatillas, pelo esculpido (moño en la
   mujer). render_demos.py toma las poses exportadas desde la app
@@ -215,7 +220,7 @@
   Frente/Lado/Espalda y figura mujer/hombre; reducir movimiento la deja
   quieta con la barra; si falta una imagen usa el maniquí dibujado (U8).
   Se quitó el giro libre (vistas fijas, pedido del usuario).
-- U10 — Registro de comidas mejorado: IMPLEMENTADO, validación PENDIENTE.
+- U10 — Registro de comidas mejorado: VALIDADO por el usuario (22-oct-2026).
   Base ampliada dentro de la app (food_catalog_extra.dart, valores de
   referencia USDA FoodData Central redondeados): café y bebidas calientes,
   bebidas y jugos, alcoholes (cerveza, vinos, pisco, piscola, tragos),
@@ -226,18 +231,18 @@
   cantidad en porciones o gramos/ml; aviso del alcohol. Si no está: "Crear
   «…»" abre "A mano" con el nombre; "A mano" pide cantidad y unidad y queda
   guardado para la próxima vez. Sin migración (usa food_entries).
-- U11 — Sustituir ejercicios: IMPLEMENTADO, validación PENDIENTE. Botón
+- U11 — Sustituir ejercicios: VALIDADO por el usuario (22-oct-2026). Botón
   "Cambiar" en cada ejercicio de la rutina: opciones del mismo patrón de
   movimiento filtradas por equipo y lesiones (exercise_alternatives.dart),
   con ficha y animación; se guardan en exercise_swaps (MIGRACIÓN 0013) y se
   aplican a la rutina, la sesión y el coach; "Volver a …" deshace. Mismas
   series y repeticiones; el progreso del nuevo parte de cero.
-- U12 — Editar comidas: IMPLEMENTADO, validación PENDIENTE. Tocar un
+- U12 — Editar comidas: VALIDADO por el usuario (22-oct-2026). Tocar un
   alimento registrado abre "Editar alimento" (cantidad recalcula en
   proporción, o nutrientes directos). En el menú semanal, "Editar" cambia
   cantidades, quita o agrega ingredientes de la base y se guarda en el menú;
   "Lo comí" registra la versión editada. Sin migración.
-- U13 — GPS y pasos: IMPLEMENTADO, validación PENDIENTE. "Correr, caminar o
+- U13 — GPS y pasos: VALIDADO por el usuario (22-oct-2026). "Correr, caminar o
   bici con GPS" (Hoy → Ejercicio, solo hoy): distancia filtrada (precisión,
   saltos, temblor), tiempo con pausa, ritmo o velocidad, recorrido dibujado,
   MET por velocidad; se guarda como ejercicio con sus km
@@ -245,30 +250,27 @@
   pantalla encendida. Pasos: sección "Pasos" con la meta del plan y registro
   manual (daily_steps, migración 0014); conteo automático en la app
   instalada (M10). Dependencia nueva: geolocator.
-- U14 — Katch-McArdle: IMPLEMENTADO, validación PENDIENTE. Si hay % de
+- U14 — Katch-McArdle: VALIDADO por el usuario (22-oct-2026). Si hay % de
   grasa válido (medidas de cuello/cintura/cadera), el metabolismo basal sale
   de 370 + 21,6 × masa magra; si no, Mifflin-St Jeor. Se aplica al plan, la
   revisión semanal, los logros y Progreso, y se explica cuál se usó.
 
-## PAUSA (21-oct-2026)
+## Mejoras U7–U14 cerradas (22-oct-2026)
 
-El usuario pidió pausar antes de M18 para proponer mejoras. Al retomar:
-primero sus mejoras (como bloques cerrados, con su validación), después
-la hoja de ruta de abajo.
+Todas validadas por el usuario. Se retoma la hoja de ruta en M18.
 
 ## Próximos pasos (hoja de ruta acordada)
 
-1. Mejoras que pida el usuario (pendiente que las describa).
-2. M18 — Legal: términos, política de privacidad, consentimiento al
+1. M18 — Legal: términos, política de privacidad, consentimiento al
    crear la cuenta, exportar datos y borrar la cuenta con todo su
    contenido (obligatorio antes de vender: datos de salud).
-3. M20 — PDF para el nutricionista (medidas, evolución, plan, registro).
-4. Preparar compilación nativa: cuenta Apple Developer (US$99/año) +
+2. M20 — PDF para el nutricionista (medidas, evolución, plan, registro).
+3. Preparar compilación nativa: cuenta Apple Developer (US$99/año) +
    Codemagic (no hay Mac); Android con APK.
-5. M10 — Apple Health / Health Connect (requiere app nativa).
-6. M14 — Notificaciones (requiere app nativa).
-7. M17 — Suscripciones con RevenueCat, gratis vs premium.
-8. M19 — Publicación en App Store, Google Play, Windows y macOS.
+4. M10 — Apple Health / Health Connect (requiere app nativa).
+5. M14 — Notificaciones (requiere app nativa).
+6. M17 — Suscripciones con RevenueCat, gratis vs premium.
+7. M19 — Publicación en App Store, Google Play, Windows y macOS.
 
 Antes de abrir al público: reactivar "Confirm email" y "Allow new users
 to sign up" en Supabase, login con Google/Apple, recuperar contraseña y
@@ -279,7 +281,7 @@ publicación automática en Netlify (ver BACKLOG.md).
 - `git restore .` + `git pull` en `apps/mobile` (los archivos generados
   bloquean el pull).
 - Migraciones: `Get-Content <archivo> -Raw -Encoding UTF8 | Set-Clipboard`
-  → Supabase SQL Editor → Run (aplicadas: 0001–0012).
+  → Supabase SQL Editor → Run (aplicadas: 0001–0014).
 - Funciones: ai-photo, ai-menu, ai-coach (pegar con -Encoding UTF8 y
   revisar la primera línea antes de Deploy).
 - Web: `flutter build web --release` → `explorer build` → arrastrar
