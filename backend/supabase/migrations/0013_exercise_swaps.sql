@@ -31,3 +31,6 @@ create policy "exercise_swaps: editar los propios" on public.exercise_swaps
 drop policy if exists "exercise_swaps: borrar los propios" on public.exercise_swaps;
 create policy "exercise_swaps: borrar los propios" on public.exercise_swaps
   for delete to authenticated using ((select auth.uid()) = user_id);
+
+-- Que la API vea la tabla nueva de inmediato.
+notify pgrst, 'reload schema';

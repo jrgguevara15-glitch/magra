@@ -37,3 +37,6 @@ create policy "daily_steps: editar los propios" on public.daily_steps
 drop policy if exists "daily_steps: borrar los propios" on public.daily_steps;
 create policy "daily_steps: borrar los propios" on public.daily_steps
   for delete to authenticated using ((select auth.uid()) = user_id);
+
+-- Que la API vea la tabla nueva de inmediato.
+notify pgrst, 'reload schema';
