@@ -26,7 +26,7 @@ enum DemoView {
 
 /// Columnas de la hoja de cuadros y tamaño de cada cuadro (px).
 const demoColumns = 4;
-const demoFrameSize = 384;
+const demoFrameSize = 576;
 
 /// Nombre de archivo a partir del nombre del ejercicio.
 String demoSlug(String name) {
