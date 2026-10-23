@@ -46,6 +46,7 @@ class FollowUpState {
     required this.now,
     required this.name,
     required this.mealTimes,
+    this.mealNames = const [],
     required this.loggedMeals,
     required this.proteinEaten,
     required this.proteinTarget,
@@ -68,6 +69,9 @@ class FollowUpState {
 
   /// Hora de cada comida del plan, en minutos desde medianoche.
   final List<int> mealTimes;
+
+  /// Nombre de cada comida ("Almuerzo"); si falta, "Comida N".
+  final List<String> mealNames;
 
   /// Comidas con algo anotado hoy (índices).
   final Set<int> loggedMeals;
@@ -143,7 +147,7 @@ List<Nudge> followUps(FollowUpState s) {
         out.add(Nudge(
           kind: NudgeKind.meal,
           id: 'meal-$i-$key',
-          title: '¿Ya comiste la comida ${i + 1}?',
+          title: '${i < s.mealNames.length ? s.mealNames[i] : 'Comida ${i + 1}'} sin anotar',
           message: msg(_pick([
             'anótala ahora que la tienes fresca: lo que se registra se puede mejorar.',
             'registrarla te toma 30 segundos y mantiene tu plan exacto.',

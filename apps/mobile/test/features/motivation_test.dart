@@ -149,11 +149,14 @@ void main() {
     await tester.pumpAndSettle();
 
     await openSection(tester, 'Rachas');
-    await openSection(tester, 'Banco de calorías');
-    expect(find.text('4 días registrando'), findsNothing); // hoy lleva 540: no cuenta aún
+    // Días seguidos registrados antes de hoy (depende del día de la semana).
+    final before = today.weekday - 1 > 3 ? today.weekday - 1 : 3;
+    expect(find.text('${before + 1} días registrando'), findsNothing); // hoy lleva 540: no cuenta aún
+    expect(find.text('$before días registrando'), findsOneWidget);
     expect(find.descendant(of: find.byType(StreaksCard), matching: find.textContaining('días registrando')),
         findsOneWidget);
     expect(find.textContaining('días con tu proteína'), findsOneWidget);
+    await openSection(tester, 'Banco de calorías');
     final red = tester.widget<FoodLightDot>(find.byType(FoodLightDot).first);
     expect(red.light, FoodLight.red);
 

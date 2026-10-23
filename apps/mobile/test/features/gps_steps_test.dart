@@ -147,6 +147,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(steps.items[today], 1200);
     expect(find.textContaining('Te faltan'), findsOneWidget);
-    expect(find.textContaining('1.200 / '), findsOneWidget);
+    expect(find.textContaining('1.200 / '), findsWidgets);
   });
 }

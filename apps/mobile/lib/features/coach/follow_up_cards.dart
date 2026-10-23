@@ -94,6 +94,8 @@ class FollowUpCards extends ConsumerStatefulWidget {
 }
 
 class _FollowUpCardsState extends ConsumerState<FollowUpCards> {
+  bool _all = false;
+
   void _notify(List<Nudge> visible) {
     final settings = ref.read(followUpSettingsProvider);
     if (!settings.browser) return;
@@ -111,10 +113,11 @@ class _FollowUpCardsState extends ConsumerState<FollowUpCards> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dismissed = ref.watch(dismissedNudgesProvider);
-    final visible = [for (final n in widget.nudges) if (!dismissed.contains(n.id)) n].take(2).toList();
-    if (visible.isNotEmpty) {
+    final pending = [for (final n in widget.nudges) if (!dismissed.contains(n.id)) n];
+    final visible = _all ? pending : pending.take(1).toList();
+    if (pending.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _notify(visible);
+        if (mounted) _notify(pending);
       });
     }
     return Column(
@@ -164,14 +167,14 @@ class _FollowUpCardsState extends ConsumerState<FollowUpCards> {
               ),
             ),
           ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: () => showFollowUpSettings(context),
-            icon: const Icon(Icons.notifications_active_outlined, size: 18),
-            label: const Text('Avisos del coach'),
+        if (pending.length > 1 && !_all)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => setState(() => _all = true),
+              child: Text('${pending.length - 1} ${pending.length == 2 ? 'aviso más' : 'avisos más'}'),
+            ),
           ),
-        ),
       ],
     );
   }

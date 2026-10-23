@@ -100,7 +100,7 @@ void main() {
     expect(find.text('Martes · Tren inferior'), findsOneWidget);
     expect(find.text('Sentadilla a un cajón alto (rango sin dolor)'),
         findsNWidgets(2));
-    expect(find.widgetWithText(ActionChip, 'Cuidados'), findsOneWidget);
+    expect(find.byKey(const ValueKey('section-closed-Cuidados')), findsOneWidget);
     await openSection(tester, 'Por qué');
     expect(find.textContaining('Cardio de bajo impacto'), findsWidgets);
   });

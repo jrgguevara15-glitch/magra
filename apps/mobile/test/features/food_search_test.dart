@@ -5,6 +5,7 @@ import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/food_catalog.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -23,7 +24,7 @@ Widget app(FakeFoodLog log) => testApp(
 CatalogFood food(String name) => foodCatalog.firstWhere((f) => f.name == name);
 
 Future<void> openSheet(WidgetTester tester) async {
-  await tester.tap(find.text('Agregar alimento').first);
+  await tester.tap(addFoodButton().first);
   await tester.pumpAndSettle();
 }
 

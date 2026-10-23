@@ -7,6 +7,7 @@ import 'package:magra/features/progress/measurement.dart';
 import 'package:magra/features/questionnaire/questionnaire.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -31,7 +32,7 @@ void main() {
     final log = FakeFoodLog();
     await tester.pumpWidget(app(log: log));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Agregar alimento').first);
+    await tester.tap(addFoodButton().first);
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Buscar alimento'), 'arroz');
     await tester.pumpAndSettle();

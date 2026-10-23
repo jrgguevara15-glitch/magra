@@ -364,3 +364,24 @@ NutritionPlan recommendNutrition({
     formula: energy.formula,
   );
 }
+
+/// Nombre de cada comida según su hora (desayuno, colación, almuerzo, once,
+/// cena). Si se repite, se numera: "Colación 1", "Colación 2".
+List<String> mealNames(List<PlannedMeal> meals) {
+  String byTime(TimeOfDay t) {
+    final m = t.hour * 60 + t.minute;
+    if (m < 4 * 60) return 'Cena';
+    if (m < 10 * 60 + 30) return 'Desayuno';
+    if (m < 12 * 60 + 30) return 'Colación';
+    if (m < 15 * 60 + 30) return 'Almuerzo';
+    if (m < 18 * 60 + 45) return 'Once';
+    return 'Cena';
+  }
+
+  final base = [for (final m in meals) byTime(m.time)];
+  final seen = <String, int>{};
+  return [
+    for (final n in base)
+      base.where((x) => x == n).length > 1 ? '$n ${seen[n] = (seen[n] ?? 0) + 1}' : n,
+  ];
+}

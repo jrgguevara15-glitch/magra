@@ -135,11 +135,11 @@ void main() {
         clock: () => clock,
       ));
       await tester.pumpAndSettle();
-      expect(find.text('Sin ayuno en curso'), findsOneWidget);
+      expect(find.text('Sin ayuno'), findsOneWidget);
       await openSection(tester, 'Ayuno');
 
       // El plan con ayuno recomienda 16:8.
-      expect(find.widgetWithText(ActionChip, 'Ayuno'), findsOneWidget);
+      expect(find.byKey(const ValueKey('section-open-Ayuno')), findsOneWidget);
       expect(find.textContaining('el que te recomienda MAGRA'), findsOneWidget);
       await tester.tap(find.text('12:12'));
       await tester.pumpAndSettle();
@@ -194,7 +194,7 @@ void main() {
       await tester.pumpWidget(app(
           q: Questionnaire.initial.copyWith(fasting: Fasting.no)));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(ActionChip, 'Ayuno'), findsNothing);
+      expect(find.byKey(const ValueKey('section-closed-Ayuno')), findsNothing);
       expect(find.textContaining('Empezar ayuno'), findsNothing);
 
       await tester.pumpWidget(app(
@@ -202,7 +202,7 @@ void main() {
               fasting: Fasting.yes,
               healthConditions: [HealthCondition.type2Diabetes])));
       await tester.pumpAndSettle();
-      expect(find.text('No recomendado para ti'), findsOneWidget);
+      expect(find.text('No recomendado'), findsOneWidget);
       await openSection(tester, 'Ayuno');
       expect(find.text('Ayuno no recomendado'), findsOneWidget);
       expect(find.textContaining('glucosa'), findsWidgets);
@@ -213,11 +213,11 @@ void main() {
       setSize(tester, const Size(700, 3000));
       await tester.pumpWidget(app());
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(ActionChip, 'Ayuno'), findsOneWidget);
+      expect(find.byKey(const ValueKey('section-closed-Ayuno')), findsOneWidget);
       await tester.tap(find.byTooltip('Día anterior'));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(ActionChip, 'Ayuno'), findsNothing);
-      expect(find.widgetWithText(ActionChip, 'Ejercicio'), findsOneWidget);
+      expect(find.byKey(const ValueKey('section-closed-Ayuno')), findsNothing);
+      expect(find.byKey(const ValueKey('section-closed-Ejercicio')), findsOneWidget);
     });
   });
 
@@ -231,7 +231,9 @@ void main() {
     await tester.tap(find.text('Empezar ayuno 16:8'));
     await tester.pumpAndSettle();
     await addExercise(tester, 'Fútbol recreativo / pichanga', '90');
+    await openSection(tester, 'Ayuno');
     expect(find.text('Terminar ayuno'), findsOneWidget);
+    await openSection(tester, 'Ejercicio');
     expect(find.textContaining('90 min'), findsOneWidget);
   });
 }

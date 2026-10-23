@@ -10,8 +10,12 @@ class PageSection {
     required this.icon,
     required this.child,
     this.summary,
+    this.value,
     this.initiallyOpen = false,
   });
+
+  /// Cifra corta para la tarjeta de la cuadrícula ("3.240 / 7.000").
+  final String? value;
 
   final String title;
   final IconData icon;
@@ -22,8 +26,8 @@ class PageSection {
   final bool initiallyOpen;
 }
 
-/// Índice de subtítulos tocables y secciones que se abren y cierran: la
-/// pantalla muestra lo esencial y el detalle queda a un toque.
+/// Secciones que se abren y cierran: la pantalla muestra lo esencial y el
+/// detalle queda a un toque.
 class SectionList extends StatefulWidget {
   const SectionList({super.key, required this.sections});
 
@@ -44,38 +48,12 @@ class _SectionListState extends State<SectionList> {
   void _toggle(String title) => setState(
       () => _open.contains(title) ? _open.remove(title) : _open.add(title));
 
-  void _goTo(String title) {
-    setState(() => _open.add(title));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final ctx = _key(title).currentContext;
-      if (ctx != null) {
-        Scrollable.ensureVisible(ctx,
-            duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final sections = widget.sections;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (sections.length > 1) ...[
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final s in sections)
-                ActionChip(
-                  avatar: Icon(s.icon, size: 16, color: MagraColors.lime),
-                  label: Text(s.title),
-                  onPressed: () => _goTo(s.title),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-        ],
         for (final s in sections) ...[
           _SectionTile(
             key: _key(s.title),
@@ -108,6 +86,7 @@ class _SectionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
+      key: ValueKey('section-${open ? 'open' : 'closed'}-${section.title}'),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -149,6 +128,100 @@ class _SectionTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Secciones secundarias como tarjetas pequeñas en dos columnas: cada una
+/// muestra su cifra y, al tocarla, su detalle aparece debajo (una a la vez).
+class SectionGrid extends StatefulWidget {
+  const SectionGrid({super.key, required this.sections});
+
+  final List<PageSection> sections;
+
+  @override
+  State<SectionGrid> createState() => _SectionGridState();
+}
+
+class _SectionGridState extends State<SectionGrid> {
+  String? _open;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final open = widget.sections.where((s) => s.title == _open).firstOrNull;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LayoutBuilder(builder: (context, c) {
+          final w = (c.maxWidth - 8) / 2;
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final s in widget.sections)
+                SizedBox(
+                  width: w,
+                  child: Material(
+                    key: ValueKey('section-${s.title == _open ? 'open' : 'closed'}-${s.title}'),
+                    color: s.title == _open ? MagraColors.surfaceHigh : MagraColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      side: BorderSide(color: s.title == _open ? MagraColors.lime : Colors.transparent),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => setState(() => _open = _open == s.title ? null : s.title),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 11),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(children: [
+                              Icon(s.icon, size: 15, color: MagraColors.textSoft),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(s.title, style: theme.textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+                              ),
+                            ]),
+                            const SizedBox(height: 3),
+                            Text(
+                              s.value ?? s.summary ?? '',
+                              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        }),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: open == null
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (open.summary != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6, left: 2),
+                          child: Text(open.summary!, style: theme.textTheme.bodySmall),
+                        ),
+                      open.child,
+                    ],
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }

@@ -75,7 +75,7 @@ void main() {
       adjustments: FakeKcalAdjustments(adj),
     ));
     await tester.pumpAndSettle();
-    expect(find.textContaining('/ ${fmt(plan.kcal)} kcal'), findsOneWidget);
+    expect(find.textContaining('de ${fmt(plan.kcal)} · meta fija'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.monitor_weight_outlined));
     await tester.pumpAndSettle();
     expect(find.text('${fmt(plan.kcal)} kcal'), findsWidgets);

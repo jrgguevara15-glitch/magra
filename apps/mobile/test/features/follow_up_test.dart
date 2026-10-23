@@ -23,6 +23,7 @@ FollowUpState at(int hour, int minute,
       now: DateTime(2026, 10, 18 + weekday, hour, minute),
       name: name,
       mealTimes: const [8 * 60, 13 * 60, 17 * 60, 20 * 60 + 30],
+      mealNames: const ['Desayuno', 'Almuerzo', 'Once', 'Cena'],
       loggedMeals: logged,
       proteinEaten: protein,
       proteinTarget: 160,
@@ -51,7 +52,7 @@ void main() {
     expect(followUps(at(9, 0, logged: {})).where((n) => n.kind == NudgeKind.meal), isEmpty);
     final n = followUps(at(14, 40, logged: {0})).where((n) => n.kind == NudgeKind.meal).toList();
     expect(n.single.mealIndex, 1);
-    expect(n.single.title, '¿Ya comiste la comida 2?');
+    expect(n.single.title, 'Almuerzo sin anotar');
     // Si la más reciente ya está, no insiste con las anteriores.
     expect(followUps(at(14, 40, logged: {1})).where((n) => n.kind == NudgeKind.meal), isEmpty);
   });
@@ -76,7 +77,7 @@ void main() {
   testWidgets('Hoy muestra el aviso (teléfono de 360 px), lleva a anotar la comida y se puede descartar', (tester) async {
     setSize(tester, const Size(360, 3000));
     final now = DateTime.now();
-    final prefs = MemoryPrefs();
+    final prefs = MemoryPrefs()..write('magra.followup.enabled', 'meal');
     final q = Questionnaire.initial.copyWith(
       wakeTime: const TimeOfDay(hour: 0, minute: 0),
       sleepTime: const TimeOfDay(hour: 23, minute: 59),
@@ -92,16 +93,16 @@ void main() {
       clock: () => DateTime(now.year, now.month, now.day, 23, 0),
     ));
     await tester.pumpAndSettle();
-    expect(find.textContaining('¿Ya comiste la comida'), findsOneWidget);
-    expect(find.text('Avisos del coach'), findsOneWidget);
+    expect(find.textContaining('sin anotar'), findsOneWidget);
+    expect(find.byTooltip('Avisos del coach'), findsOneWidget);
     await tester.tap(find.text('Anotar comida'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Agregar a Comida'), findsOneWidget);
-    Navigator.of(tester.element(find.textContaining('Agregar a Comida'))).pop();
+    expect(find.textContaining('Agregar a '), findsOneWidget);
+    Navigator.of(tester.element(find.textContaining('Agregar a '))).pop();
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Descartar aviso'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('¿Ya comiste la comida'), findsNothing);
+    expect(find.textContaining('sin anotar'), findsNothing);
     expect(prefs.read('magra.followup.dismissed'), contains('meal-'));
   });
 }

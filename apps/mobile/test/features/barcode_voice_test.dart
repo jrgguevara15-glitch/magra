@@ -10,6 +10,7 @@ import 'package:magra/features/today/barcode.dart';
 import 'package:magra/features/today/photo_analysis.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -49,7 +50,7 @@ Widget app({
     );
 
 Future<void> openMode(WidgetTester tester, String mode) async {
-  await tester.tap(find.text('Agregar alimento').first);
+  await tester.tap(addFoodButton().first);
   await tester.pumpAndSettle();
   await tester.tap(find.text(mode));
   await tester.pumpAndSettle();

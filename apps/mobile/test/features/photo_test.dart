@@ -5,6 +5,7 @@ import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/photo_analysis.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -33,7 +34,7 @@ Widget app({required FakeFoodLog log, required FakePhotoAnalyzer ai, ImagePickFn
     );
 
 Future<void> openPhoto(WidgetTester tester) async {
-  await tester.tap(find.text('Agregar alimento').first);
+  await tester.tap(addFoodButton().first);
   await tester.pumpAndSettle();
   await tester.tap(find.text('Foto'));
   await tester.pumpAndSettle();

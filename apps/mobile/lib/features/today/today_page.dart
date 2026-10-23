@@ -172,6 +172,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
       now: now,
       name: widget.inputs.profile.name,
       mealTimes: [for (final m in plan.meals) m.time.hour * 60 + m.time.minute],
+      mealNames: mealNames(plan.meals),
       loggedMeals: {for (final e in entries) e.mealIndex},
       proteinEaten: entries.fold<double>(0, (a, e) => a + e.protein),
       proteinTarget: plan.protein,
@@ -218,6 +219,12 @@ class _TodayViewState extends ConsumerState<TodayView> {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall),
           ),
+          if (isToday)
+            IconButton(
+              tooltip: 'Avisos del coach',
+              icon: const Icon(Icons.notifications_none),
+              onPressed: () => showFollowUpSettings(context),
+            ),
           IconButton(
             tooltip: 'Día siguiente',
             icon: const Icon(Icons.chevron_right),
@@ -280,7 +287,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
           final withLog = {for (final e in entries) e.mealIndex}
               .where((i) => i < plan.meals.length)
               .length;
-          final eaten = entries.fold<double>(0, (a, e) => a + e.kcal);
+          final names = mealNames(plan.meals);
           final nudges = isToday
               ? _nudges(
                   now: ref.watch(followUpTickProvider).value ?? ref.read(clockProvider)(),
@@ -307,21 +314,24 @@ class _TodayViewState extends ConsumerState<TodayView> {
                     List.generate(plan.meals.length, (k) => k).firstWhere((k) => !logged.contains(k),
                         orElse: () => plan.meals.length - 1);
                 if (i < 0) i = 0;
-                _add(i, 'Comida ${i + 1}', plan.meals[i]);
+                _add(i, names[i], plan.meals[i]);
             }
           }
           return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (isToday) FollowUpCards(nudges: nudges, onAction: onNudge),
             DaySummary(
               plan: plan,
               entries: entries,
               exerciseBonus: bonus,
               bankKcal: bankToday.toDouble(),
             ),
-            if (isToday && entries.isNotEmpty) ...[
+            if (isToday) ...[
               const SizedBox(height: 12),
+              FollowUpCards(nudges: nudges, onAction: onNudge),
+            ],
+            if (isToday && entries.isNotEmpty) ...[
+              const SizedBox(height: 4),
               ForecastCard(
                 forecast: _forecast(
                   plan: plan,
@@ -332,43 +342,37 @@ class _TodayViewState extends ConsumerState<TodayView> {
                 ),
               ),
             ],
-            const SizedBox(height: 12),
-            SectionList(sections: [
-              PageSection(
-                title: 'Comidas',
-                icon: Icons.restaurant,
-                initiallyOpen: true,
-                summary: '$withLog de ${plan.meals.length} con registro · ${fmt(eaten)} kcal',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (var i = 0; i < plan.meals.length; i++)
-                      _MealLog(
-                        title: '${plan.meals[i].time.format(context)} · Comida ${i + 1}',
-                        targetKcal: plan.meals[i].kcal,
-                        entries: [for (final e in entries) if (e.mealIndex == i) e],
-                        onAdd: () => _add(i, 'Comida ${i + 1}', plan.meals[i]),
-                        onDelete: _delete,
-                        onEdit: _edit,
-                      ),
-                    _MealLog(
-                      title: 'Fuera del plan',
-                      targetKcal: null,
-                      entries: [
-                        for (final e in entries)
-                          if (e.mealIndex >= plan.meals.length) e,
-                      ],
-                      onAdd: () => _add(plan.meals.length, 'Fuera del plan', null),
-                      onDelete: _delete,
-                      onEdit: _edit,
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 18),
+            Text('COMIDAS · $withLog de ${plan.meals.length} con registro',
+                style: theme.textTheme.labelMedium?.copyWith(color: MagraColors.textSoft, letterSpacing: 0.8)),
+            const SizedBox(height: 4),
+            for (var i = 0; i < plan.meals.length; i++)
+              _MealLog(
+                time: plan.meals[i].time.format(context),
+                title: names[i],
+                meal: plan.meals[i],
+                entries: [for (final e in entries) if (e.mealIndex == i) e],
+                onAdd: () => _add(i, names[i], plan.meals[i]),
+                onDelete: _delete,
+                onEdit: _edit,
               ),
+            _MealLog(
+              title: 'Fuera del plan',
+              entries: [
+                for (final e in entries)
+                  if (e.mealIndex >= plan.meals.length) e,
+              ],
+              onAdd: () => _add(plan.meals.length, 'Fuera del plan', null),
+              onDelete: _delete,
+              onEdit: _edit,
+            ),
+            const SizedBox(height: 16),
+            SectionGrid(sections: [
               if (isToday)
                 PageSection(
                   title: 'Rachas',
                   icon: Icons.local_fire_department_outlined,
+                  value: '$logDays ${logDays == 1 ? 'día' : 'días'}',
                   summary: '$logDays ${logDays == 1 ? 'día' : 'días'} registrando · '
                       '$proteinDays con tu proteína',
                   child: StreaksCard(
@@ -382,6 +386,11 @@ class _TodayViewState extends ConsumerState<TodayView> {
                 PageSection(
                   title: 'Ayuno',
                   icon: Icons.timer_outlined,
+                  value: blockReason != null
+                      ? 'No recomendado'
+                      : fast != null && fast.active
+                          ? fmtDuration(fast.elapsed(fastNow))
+                          : 'Sin ayuno',
                   summary: blockReason != null
                       ? 'No recomendado para ti'
                       : fast != null && fast.active
@@ -395,6 +404,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
               PageSection(
                 title: 'Ejercicio',
                 icon: Icons.directions_run,
+                value: bonus > 0 ? '${fmt(exercise.fold<double>(0, (a, e) => a + e.kcalNet))} kcal' : 'Anotar',
                 summary: bonus > 0
                     ? '+${fmt(bonus)} kcal para comer hoy'
                     : 'Sin ejercicio anotado',
@@ -403,6 +413,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
               PageSection(
                 title: 'Pasos',
                 icon: Icons.directions_walk,
+                value: steps == null ? 'Meta ${fmt(training.stepsStart)}' : '${fmt(steps)} / ${fmt(training.stepsStart)}',
                 summary: steps == null
                     ? 'Meta: ${fmt(training.stepsStart)} pasos'
                     : '${fmt(steps)} de ${fmt(training.stepsStart)} pasos',
@@ -412,6 +423,7 @@ class _TodayViewState extends ConsumerState<TodayView> {
                 PageSection(
                   title: 'Banco de calorías',
                   icon: Icons.savings_outlined,
+                  value: bankToday > 0 ? '−$bankToday hoy' : '${fmt(bank)} kcal',
                   summary: bankToday > 0
                       ? 'Hoy usas $bankToday kcal'
                       : '${fmt(bank)} kcal guardadas esta semana',
@@ -455,69 +467,59 @@ class DaySummary extends StatelessWidget {
     final target = plan.kcal + exerciseBonus + bankKcal;
     final left = target - kcal;
     final over = left < -target * 0.05;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                ProgressRing(
-                  value: target <= 0 ? 0 : kcal / target,
-                  over: over,
-                  size: 88,
-                  center: Text(
-                    '${fmt(target <= 0 ? 0 : kcal / target * 100)} %',
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child:
-                    Wrap(
-                      spacing: 24,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.end,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('${fmt(kcal)} / ${fmt(plan.kcal)} kcal',
-                                style: theme.textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w700)),
-                            Text(
-                                [
-                                  'consumidas · meta fija de la semana',
-                                  if (exerciseBonus > 0) '+${fmt(exerciseBonus)} por tu ejercicio',
-                                  if (bankKcal > 0) '+${fmt(bankKcal)} del banco',
-                                ].join(' · '),
-                                style: theme.textTheme.bodySmall),
-                          ],
-                        ),
-                        Text(
-                          left >= 0
-                              ? 'Te quedan ${fmt(left)} kcal'
-                              : 'Te pasaste ${fmt(-left)} kcal',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                              color: over ? MagraColors.bad : MagraColors.good),
-                        ),
-                      ],
-                    ),
-                ),
-              ],
+            ProgressRing(
+              value: target <= 0 ? 0 : kcal / target,
+              over: over,
+              size: 104,
+              center: Text(
+                '${fmt(target <= 0 ? 0 : kcal / target * 100)} %',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
             ),
-            const SizedBox(height: 8),
-            _Bar(value: kcal / target, color: over ? MagraColors.bad : null),
-            const SizedBox(height: 12),
-            _MacroRow('Proteína', protein, plan.protein, MagraColors.protein),
-            _MacroRow('Carbohidratos', carbs, plan.carbs, MagraColors.carb),
-            _MacroRow('Grasas', fat, plan.fat, MagraColors.lipid),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fmt(left.abs()),
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: left < 0 ? MagraColors.bad : null,
+                    ),
+                  ),
+                  Text(left >= 0 ? 'kcal disponibles' : 'kcal sobre tu meta',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: left < 0 ? MagraColors.bad : null)),
+                  const SizedBox(height: 2),
+                  Text(
+                    [
+                      '${fmt(kcal)} de ${fmt(plan.kcal)} · meta fija de la semana',
+                      if (exerciseBonus > 0) '+${fmt(exerciseBonus)} por tu ejercicio',
+                      if (bankKcal > 0) '+${fmt(bankKcal)} del banco',
+                    ].join(' · '),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(child: _MacroPill('Proteína', protein, plan.protein, MagraColors.protein)),
+            const SizedBox(width: 8),
+            Expanded(child: _MacroPill('Carbos', carbs, plan.carbs, MagraColors.carb)),
+            const SizedBox(width: 8),
+            Expanded(child: _MacroPill('Grasas', fat, plan.fat, MagraColors.lipid)),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -534,8 +536,9 @@ class _Bar extends StatelessWidget {
   }
 }
 
-class _MacroRow extends StatelessWidget {
-  const _MacroRow(this.label, this.value, this.target, this.color);
+/// Un macronutriente: lo comido, su barra y lo que falta o sobra.
+class _MacroPill extends StatelessWidget {
+  const _MacroPill(this.label, this.value, this.target, this.color);
 
   final String label;
   final double value;
@@ -547,78 +550,27 @@ class _MacroRow extends StatelessWidget {
     final theme = Theme.of(context);
     final diff = target - value;
     final over = diff < -target * 0.05;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Expanded(child: Text(label)),
-              Text('${fmt(value)} de ${fmt(target)} g', style: theme.textTheme.bodyMedium),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 92,
-                child: Text(
-                  over ? '+${fmt(-diff)} g de más' : diff > 0.5 ? 'faltan ${fmt(diff)} g' : 'listo',
-                  textAlign: TextAlign.right,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: over ? MagraColors.bad : diff <= 0.5 ? MagraColors.good : null,
-                    fontWeight: over ? FontWeight.w700 : null,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          _Bar(value: target <= 0 ? 0 : value / target, color: over ? MagraColors.bad : color),
-        ],
-      ),
-    );
-  }
-}
-
-/// Proyección del coach: cómo cerrarías hoy y adónde te lleva tu promedio.
-class ForecastCard extends StatelessWidget {
-  const ForecastCard({super.key, required this.forecast});
-
-  final BalanceForecast forecast;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final f = forecast;
-    if (f.lines.isEmpty) return const SizedBox.shrink();
-    final color = switch (f.tone) {
-      BalanceTone.good => MagraColors.good,
-      BalanceTone.warn => MagraColors.lipid,
-      BalanceTone.bad => MagraColors.bad,
-    };
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
+    return Semantics(
+      label: '$label: ${fmt(value)} de ${fmt(target)} gramos',
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+        decoration: BoxDecoration(color: MagraColors.surface, borderRadius: BorderRadius.circular(14)),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              f.tone == BalanceTone.good ? Icons.trending_down : Icons.insights,
-              color: color,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Proyección del coach · ${f.title}',
-                      style: theme.textTheme.titleSmall?.copyWith(color: color)),
-                  for (final l in f.lines)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(l, style: theme.textTheme.bodyMedium),
-                    ),
-                ],
+            Text(label, style: theme.textTheme.bodySmall),
+            const SizedBox(height: 2),
+            Text('${fmt(value)} de ${fmt(target)} g',
+                style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700, color: over ? MagraColors.bad : null)),
+            const SizedBox(height: 6),
+            _Bar(value: target <= 0 ? 0 : value / target, color: over ? MagraColors.bad : color),
+            const SizedBox(height: 5),
+            Text(
+              over ? '+${fmt(-diff)} g de más' : diff > 0.5 ? 'faltan ${fmt(diff)} g' : 'listo',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: over ? MagraColors.bad : diff <= 0.5 ? MagraColors.good : null,
+                fontWeight: over ? FontWeight.w700 : null,
               ),
             ),
           ],
@@ -628,18 +580,92 @@ class ForecastCard extends StatelessWidget {
   }
 }
 
+/// Proyección del coach: cómo cerrarías hoy y adónde te lleva tu promedio.
+/// Muestra lo principal; el detalle se abre con un toque.
+class ForecastCard extends StatefulWidget {
+  const ForecastCard({super.key, required this.forecast});
+
+  final BalanceForecast forecast;
+
+  @override
+  State<ForecastCard> createState() => _ForecastCardState();
+}
+
+class _ForecastCardState extends State<ForecastCard> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final f = widget.forecast;
+    if (f.lines.isEmpty) return const SizedBox.shrink();
+    final color = switch (f.tone) {
+      BalanceTone.good => MagraColors.good,
+      BalanceTone.warn => MagraColors.lipid,
+      BalanceTone.bad => MagraColors.bad,
+    };
+    final more = f.lines.length > 1;
+    return Card(
+      color: MagraColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: MagraColors.violet.withValues(alpha: 0.6)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: more ? () => setState(() => _open = !_open) : null,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(f.tone == BalanceTone.good ? Icons.trending_down : Icons.insights, color: color),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(f.title, style: theme.textTheme.titleSmall?.copyWith(color: color)),
+                    for (final l in _open ? f.lines : f.lines.take(1))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(l, style: theme.textTheme.bodyMedium),
+                      ),
+                    if (more)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(_open ? 'Ver menos' : 'Ver proyección de la semana ›',
+                            style: theme.textTheme.bodySmall?.copyWith(color: MagraColors.lime)),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Una comida del día: hora, nombre, su reparto de macros, lo anotado y el
+/// botón para agregar.
 class _MealLog extends StatelessWidget {
   const _MealLog({
     required this.title,
-    required this.targetKcal,
     required this.entries,
     required this.onAdd,
     required this.onDelete,
     required this.onEdit,
+    this.time,
+    this.meal,
   });
 
+  final String? time;
   final String title;
-  final double? targetKcal;
+
+  /// Lo que le toca a esta comida según el plan (null: fuera del plan).
+  final PlannedMeal? meal;
   final List<FoodEntry> entries;
   final VoidCallback onAdd;
   final ValueChanged<FoodEntry> onDelete;
@@ -649,32 +675,57 @@ class _MealLog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final kcal = entries.fold<double>(0, (a, e) => a + e.kcal);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
-                Text(
-                  targetKcal == null
-                      ? '${fmt(kcal)} kcal'
-                      : '${fmt(kcal)} / ${fmt(targetKcal)} kcal',
-                  style: theme.textTheme.bodySmall,
+    final m = meal;
+    final logged = entries.isNotEmpty;
+    return Container(
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: MagraColors.outlineSoft))),
+      padding: const EdgeInsets.only(top: 6, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 50,
+                child: Text(time ?? '', style: theme.textTheme.bodySmall),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: theme.textTheme.titleMedium),
+                    if (m != null)
+                      Text('P ${fmt(m.protein)} · C ${fmt(m.carbs)} · G ${fmt(m.fat)}',
+                          style: theme.textTheme.bodySmall),
+                  ],
                 ),
-                const SizedBox(width: 8),
-              ],
-            ),
-            for (final e in entries)
-              ListTile(
+              ),
+              Text(
+                logged || m == null ? '${fmt(kcal)} kcal' : 'meta ${fmt(m.kcal)}',
+                style: theme.textTheme.bodySmall,
+              ),
+              if (logged && m != null)
+                const Padding(
+                  padding: EdgeInsets.only(left: 6),
+                  child: Icon(Icons.check_circle, size: 18, color: MagraColors.good),
+                ),
+              IconButton(
+                tooltip: 'Agregar alimento a $title',
+                icon: const Icon(Icons.add_circle_outline, color: MagraColors.lime),
+                onPressed: onAdd,
+              ),
+            ],
+          ),
+          for (final e in entries)
+            Padding(
+              padding: const EdgeInsets.only(left: 50),
+              child: ListTile(
                 dense: true,
+                visualDensity: VisualDensity.compact,
                 contentPadding: EdgeInsets.zero,
                 minLeadingWidth: 10,
                 leading: FoodLightDot(
-                  light: foodLight(
-                      kcal: e.kcal, protein: e.protein, quantity: e.quantity, unit: e.unit),
+                  light: foodLight(kcal: e.kcal, protein: e.protein, quantity: e.quantity, unit: e.unit),
                 ),
                 title: Text(e.name),
                 subtitle: Text([
@@ -687,17 +738,12 @@ class _MealLog extends StatelessWidget {
                     ? null
                     : IconButton(
                         tooltip: 'Quitar ${e.name}',
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close, size: 18),
                         onPressed: () => onDelete(e),
                       ),
               ),
-            TextButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add),
-              label: const Text('Agregar alimento'),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

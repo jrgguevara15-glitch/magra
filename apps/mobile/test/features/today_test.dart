@@ -5,6 +5,7 @@ import 'package:magra/features/questionnaire/questionnaire.dart';
 import 'package:magra/features/today/food_catalog.dart';
 
 import '../support/fakes.dart';
+import '../support/sections.dart';
 import '../widget_test.dart' show setSize;
 
 final now = DateTime.now();
@@ -24,7 +25,7 @@ CatalogFood food(String name) => foodCatalog.firstWhere((f) => f.name == name);
 
 Future<void> addFromCatalog(WidgetTester tester, String search, String name,
     {String? qty, int addButton = 0}) async {
-  await tester.tap(find.text('Agregar alimento').at(addButton));
+  await tester.tap(addFoodButton().at(addButton));
   await tester.pumpAndSettle();
   await tester.enterText(find.widgetWithText(TextField, 'Buscar alimento'), search);
   await tester.pumpAndSettle();
@@ -97,22 +98,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Hoy'), findsNWidgets(2)); // título del día y pestaña
-    expect(find.textContaining('0 / '), findsWidgets);
+    expect(find.text('kcal disponibles'), findsOneWidget);
     await addFromCatalog(tester, 'pollo', 'Pechuga de pollo cocida', qty: '200');
 
     expect(log.items, hasLength(1));
     expect(log.items.single.mealIndex, 0);
     expect(log.items.single.kcal, closeTo(330, 1e-9));
     expect(find.text('Pechuga de pollo cocida'), findsOneWidget);
-    expect(find.textContaining('330 / '), findsNWidgets(2)); // resumen y comida
-    expect(find.textContaining('Te quedan'), findsOneWidget);
+    expect(find.textContaining('330 de '), findsOneWidget); // resumen
+    expect(find.text('330 kcal'), findsOneWidget); // la comida
+    expect(find.text('kcal disponibles'), findsOneWidget);
   });
 
   testWidgets('cantidad sugerida y vista previa en la hoja', (tester) async {
     setSize(tester, const Size(700, 3000));
     await tester.pumpWidget(app(FakeFoodLog()));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Agregar alimento').first);
+    await tester.tap(addFoodButton().first);
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Buscar alimento'), 'huevo');
     await tester.pumpAndSettle();
@@ -129,7 +131,7 @@ void main() {
     await tester.pumpWidget(app(log));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Agregar alimento').last); // Fuera del plan
+    await tester.tap(addFoodButton().last); // Fuera del plan
     await tester.pumpAndSettle();
     await tester.tap(find.text('A mano'));
     await tester.pumpAndSettle();
@@ -178,7 +180,7 @@ void main() {
     await tester.pumpWidget(app(log));
     await tester.pumpAndSettle();
     await addFromCatalog(tester, 'aceite', 'Aceite de oliva', qty: '400');
-    expect(find.textContaining('Te pasaste'), findsOneWidget);
+    expect(find.text('kcal sobre tu meta'), findsOneWidget);
   });
 
   testWidgets('teléfono de 360 px: Hoy y la hoja sin desbordes', (tester) async {
@@ -186,7 +188,7 @@ void main() {
     await tester.pumpWidget(app(FakeFoodLog()));
     await tester.pumpAndSettle();
     await addFromCatalog(tester, 'legumbres', 'Legumbres cocidas (lentejas, porotos, garbanzos)');
-    await tester.tap(find.text('Agregar alimento').first);
+    await tester.tap(addFoodButton().first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('A mano'));
     await tester.pumpAndSettle();
