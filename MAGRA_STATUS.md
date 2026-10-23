@@ -297,7 +297,8 @@
   explicación (distributionReasons). Entreno: Hoy / Semana / Historial y
   botón "Empezar entreno". Progreso: Resumen / Medidas / Fotos / Logros con
   peso grande y gráfico. Secciones sin la fila de chips.
-- U20 — Figuras estilo lámina anatómica (pedido 23-oct): PENDIENTE.
+- U20 — Figuras estilo lámina anatómica: DESCARTADO (23-oct). Se probó una
+  muestra; el usuario prefiere dejar las figuras actuales (U9).
 
 ## Mejoras U7–U14 cerradas (22-oct-2026)
 
