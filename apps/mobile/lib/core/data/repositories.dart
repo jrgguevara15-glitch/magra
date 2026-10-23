@@ -71,6 +71,13 @@ abstract interface class StepsRepository {
 }
 
 /// Ejercicios de la rutina que el usuario cambió (original → elegido).
+/// Sesión alternativa elegida para un día (id de alt_sessions).
+abstract interface class TrainingChoiceRepository {
+  Future<String?> forDay(DateTime day);
+  Future<void> set(DateTime day, String sessionId);
+  Future<void> clear(DateTime day);
+}
+
 abstract interface class ExerciseSwapRepository {
   Future<Map<String, String>> all();
   Future<void> set(String original, String chosen);
@@ -316,6 +323,26 @@ class SupabaseStepsRepository implements StepsRepository {
   Future<void> set(DateTime day, int steps) => _client.from('daily_steps').upsert(
       {'day': isoDate(day), 'steps': steps, 'updated_at': DateTime.now().toUtc().toIso8601String()},
       onConflict: 'user_id,day');
+}
+
+class SupabaseTrainingChoiceRepository implements TrainingChoiceRepository {
+  SupabaseTrainingChoiceRepository(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  Future<String?> forDay(DateTime day) async {
+    final row = await _client.from('training_choices').select('session_id').eq('day', isoDate(day)).maybeSingle();
+    return row?['session_id'] as String?;
+  }
+
+  @override
+  Future<void> set(DateTime day, String sessionId) => _client.from('training_choices').upsert(
+      {'day': isoDate(day), 'session_id': sessionId, 'updated_at': DateTime.now().toUtc().toIso8601String()},
+      onConflict: 'user_id,day');
+
+  @override
+  Future<void> clear(DateTime day) => _client.from('training_choices').delete().eq('day', isoDate(day));
 }
 
 class SupabaseExerciseSwapRepository implements ExerciseSwapRepository {

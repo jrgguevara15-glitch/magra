@@ -100,7 +100,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.fitness_center_outlined));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Empezar entreno'));
+    await tester.tap(find.text('2 · Empezar entreno'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.info_outline).first);
     await tester.pumpAndSettle();

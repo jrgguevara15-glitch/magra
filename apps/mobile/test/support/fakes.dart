@@ -273,6 +273,19 @@ class FakeBody implements BodyAssessmentService {
   Future<void> delete(String id) async => items.removeWhere((a) => a.id == id);
 }
 
+class FakeTrainingChoices implements TrainingChoiceRepository {
+  final Map<DateTime, String> items = {};
+
+  @override
+  Future<String?> forDay(DateTime day) async => items[DateUtils.dateOnly(day)];
+
+  @override
+  Future<void> set(DateTime day, String sessionId) async => items[DateUtils.dateOnly(day)] = sessionId;
+
+  @override
+  Future<void> clear(DateTime day) async => items.remove(DateUtils.dateOnly(day));
+}
+
 class FakeKcalAdjustments implements KcalAdjustmentRepository {
   FakeKcalAdjustments([List<KcalAdjustment>? initial]) : items = [...?initial];
 
@@ -626,6 +639,7 @@ Widget testApp({
   FakeSteps? steps,
   LocationStream? locations,
   FakeBody? body,
+  FakeTrainingChoices? choices,
   LocalPrefs? prefs,
   SystemAlerts? alerts,
   DateTime Function()? clock,
@@ -649,6 +663,7 @@ Widget testApp({
       exerciseSwapRepositoryProvider.overrideWithValue(swaps ?? FakeSwaps()),
       stepsRepositoryProvider.overrideWithValue(steps ?? FakeSteps()),
       bodyAssessmentServiceProvider.overrideWithValue(body ?? FakeBody()),
+      trainingChoiceRepositoryProvider.overrideWithValue(choices ?? FakeTrainingChoices()),
       // Avisos del coach apagados salvo en sus pruebas (dependen de la hora).
       localPrefsProvider.overrideWithValue(prefs ?? (MemoryPrefs()..write('magra.followup.enabled', ''))),
       systemAlertsProvider.overrideWithValue(alerts ?? NoSystemAlerts()),

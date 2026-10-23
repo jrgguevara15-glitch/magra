@@ -71,6 +71,20 @@ final bodyAssessmentsProvider = FutureProvider<List<BodyAssessment>>((ref) async
   }
 });
 
+final trainingChoiceRepositoryProvider =
+    Provider<TrainingChoiceRepository>((ref) => throw UnimplementedError());
+
+/// Sesión alternativa elegida para un día (null: la rutina). Si falta la
+/// migración 0016, la rutina.
+final trainingChoiceProvider = FutureProvider.family<String?, DateTime>((ref, day) async {
+  if (ref.watch(signedInProvider).value != true) return null;
+  try {
+    return await ref.watch(trainingChoiceRepositoryProvider).forDay(day);
+  } catch (_) {
+    return null;
+  }
+});
+
 final exerciseSwapRepositoryProvider =
     Provider<ExerciseSwapRepository>((ref) => throw UnimplementedError());
 

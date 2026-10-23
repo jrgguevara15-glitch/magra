@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data/db_errors.dart';
 import '../../core/data/providers.dart';
 import '../../core/format.dart';
+import '../../core/recommendation/alt_sessions.dart';
 import '../../core/recommendation/exercise_alternatives.dart';
 import '../../core/recommendation/exercise_guides.dart' show guideFor;
 import '../../core/recommendation/progression.dart';
@@ -12,6 +13,7 @@ import '../../core/widgets/sections.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
 import '../../core/recommendation/warmup.dart';
+import 'alt_session_page.dart';
 import 'exercise_guide_page.dart';
 import 'guided_routine_page.dart';
 import 'workout_session_page.dart';
@@ -92,6 +94,21 @@ class _TrainingPlanViewState extends ConsumerState<TrainingPlanView> {
     }
   }
 
+  Future<void> _vary(DateTime day, List<AltSession> options, String? current) async {
+    final id = await pickAltSession(context, options: options, weightKg: inputs.weightKg, current: current);
+    if (id == null || !mounted) return;
+    try {
+      final repo = ref.read(trainingChoiceRepositoryProvider);
+      id.isEmpty ? await repo.clear(day) : await repo.set(day, id);
+      ref.invalidate(trainingChoiceProvider(day));
+    } catch (err) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(saveErrorMessage(err, migration: '0016_training_choices.sql'))));
+      }
+    }
+  }
+
   Widget _exercise(Exercise e) => Card(
         margin: const EdgeInsets.only(bottom: 8),
         child: ListTile(
@@ -119,8 +136,54 @@ class _TrainingPlanViewState extends ConsumerState<TrainingPlanView> {
     final doneToday = history.any((s) => s.date == today);
     final warm = warmUp(focus: focusOf(next), questionnaire: inputs.questionnaire, lowImpact: plan.lowImpact);
     final cool = coolDown(focus: focusOf(next), questionnaire: inputs.questionnaire);
+    final options = altSessionsFor(inputs.questionnaire, lowImpact: plan.lowImpact);
+    final choiceId = ref.watch(trainingChoiceProvider(today)).value;
+    final alt = options.where((o) => o.id == choiceId).firstOrNull;
+    final varyButton = OutlinedButton.icon(
+      onPressed: () => _vary(today, options, alt?.id),
+      icon: const Icon(Icons.shuffle),
+      label: Text(alt == null ? 'Variar hoy: HYROX, CrossFit, yoga…' : 'Cambiar sesión o volver a mi rutina'),
+    );
 
     final body = switch (_tab) {
+      _Tab.today when alt != null => [
+          Text('Hoy variaste tu entreno', style: theme.textTheme.labelLarge),
+          Text(alt.name, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            '${alt.style} · ${alt.minutes} min · intensidad ${alt.intensity.label.toLowerCase()} · '
+            '~${fmt(altKcal(alt, inputs.weightKg))} kcal',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          Text(alt.why, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 8),
+          varyButton,
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => openGuidedRoutine(context, 'Calentamiento', warm),
+            icon: const Icon(Icons.local_fire_department_outlined),
+            label: Text('1 · Calentar · ${routineMinutes(warm)} min'),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => AltSessionPage(session: alt, day: today, weightKg: inputs.weightKg),
+            )),
+            icon: const Icon(Icons.play_arrow),
+            label: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text('2 · Empezar ${alt.name}'),
+            ),
+          ),
+          const SizedBox(height: 14),
+          AltBlocks(session: alt),
+          const SizedBox(height: 4),
+          OutlinedButton.icon(
+            onPressed: () => openGuidedRoutine(context, 'Estiramiento', cool),
+            icon: const Icon(Icons.self_improvement),
+            label: Text('3 · Estirar al terminar · ${routineMinutes(cool)} min'),
+          ),
+        ],
       _Tab.today => [
           Text(doneToday ? 'Próxima sesión' : 'Hoy te toca', style: theme.textTheme.labelLarge),
           Text(next.title, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
@@ -129,7 +192,24 @@ class _TrainingPlanViewState extends ConsumerState<TrainingPlanView> {
             'calentar ${routineMinutes(warm)} min',
             style: theme.textTheme.bodySmall,
           ),
+          const SizedBox(height: 8),
+          varyButton,
           const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => openGuidedRoutine(context, 'Calentamiento', warm),
+            icon: const Icon(Icons.local_fire_department_outlined),
+            label: Text('1 · Calentar · ${routineMinutes(warm)} min'),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: async.isLoading ? null : () => _start(next, history),
+            icon: const Icon(Icons.play_arrow),
+            label: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('2 · Empezar entreno'),
+            ),
+          ),
+          const SizedBox(height: 14),
           for (final e in next.exercises) _exercise(e),
           if (next.cardioMinutes > 0)
             Padding(
@@ -142,24 +222,9 @@ class _TrainingPlanViewState extends ConsumerState<TrainingPlanView> {
             ),
           const SizedBox(height: 4),
           OutlinedButton.icon(
-            onPressed: () => openGuidedRoutine(context, 'Calentamiento', warm),
-            icon: const Icon(Icons.local_fire_department_outlined),
-            label: Text('Calentar · ${routineMinutes(warm)} min'),
-          ),
-          const SizedBox(height: 8),
-          FilledButton.icon(
-            onPressed: async.isLoading ? null : () => _start(next, history),
-            icon: const Icon(Icons.play_arrow),
-            label: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('Empezar entreno'),
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextButton.icon(
             onPressed: () => openGuidedRoutine(context, 'Estiramiento', cool),
             icon: const Icon(Icons.self_improvement),
-            label: Text('Estirar al terminar · ${routineMinutes(cool)} min'),
+            label: Text('3 · Estirar al terminar · ${routineMinutes(cool)} min'),
           ),
         ],
       _Tab.week => [

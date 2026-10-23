@@ -151,7 +151,7 @@ void main() {
     await tester.tap(find.widgetWithText(ChoiceChip, 'Hoy'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Empezar entreno'));
+    await tester.tap(find.text('2 · Empezar entreno'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Reps').first, '10');
     await tester.tap(find.text('Terminar sesión'));

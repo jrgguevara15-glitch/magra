@@ -297,6 +297,15 @@
   explicación (distributionReasons). Entreno: Hoy / Semana / Historial y
   botón "Empezar entreno". Progreso: Resumen / Medidas / Fotos / Logros con
   peso grande y gráfico. Secciones sin la fila de chips.
+- U21 — Variar el entreno: IMPLEMENTADO, validación PENDIENTE. Entreno → Hoy
+  en orden: 1 · Calentar, 2 · Empezar entreno, ejercicios, 3 · Estirar.
+  "Variar hoy" cambia la rutina de un día por HYROX (simulación), CrossFit
+  (WOD), HIIT, circuito funcional, boxeo fitness, cardio largo en zona 2,
+  yoga, pilates o movilidad (alt_sessions.dart), adaptadas al equipo y
+  ocultas si no convienen (lesiones, bajo impacto, principiante, condición
+  que requiere supervisión → solo baja intensidad). Se guarda por día
+  (MIGRACIÓN 0016 training_choices); la sesión tiene cronómetro, ítems para
+  marcar y se guarda como ejercicio del día con sus kcal (MET).
 - U20 — Figuras estilo lámina anatómica: DESCARTADO (23-oct). Se probó una
   muestra; el usuario prefiere dejar las figuras actuales (U9).
 
@@ -326,7 +335,7 @@ publicación automática en Netlify (ver BACKLOG.md).
 - `git restore .` + `git pull` en `apps/mobile` (los archivos generados
   bloquean el pull).
 - Migraciones: `Get-Content <archivo> -Raw -Encoding UTF8 | Set-Clipboard`
-  → Supabase SQL Editor → Run (aplicadas: 0001–0014).
+  → Supabase SQL Editor → Run (aplicadas: 0001–0015; pendiente 0016).
 - Funciones: ai-photo, ai-menu, ai-coach (pegar con -Encoding UTF8 y
   revisar la primera línea antes de Deploy).
 - Web: `flutter build web --release` → `explorer build` → arrastrar
