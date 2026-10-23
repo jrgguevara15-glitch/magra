@@ -8,7 +8,6 @@ import '../../core/recommendation/exercise_alternatives.dart';
 import '../../core/recommendation/exercise_guides.dart' show guideFor;
 import '../../core/recommendation/progression.dart';
 import '../../core/recommendation/training_plan.dart';
-import '../../core/widgets/hero_card.dart';
 import '../../core/widgets/sections.dart';
 import '../plan/plan_inputs.dart';
 import '../questionnaire/questionnaire.dart';
@@ -41,94 +40,234 @@ class TrainingPage extends ConsumerWidget {
   }
 }
 
-class TrainingPlanView extends StatelessWidget {
+enum _Tab { today, week, history }
+
+class TrainingPlanView extends ConsumerStatefulWidget {
   const TrainingPlanView({super.key, required this.plan, required this.inputs});
 
   final TrainingPlan plan;
   final PlanInputs inputs;
 
   @override
+  ConsumerState<TrainingPlanView> createState() => _TrainingPlanViewState();
+}
+
+class _TrainingPlanViewState extends ConsumerState<TrainingPlanView> {
+  _Tab _tab = _Tab.today;
+
+  TrainingPlan get plan => widget.plan;
+  PlanInputs get inputs => widget.inputs;
+
+  Future<void> _start(TrainingDay day, List<WorkoutSession> history) async {
+    final saved = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => WorkoutSessionPage(
+        day: day,
+        history: history,
+        weightKg: inputs.weightKg,
+        today: DateUtils.dateOnly(inputs.today),
+        intense: inputs.questionnaire.experience == Experience.advanced,
+      ),
+    ));
+    if (saved == true && mounted) {
+      final cool = coolDown(focus: focusOf(day), questionnaire: inputs.questionnaire);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Sesión guardada. Sus calorías ya están en Hoy.'),
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: 'Estirar',
+          onPressed: () => openGuidedRoutine(context, 'Estiramiento', cool),
+        ),
+      ));
+    }
+  }
+
+  Future<void> _delete(WorkoutSession s) async {
+    try {
+      await ref.read(workoutRepositoryProvider).delete(s.id!);
+      ref.invalidate(workoutsProvider);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No se pudo borrar.')));
+      }
+    }
+  }
+
+  Widget _exercise(Exercise e) => Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: ListTile(
+          contentPadding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
+          leading: ExerciseThumb(exercise: e.name),
+          title: Text(e.name),
+          subtitle: Text(e.prescription),
+          trailing: IconButton(
+            tooltip: 'Cambiar ${e.name}',
+            icon: const Icon(Icons.swap_horiz),
+            onPressed: () => showExerciseSwap(context, e, inputs.questionnaire),
+          ),
+          onTap: () => openExerciseGuide(context, e.name, prescription: e.prescription),
+        ),
+      );
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final first = plan.days.first;
+    final async = ref.watch(workoutsProvider);
+    final history = async.value ?? const <WorkoutSession>[];
+    final next = nextSession(plan, history);
+    final today = DateUtils.dateOnly(inputs.today);
+    final doneToday = history.any((s) => s.date == today);
+    final warm = warmUp(focus: focusOf(next), questionnaire: inputs.questionnaire, lowImpact: plan.lowImpact);
+    final cool = coolDown(focus: focusOf(next), questionnaire: inputs.questionnaire);
+
+    final body = switch (_tab) {
+      _Tab.today => [
+          Text(doneToday ? 'Próxima sesión' : 'Hoy te toca', style: theme.textTheme.labelLarge),
+          Text(next.title, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            '${next.exercises.length} ejercicios · ${next.strengthMinutes + next.cardioMinutes} min · '
+            'calentar ${routineMinutes(warm)} min',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          for (final e in next.exercises) _exercise(e),
+          if (next.cardioMinutes > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Cardio ${next.cardioMinutes} min: ${plan.cardio.toLowerCase()}, en zona 2 '
+                '(${plan.zone2.$1}–${plan.zone2.$2} ppm, puedes hablar en frases cortas).',
+                style: theme.textTheme.bodySmall,
+              ),
+            ),
+          const SizedBox(height: 4),
+          OutlinedButton.icon(
+            onPressed: () => openGuidedRoutine(context, 'Calentamiento', warm),
+            icon: const Icon(Icons.local_fire_department_outlined),
+            label: Text('Calentar · ${routineMinutes(warm)} min'),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            onPressed: async.isLoading ? null : () => _start(next, history),
+            icon: const Icon(Icons.play_arrow),
+            label: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('Empezar entreno'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: () => openGuidedRoutine(context, 'Estiramiento', cool),
+            icon: const Icon(Icons.self_improvement),
+            label: Text('Estirar al terminar · ${routineMinutes(cool)} min'),
+          ),
+        ],
+      _Tab.week => [
+          for (final d in plan.days)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${weekdayName(d.weekday)} · ${d.title}', style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    _RoutineButtons(plan: plan, day: d, questionnaire: inputs.questionnaire),
+                    const SizedBox(height: 4),
+                    for (final e in d.exercises)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: ExerciseThumb(exercise: e.name),
+                        title: Text(e.name),
+                        subtitle: Text(e.prescription),
+                        trailing: IconButton(
+                          tooltip: 'Cambiar ${e.name}',
+                          icon: const Icon(Icons.swap_horiz),
+                          onPressed: () => showExerciseSwap(context, e, inputs.questionnaire),
+                        ),
+                        onTap: () => openExerciseGuide(context, e.name, prescription: e.prescription),
+                      ),
+                    if (d.cardioMinutes > 0)
+                      Text(
+                        'Cardio ${d.cardioMinutes} min: ${plan.cardio.toLowerCase()}, '
+                        'en zona 2 (${plan.zone2.$1}–${plan.zone2.$2} ppm, puedes '
+                        'hablar en frases cortas).',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      _Tab.history => [
+          if (history.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('Aún no registras sesiones. Tu primer entreno queda aquí.',
+                  style: theme.textTheme.bodyMedium),
+            ),
+          for (final s in history.reversed)
+            Card(
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                title: Text('${fmtDate(s.date)} · ${s.title}'),
+                subtitle: Text(
+                  '${s.exercises.fold<int>(0, (a, e) => a + e.sets.length)} series'
+                  '${s.volume > 0 ? ' · ${fmt(s.volume)} kg movidos' : ''}'
+                  ' · ${s.minutes} min',
+                ),
+                trailing: s.id == null
+                    ? null
+                    : IconButton(
+                        tooltip: 'Borrar sesión del ${fmtDate(s.date)}',
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _delete(s),
+                      ),
+              ),
+            ),
+        ],
+    };
+
     return PlanScroll(children: [
       Text('Tu plan de entrenamiento', style: theme.textTheme.headlineSmall),
       const SizedBox(height: 12),
-      HealthAlertList(
-          alerts: [for (final a in inputs.alerts) if (a.blocking) a]),
-      WorkoutCard(plan: plan, inputs: inputs),
-      const SizedBox(height: 8),
+      HealthAlertList(alerts: [for (final a in inputs.alerts) if (a.blocking) a]),
+      Wrap(
+        spacing: 8,
+        children: [
+          for (final (t, label) in [(_Tab.today, 'Hoy'), (_Tab.week, 'Semana'), (_Tab.history, 'Historial')])
+            ChoiceChip(
+              showCheckmark: false,
+              label: Text(label),
+              selected: _tab == t,
+              onSelected: (_) => setState(() => _tab = t),
+            ),
+        ],
+      ),
+      const SizedBox(height: 14),
+      ...body,
+      const SizedBox(height: 18),
       SectionList(sections: [
-        PageSection(
-          title: 'Rutina de la semana',
-          icon: Icons.calendar_month_outlined,
-          initiallyOpen: true,
-          summary: [for (final d in plan.days) '${weekdayName(d.weekday).substring(0, 3)} ${d.title.replaceAll('Cuerpo completo ', '')}'].join(' · '),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-            for (final d in plan.days)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${weekdayName(d.weekday)} · ${d.title}',
-                          style: theme.textTheme.titleMedium),
-                      const SizedBox(height: 8),
-                      _RoutineButtons(plan: plan, day: d, questionnaire: inputs.questionnaire),
-                      const SizedBox(height: 4),
-                      for (final e in d.exercises)
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: ExerciseThumb(exercise: e.name),
-                          title: Text(e.name),
-                          subtitle: Text(e.prescription),
-                          trailing: IconButton(
-                            tooltip: 'Cambiar ${e.name}',
-                            icon: const Icon(Icons.swap_horiz),
-                            onPressed: () => showExerciseSwap(context, e, inputs.questionnaire),
-                          ),
-                          onTap: () => openExerciseGuide(context, e.name,
-                              prescription: e.prescription),
-                        ),
-                      if (d.cardioMinutes > 0)
-                        Text(
-                          'Cardio ${d.cardioMinutes} min: ${plan.cardio.toLowerCase()}, '
-                          'en zona 2 (${plan.zone2.$1}–${plan.zone2.$2} ppm, puedes '
-                          'hablar en frases cortas).',
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(fontStyle: FontStyle.italic),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
         PageSection(
           title: 'Resumen',
           icon: Icons.insights_outlined,
           summary: '${plan.days.length} días · zona 2: ${plan.zone2.$1}–${plan.zone2.$2} ppm',
           child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Wrap(
-            spacing: 24,
-            runSpacing: 12,
-            children: [
-              _Figure('${plan.days.length} días', 'por semana'),
-              _Figure(
-                  '${first.strengthMinutes}${first.cardioMinutes > 0 ? ' + ${first.cardioMinutes}' : ''} min',
-                  first.cardioMinutes > 0 ? 'fuerza + cardio' : 'fuerza'),
-              _Figure('${plan.zone2.$1}–${plan.zone2.$2}', 'ppm en cardio (zona 2)'),
-              _Figure(fmt(plan.stepsStart), 'pasos diarios para empezar'),
-            ],
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Wrap(
+                spacing: 24,
+                runSpacing: 12,
+                children: [
+                  _Figure('${plan.days.length} días', 'por semana'),
+                  _Figure('${first.strengthMinutes}${first.cardioMinutes > 0 ? ' + ${first.cardioMinutes}' : ''} min',
+                      first.cardioMinutes > 0 ? 'fuerza + cardio' : 'fuerza'),
+                  _Figure('${plan.zone2.$1}–${plan.zone2.$2}', 'ppm en cardio (zona 2)'),
+                  _Figure(fmt(plan.stepsStart), 'pasos diarios para empezar'),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
         ),
         PageSection(
           title: 'Por qué',
@@ -143,18 +282,18 @@ class TrainingPlanView extends StatelessWidget {
             summary: '${plan.cautions.length} ${plan.cautions.length == 1 ? 'aviso' : 'avisos'}',
             child: ReasonList(title: 'Cuidados', reasons: plan.cautions),
           ),
-        PageSection(
+        const PageSection(
           title: 'Cómo progresar',
           icon: Icons.trending_up,
           summary: 'Carga, pasos y descarga',
-          child: const ReasonList(title: 'Cómo progresar', reasons: [
-        'Anota cada sesión: cuando completes todas las series en el tope de '
-            'repeticiones, MAGRA te sube el peso (2,5 kg piernas, 1 kg el '
-            'resto); si fallas 3 veces seguidas, baja 10 %.',
-        'Cada 2 semanas suma 1.000 pasos diarios hasta llegar a 10.000.',
-        'Cada 6.ª semana baja el volumen a la mitad para recuperarte.',
-        'Técnica antes que peso. Si algo duele (no cansancio), detente.',
-      ]),
+          child: ReasonList(title: 'Cómo progresar', reasons: [
+            'Anota cada sesión: cuando completes todas las series en el tope de '
+                'repeticiones, MAGRA te sube el peso (2,5 kg piernas, 1 kg el '
+                'resto); si fallas 3 veces seguidas, baja 10 %.',
+            'Cada 2 semanas suma 1.000 pasos diarios hasta llegar a 10.000.',
+            'Cada 6.ª semana baja el volumen a la mitad para recuperarte.',
+            'Técnica antes que peso. Si algo duele (no cansancio), detente.',
+          ]),
         ),
       ]),
     ]);
@@ -174,129 +313,9 @@ class _Figure extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value,
-            style: theme.textTheme.titleLarge
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        Text(value, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
         Text(label, style: theme.textTheme.bodySmall),
       ],
-    );
-  }
-}
-
-/// Próxima sesión según la rotación y el historial de fuerza.
-class WorkoutCard extends ConsumerWidget {
-  const WorkoutCard({super.key, required this.plan, required this.inputs});
-
-  final TrainingPlan plan;
-  final PlanInputs inputs;
-
-  Future<void> _start(BuildContext context, TrainingDay day,
-      List<WorkoutSession> history) async {
-    final saved = await Navigator.of(context).push<bool>(MaterialPageRoute(
-      builder: (_) => WorkoutSessionPage(
-        day: day,
-        history: history,
-        weightKg: inputs.weightKg,
-        today: DateUtils.dateOnly(inputs.today),
-        intense: inputs.questionnaire.experience == Experience.advanced,
-      ),
-    ));
-    if (saved == true && context.mounted) {
-      final cool = coolDown(focus: focusOf(day), questionnaire: inputs.questionnaire);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Sesión guardada. Sus calorías ya están en Hoy.'),
-        duration: const Duration(seconds: 8),
-        action: SnackBarAction(
-          label: 'Estirar',
-          onPressed: () => openGuidedRoutine(context, 'Estiramiento', cool),
-        ),
-      ));
-    }
-  }
-
-  Future<void> _delete(BuildContext context, WidgetRef ref, WorkoutSession s) async {
-    try {
-      await ref.read(workoutRepositoryProvider).delete(s.id!);
-      ref.invalidate(workoutsProvider);
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se pudo borrar.')));
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final async = ref.watch(workoutsProvider);
-    final history = async.value ?? const <WorkoutSession>[];
-    final next = nextSession(plan, history);
-    final today = DateUtils.dateOnly(inputs.today);
-    final doneToday = history.any((s) => s.date == today);
-    final recent = history.reversed.take(5).toList();
-    return HeroCard(
-      child: Padding(
-        padding: EdgeInsets.zero,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(doneToday ? 'Próxima sesión' : 'Hoy te toca',
-                style: theme.textTheme.labelLarge),
-            Text(next.title, style: theme.textTheme.titleLarge),
-            Text(
-              [for (final e in next.exercises) e.name].join(' · '),
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => openGuidedRoutine(
-                    context,
-                    'Calentamiento',
-                    warmUp(
-                        focus: focusOf(next),
-                        questionnaire: inputs.questionnaire,
-                        lowImpact: plan.lowImpact),
-                  ),
-                  icon: const Icon(Icons.local_fire_department_outlined),
-                  label: const Text('1 · Calentar'),
-                ),
-                FilledButton.icon(
-                  onPressed: async.isLoading ? null : () => _start(context, next, history),
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('2 · Empezar sesión'),
-                ),
-              ],
-            ),
-            if (recent.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text('Últimas sesiones', style: theme.textTheme.titleSmall),
-              for (final s in recent)
-                ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text('${fmtDate(s.date)} · ${s.title}'),
-                  subtitle: Text(
-                    '${s.exercises.fold<int>(0, (a, e) => a + e.sets.length)} series'
-                    '${s.volume > 0 ? ' · ${fmt(s.volume)} kg movidos' : ''}'
-                    ' · ${s.minutes} min',
-                  ),
-                  trailing: s.id == null
-                      ? null
-                      : IconButton(
-                          tooltip: 'Borrar sesión del ${fmtDate(s.date)}',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _delete(context, ref, s),
-                        ),
-                ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }

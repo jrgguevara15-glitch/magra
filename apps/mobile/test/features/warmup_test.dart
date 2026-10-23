@@ -99,7 +99,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.fitness_center_outlined));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('1 · Calentar'));
+    await tester.tap(find.textContaining('Calentar · ').first);
     await tester.pumpAndSettle();
 
     expect(find.byType(GuidedRoutinePage), findsOneWidget);
@@ -141,13 +141,17 @@ void main() {
     await tester.tap(find.byIcon(Icons.fitness_center_outlined));
     await tester.pumpAndSettle();
     expect(find.textContaining('Calentar · '), findsWidgets);
+    await tester.tap(find.text('Semana'));
+    await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Estirar · ').first);
     await tester.pumpAndSettle();
     expect(find.text('Estiramiento'), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Hoy'));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('2 · Empezar sesión'));
+    await tester.tap(find.text('Empezar entreno'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Reps').first, '10');
     await tester.tap(find.text('Terminar sesión'));

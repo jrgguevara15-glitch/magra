@@ -385,3 +385,23 @@ List<String> mealNames(List<PlannedMeal> meals) {
       base.where((x) => x == n).length > 1 ? '$n ${seen[n] = (seen[n] ?? 0) + 1}' : n,
   ];
 }
+
+/// Por qué los macros se reparten así entre las comidas (para mostrarlo).
+List<String> distributionReasons(NutritionPlan plan) {
+  final meals = plan.meals;
+  if (meals.isEmpty) return const [];
+  final hasPre = meals.any((m) => m.role == MealRole.preWorkout);
+  final hasPost = meals.any((m) => m.role == MealRole.postWorkout);
+  return [
+    'Proteína pareja: ~${fmt(meals.first.protein)} g en cada comida. Repartida así, cada comida '
+        'estimula tu músculo mejor que juntarla en una o dos.',
+    if (hasPre || hasPost)
+      'Más carbohidratos ${hasPre && hasPost ? 'antes y después' : hasPre ? 'antes' : 'después'} de entrenar: '
+          'energía para la sesión y para recuperarte.',
+    if (hasPre || hasPost)
+      'Menos grasa alrededor del entreno: se digiere más rápido y no pesa al entrenar.',
+    if (meals.length > 1 && meals.last.role == MealRole.regular)
+      'Última comida más liviana en carbohidratos: el resto del día ya cubrió tu energía.',
+    'Las grasas se reparten en las demás comidas, y los vegetales van libres en todas.',
+  ];
+}

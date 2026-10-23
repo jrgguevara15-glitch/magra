@@ -127,7 +127,7 @@ void main() {
 
     expect(find.text('Hoy te toca'), findsOneWidget);
     expect(find.text('Cuerpo completo A'), findsWidgets);
-    await tester.tap(find.text('2 · Empezar sesión'));
+    await tester.tap(find.text('Empezar entreno'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Primera vez'), findsWidgets);
 
@@ -154,6 +154,8 @@ void main() {
     expect(find.textContaining('Sesión guardada'), findsOneWidget);
     expect(find.text('Próxima sesión'), findsOneWidget);
     expect(find.text('Cuerpo completo B'), findsWidgets);
+    await tester.tap(find.text('Historial'));
+    await tester.pumpAndSettle();
     expect(find.textContaining('2 series · 1.440 kg movidos'), findsOneWidget);
   });
 
@@ -170,7 +172,7 @@ void main() {
     await tester.pumpWidget(app(workouts));
     await tester.pumpAndSettle();
     await openTraining(tester);
-    await tester.tap(find.text('2 · Empezar sesión'));
+    await tester.tap(find.text('Empezar entreno'));
     await tester.pumpAndSettle();
     expect(find.text('Hoy: 62,5 kg × 10'), findsOneWidget);
     expect(find.widgetWithText(TextField, '62,5'), findsNWidgets(2));
@@ -185,10 +187,12 @@ void main() {
     await tester.pumpWidget(app(workouts));
     await tester.pumpAndSettle();
     await openTraining(tester);
+    await tester.tap(find.text('Historial'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Borrar sesión del ${today.day}-${const ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][today.month - 1]}-${today.year}'));
     await tester.pumpAndSettle();
     expect(workouts.items, isEmpty);
-    expect(find.text('Hoy te toca'), findsOneWidget);
+    expect(find.textContaining('Aún no registras sesiones'), findsOneWidget);
   });
 
   testWidgets('teléfono de 360 px: sesión sin desbordes', (tester) async {
@@ -197,7 +201,7 @@ void main() {
         q: Questionnaire.initial.copyWith(experience: Experience.advanced, trainingDays: 4)));
     await tester.pumpAndSettle();
     await openTraining(tester);
-    await tester.tap(find.text('2 · Empezar sesión'));
+    await tester.tap(find.text('Empezar entreno'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Serie').first);
     await tester.pumpAndSettle();

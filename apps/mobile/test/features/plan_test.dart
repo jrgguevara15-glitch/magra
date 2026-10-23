@@ -64,8 +64,11 @@ void main() {
       await openSection(tester, s);
     }
     expect(find.text('Por qué este plan'), findsOneWidget);
-    expect(find.textContaining('· Comida 1'), findsOneWidget);
+    expect(find.text('Por qué se reparte así'), findsOneWidget);
     expect(find.text('Después de entrenar'), findsOneWidget);
+    // Los ejemplos de cada comida se abren al tocarla.
+    await tester.tap(find.textContaining(' · Desayuno'));
+    await tester.pumpAndSettle();
     // Vegetariano y sin lactosa: no aparece pollo ni yogur.
     expect(find.textContaining('pollo'), findsNothing);
     expect(find.textContaining('yogur'), findsNothing);
@@ -83,7 +86,7 @@ void main() {
     await openTab(tester, Icons.restaurant_menu_outlined);
 
     expect(find.text('Tu plan debe guiarlo un profesional'), findsOneWidget);
-    expect(find.text('mantención'), findsOneWidget);
+    expect(find.textContaining('mantención · '), findsOneWidget);
   });
 
   testWidgets('Entreno: días, ejercicios adaptados y cuidados', (tester) async {
@@ -96,6 +99,8 @@ void main() {
     await openTab(tester, Icons.fitness_center_outlined);
 
     expect(find.text('Tu plan de entrenamiento'), findsOneWidget);
+    await tester.tap(find.text('Semana'));
+    await tester.pumpAndSettle();
     expect(find.text('Lunes · Tren superior'), findsOneWidget);
     expect(find.text('Martes · Tren inferior'), findsOneWidget);
     expect(find.text('Sentadilla a un cajón alto (rango sin dolor)'),
