@@ -288,7 +288,16 @@
   (subir, mantenerse o bajar, con el gasto real si se conoce). Macros como
   "76 de 139 g · faltan 63 g" o "+31 g de más" en rojo. El coach IA hace
   la misma proyección (reescribir ai-coach).
-- U19 — Diseño más minimalista: PROPUESTA (pendiente de aprobación).
+- U19 — Diseño minimalista (aprobado sobre maqueta): IMPLEMENTADO, validación
+  PENDIENTE. Hoy: kcal disponibles grande, macros en 3 tarjetas, un aviso
+  del coach a la vez, proyección compacta, comidas con nombre según la hora
+  (Desayuno, Colación, Almuerzo, Once, Cena) y su reparto P/C/G, y pasos,
+  ejercicio, rachas, ayuno y banco en tarjetas (SectionGrid). Plan: meta
+  grande, barra de proporción y tabla del reparto por comida con su
+  explicación (distributionReasons). Entreno: Hoy / Semana / Historial y
+  botón "Empezar entreno". Progreso: Resumen / Medidas / Fotos / Logros con
+  peso grande y gráfico. Secciones sin la fila de chips.
+- U20 — Figuras estilo lámina anatómica (pedido 23-oct): PENDIENTE.
 
 ## Mejoras U7–U14 cerradas (22-oct-2026)
 

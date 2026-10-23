@@ -56,93 +56,162 @@ class _Onboarding extends StatelessWidget {
   }
 }
 
-class _Progress extends ConsumerWidget {
+class _Progress extends ConsumerStatefulWidget {
   const _Progress({required this.profile});
 
   final UserProfile profile;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Progress> createState() => _ProgressState();
+}
+
+class _ProgressState extends ConsumerState<_Progress> {
+  String _tab = 'Resumen';
+
+  UserProfile get profile => widget.profile;
+
+  @override
+  Widget build(BuildContext context) {
     final measurements = ref.watch(measurementsProvider);
+    final noQuestionnaire = ref.watch(questionnaireProvider).value == null;
+    final theme = Theme.of(context);
     return measurements.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, st) => _Retry(
         message: 'No se pudieron cargar tus mediciones.',
         onRetry: () => ref.invalidate(measurementsProvider),
       ),
-      data: (list) => _Page(children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                profile.name.isEmpty ? 'Tu progreso' : 'Hola, ${profile.name}',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
-            IconButton(
-              tooltip: 'Editar perfil',
-              icon: const Icon(Icons.tune),
-              onPressed: () => _editProfile(context),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const QuestionnaireCard(),
-        const SizedBox(height: 12),
-        FilledButton.icon(
+      data: (list) {
+        final newButton = FilledButton.icon(
           onPressed: () => showMeasurementForm(context, sex: profile.sex),
           icon: const Icon(Icons.add),
           label: const Text('Nueva medición'),
-        ),
-        const SizedBox(height: 16),
-        if (list.isEmpty)
-          const Text('Aún no tienes mediciones. Registra tu peso, cuello y '
-              'cintura para ver tu evaluación.')
-        else
-          SectionList(sections: [
-            PageSection(
-              title: 'Evaluación',
-              icon: Icons.monitor_heart_outlined,
-              initiallyOpen: true,
-              summary: _evaluationSummary(profile, list),
-              child: EvaluationCard(
-                profile: profile,
-                measurements: list,
-                plan: _weekPlan(ref, list),
+        );
+        final List<Widget> body;
+        if (list.isEmpty) {
+          body = [
+            const QuestionnaireCard(),
+            const SizedBox(height: 12),
+            newButton,
+            const SizedBox(height: 16),
+            const Text('Aún no tienes mediciones. Registra tu peso, cuello y '
+                'cintura para ver tu evaluación.'),
+          ];
+        } else {
+          body = switch (_tab) {
+            'Medidas' => [
+                newButton,
+                const SizedBox(height: 12),
+                SectionList(sections: [
+                  PageSection(
+                    title: 'Historial',
+                    icon: Icons.history,
+                    initiallyOpen: true,
+                    summary: '${list.length} ${list.length == 1 ? 'medición' : 'mediciones'}',
+                    child: _History(profile: profile, measurements: list),
+                  ),
+                ]),
+              ],
+            'Fotos' => [
+                SectionList(sections: [
+                  PageSection(
+                    title: 'Evaluación con foto',
+                    icon: Icons.add_a_photo_outlined,
+                    initiallyOpen: true,
+                    summary: _photoSummary(ref),
+                    child: BodyAssessmentCard(profile: profile, last: list.last),
+                  ),
+                  PageSection(
+                    title: 'Fotos',
+                    icon: Icons.photo_camera_outlined,
+                    summary: 'Frente, perfil y espalda cada mes',
+                    child: ProgressPhotosCard(profile: profile, measurements: list),
+                  ),
+                ]),
+              ],
+            'Logros' => [
+                SectionList(sections: [
+                  PageSection(
+                    title: 'Logros',
+                    icon: Icons.emoji_events_outlined,
+                    initiallyOpen: true,
+                    summary: 'Medallas por hitos reales',
+                    child: AchievementsCard(profile: profile, measurements: list),
+                  ),
+                ]),
+              ],
+            _ => [
+                _WeightHero(measurements: list),
+                const SizedBox(height: 12),
+                newButton,
+                const SizedBox(height: 16),
+                SectionList(sections: [
+                  PageSection(
+                    title: 'Evaluación',
+                    icon: Icons.monitor_heart_outlined,
+                    initiallyOpen: true,
+                    summary: _evaluationSummary(profile, list),
+                    child: EvaluationCard(
+                      profile: profile,
+                      measurements: list,
+                      plan: _weekPlan(ref, list),
+                    ),
+                  ),
+                  PageSection(
+                    title: 'Tendencia y ajuste',
+                    icon: Icons.show_chart,
+                    summary: 'Peso de tendencia, gasto real y ajuste de la semana',
+                    child: WeeklyCheckCard(profile: profile, measurements: list),
+                  ),
+                ]),
+                if (!noQuestionnaire) ...[
+                  const SizedBox(height: 12),
+                  const QuestionnaireCard(),
+                ],
+              ],
+          };
+        }
+        return _Page(children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  profile.name.isEmpty ? 'Tu progreso' : 'Hola, ${profile.name}',
+                  style: theme.textTheme.headlineSmall,
+                ),
               ),
+              IconButton(
+                tooltip: 'Editar perfil',
+                icon: const Icon(Icons.tune),
+                onPressed: () => _editProfile(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (list.isNotEmpty && noQuestionnaire) ...[
+            const QuestionnaireCard(),
+            const SizedBox(height: 12),
+          ],
+          if (list.isNotEmpty) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final t in const ['Resumen', 'Medidas', 'Fotos', 'Logros'])
+                  ChoiceChip(
+                    key: ValueKey('tab-$t'),
+                    showCheckmark: false,
+                    label: Text(t),
+                    selected: _tab == t,
+                    onSelected: (_) => setState(() => _tab = t),
+                  ),
+              ],
             ),
-            PageSection(
-              title: 'Evaluación con foto',
-              icon: Icons.add_a_photo_outlined,
-              summary: _photoSummary(ref),
-              child: BodyAssessmentCard(profile: profile, last: list.last),
-            ),
-            PageSection(
-              title: 'Tendencia y ajuste',
-              icon: Icons.show_chart,
-              summary: 'Peso de tendencia, gasto real y ajuste de la semana',
-              child: WeeklyCheckCard(profile: profile, measurements: list),
-            ),
-            PageSection(
-              title: 'Fotos',
-              icon: Icons.photo_camera_outlined,
-              summary: 'Frente, perfil y espalda cada mes',
-              child: ProgressPhotosCard(profile: profile, measurements: list),
-            ),
-            PageSection(
-              title: 'Logros',
-              icon: Icons.emoji_events_outlined,
-              summary: 'Medallas por hitos reales',
-              child: AchievementsCard(profile: profile, measurements: list),
-            ),
-            PageSection(
-              title: 'Historial',
-              icon: Icons.history,
-              summary: '${list.length} ${list.length == 1 ? 'medición' : 'mediciones'}',
-              child: _History(profile: profile, measurements: list),
-            ),
-          ]),
-      ]),
+            const SizedBox(height: 14),
+          ],
+          ...body,
+        ]);
+      },
     );
   }
 
@@ -166,6 +235,54 @@ class _Progress extends ConsumerWidget {
 }
 
 /// Evaluación con la última medición completa y el último peso.
+/// Peso actual grande, cambio desde el primer registro, tendencia y gráfico.
+class _WeightHero extends StatelessWidget {
+  const _WeightHero({required this.measurements});
+
+  final List<Measurement> measurements;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final weighIns = [for (final m in measurements) WeighIn(m.date, m.weightKg)];
+    final line = trendLine(weighIns);
+    final last = measurements.last;
+    final first = measurements.first;
+    final change = last.weightKg - first.weightKg;
+    final weeks = last.date.difference(first.date).inDays / 7;
+    final trend = weightTrend(weighIns, paceKgPerWeek: 0.5);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(fmt(last.weightKg, 1),
+                style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(width: 6),
+            Text('kg', style: theme.textTheme.titleMedium),
+          ],
+        ),
+        Text(
+          [
+            if (measurements.length > 1)
+              '${change <= 0 ? '−' : '+'}${fmt(change.abs(), 1)} kg en ${weeks < 2 ? '${last.date.difference(first.date).inDays} días' : '${fmt(weeks)} semanas'}',
+            if (trend.kgPerWeek != null)
+              'tendencia ${trend.kgPerWeek! <= 0 ? '−' : '+'}${fmt(trend.kgPerWeek!.abs(), 1)} kg/sem',
+            if (measurements.length == 1) 'primer registro: ${fmtDate(last.date)}',
+          ].join(' · '),
+          style: theme.textTheme.bodySmall,
+        ),
+        if (measurements.length > 1) ...[
+          const SizedBox(height: 10),
+          WeightChart(weighIns: weighIns, trend: line),
+        ],
+      ],
+    );
+  }
+}
+
 String _photoSummary(WidgetRef ref) {
   final list = ref.watch(bodyAssessmentsProvider).value ?? const [];
   return list.isEmpty
@@ -285,13 +402,13 @@ class EvaluationCard extends StatelessWidget {
             Text('Evaluación actual',
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            Wrap(spacing: 10, runSpacing: 10, children: tiles),
+            _StatGrid(tiles: tiles),
             if (goal != null) ...[
               const SizedBox(height: 16),
               Text('Tu meta, por etapas',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              Wrap(spacing: 10, runSpacing: 10, children: [
+              _StatGrid(tiles: [
                 _Stat(
                   goal.finalGoal == null ? 'Meta' : 'Etapa 1',
                   '${fmt(goal.firstStage.targetWeightKg, 1)} kg',
@@ -326,6 +443,26 @@ class EvaluationCard extends StatelessWidget {
   }
 }
 
+/// Cifras en 2 columnas (3 o 4 en pantallas anchas).
+class _StatGrid extends StatelessWidget {
+  const _StatGrid({required this.tiles});
+
+  final List<Widget> tiles;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      final cols = c.maxWidth >= 640 ? 4 : c.maxWidth >= 480 ? 3 : 2;
+      final w = (c.maxWidth - 8 * (cols - 1)) / cols;
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [for (final t in tiles) SizedBox(width: w, child: t)],
+      );
+    });
+  }
+}
+
 class _Stat extends StatelessWidget {
   const _Stat(this.label, this.value, this.detail, [this.rating]);
 
@@ -344,7 +481,6 @@ class _Stat extends StatelessWidget {
       null => null,
     };
     return Container(
-      width: 160,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,

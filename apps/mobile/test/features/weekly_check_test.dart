@@ -58,7 +58,7 @@ void main() {
     await openProgress(tester);
 
     expect(find.text('Tendencia y ajuste semanal'), findsOneWidget);
-    expect(find.byType(WeightChart), findsOneWidget);
+    expect(find.byType(WeightChart), findsWidgets);
     expect(find.textContaining('bajas 1,50 kg por semana'), findsOneWidget);
     expect(find.textContaining('Para estimar tu gasto real'), findsOneWidget);
 
